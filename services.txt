@@ -1,0 +1,332 @@
+# [A] Laundry
+
+## Services
+
+- Wash and Fold
+- Wash and Iron
+- Dry Cleaning
+- Blanket Cleaning
+- Shoe Cleaning
+- Curtain Cleaning
+
+### 1) Wash and Fold
+
+Everyday laundry items washed, dried, and neatly folded.
+
+- Shirt
+- T-Shirt
+- Jeans
+- Trouser
+- Chinos
+- Shorts
+- Trackpants
+- Kurta
+- Kurti
+- Leggings
+- Night Suit
+- Hoodie
+- Sweatshirt
+- School Uniform
+- Dupatta
+- Bedsheet
+- Pillow Cover
+- Hand Towel
+- Bath Towel
+- Napkin Cloth
+- Apron
+
+### **2) Wash and Iron**
+
+Clothes professionally washed and ironed for ready-to-wear finish.
+
+- Shirt
+- T-Shirt
+- Jeans
+- Trouser
+- Formal Pant
+- Chinos
+- Kurta
+- Kurti
+- Saree
+- Dupatta
+- School Uniform
+- Blouse
+- Hoodie
+- Sweatshirt
+- Coat Pant
+- Bedsheet
+- Table Cloth
+
+### **3) Dry Cleaning**
+
+Premium cleaning for delicate, expensive, or occasion wear garments.
+
+- Blazer
+- Suit (2 Piece)
+- Suit (3 Piece)
+- Sherwani
+- Lehenga
+- Saree
+- Silk Saree
+- Designer Saree
+- Wedding Dress
+- Party Gown
+- Evening Gown
+- Jacket
+- Coat
+- Woolen Coat
+- Sweater
+- Silk Dress
+- Velvet Dress
+- Tie
+- Scarf
+- Shawl
+- Wool Blanket
+- Heavy Curtain
+- Carpet
+- Rug
+
+### **4) Blanket Cleaning**
+
+Deep cleaning for heavy bedding and winter wear items.
+
+- Single Blanket
+- Double Blanket
+- Comforter
+- Quilt
+- Rajai
+- Dohar
+- AC Blanket
+- Heavy Winter Blanket
+- Wool Blanket
+- Mattress Protector
+- Sleeping Bag
+
+### **5) Shoe Cleaning**
+
+Deep cleaning and care for all types of footwear.
+
+- Sneakers
+- Sports Shoes
+- Running Shoes
+- Football Shoes
+- Formal Shoes
+- Leather Shoes
+- Boots
+- High Ankle Boots
+- Heels
+- Sandals
+- Slippers
+- Canvas Shoes
+- Loafers
+- Suede Shoes
+
+### **6) Curtain Cleaning**
+
+- Professional curtain cleaning for home and office spaces.
+- Window Curtain
+- Door Curtain
+- Heavy Curtain
+
+# [B] Door to Door Car Wash
+
+- Exterior Wash
+- Interior Cleaning
+
+### **1) Exterior Wash**
+
+Exterior body cleaning and washing for your vehicle.
+
+**Items:**
+
+- Hatchback
+- Sedan
+- SUV
+
+**AddOns:**
+
+- Tire Polish
+- Wax Coating
+- Glass Cleaning
+
+### **2) Interior Cleaning**
+
+Interior vacuuming and dashboard cleaning for your vehicle.
+
+**Items:**
+
+- Hatchback
+- Sedan
+- SUV
+
+**AddOns:**
+
+- Dashboard Polish
+- Seat Shampooing
+- Odor Removal
+
+# [C] Home Cleaning
+
+- Full Home Cleaning
+- Bathroom Cleaning
+- Kitchen Cleaning
+- Sofa Cleaning
+- Mattress Cleaning
+
+### **1) Full Home Cleaning**
+
+**Items:**
+
+- 1 BHK
+- 2 BHK
+- 3 BHK
+- 4 BHK
+- Villa
+
+**AddOns:**
+
+- Balcony Cleaning
+- Fridge Cleaning
+- Microwave Cleaning
+- Cabinet Cleaning
+- Deep Floor Scrubbing
+- Sofa Vacuuming
+
+### **2) Bathroom Cleaning**
+
+**Items:**
+
+- 1 Bathroomm
+- 2 Bathrooms
+- 3 Bathrooms
+- 4 Bathrooms
+
+**AddOns:**
+
+- Hard Water Stain Removal
+- Anti-Bacterial Treatment
+- Exhaust Cleaning
+
+### **3) Kitchen Cleaning**
+
+**Items:**
+
+- Standard Kitchen
+- Deep Kitchen Cleaning
+
+**AddOns:**
+
+- Chimney Cleaning
+- Cabinet Cleaning
+- Sink Deep Cleaning
+- Refrigerator Exterior Cleaning
+
+### **4) Sofa Cleaning**
+
+**Items:**
+
+- 3 Seater Sofa
+- 5 Seater Sofa
+- 7 Seater Sofa
+- Recliner
+
+**AddOns:**
+
+- Steam Sanitization
+- Stain Protection
+- Pet Hair Removal
+
+### **5) Mattress Cleaning**
+
+**Items:**
+
+- Single Mattress
+- Double Mattress
+- King Size Mattress
+
+**AddOns:**
+
+- Anti-Bacterial Treatment
+- Dust Mite Treatment
+
+# [D] Pest Control
+
+- Cockroach Control
+- Termite Control
+- Mosquito Control
+- Rodent Control
+- Bed Bug Control
+
+### **1) Cockroach Control**
+
+**Items:**
+
+- Kitchen
+- Bathroom
+- 1 BHK
+- 2 BHK
+- 3 BHK
+- 4 BHK
+
+**AddOns:**
+
+- Gel Treatment
+- Kitchen Intensive Treatment
+- Follow-Up Visit
+
+### **2) Termite Control**
+
+**Items:**
+
+- Up to 500 sqft
+- 500–1000 sqft
+- 1000–2000 sqft
+- Full House
+
+**AddOns:**
+
+- Wooden Furniture Protection
+- Wall Protection Treatment
+
+### **3) Mosquito Control**
+
+**Items:**
+
+- 1 BHK
+- 2 BHK
+- 3 BHK
+- Villa
+- Garden Area
+
+**AddOns:**
+
+- Garden Spray
+- Fogging Treatment
+
+### **4) Rodent Control**
+
+**Items:**
+
+- Home
+- Kitchen
+- Shop
+- Office
+- Warehouse
+
+**AddOns:**
+
+- Trap Installation
+- Follow-Up Visit
+
+### **5) Bed Bug Control**
+
+**Items:**
+
+- Single Room
+- Double Room
+- Full House
+
+**AddOns:**
+
+- Mattress Treatment
+- Follow-Up Visit

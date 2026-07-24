@@ -1,0 +1,62 @@
+import { z } from "zod";
+
+export const categorySchema = z.object({
+  code: z.string().min(1, "Code is required"),
+  slug: z.string().min(1, "Slug is required"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional().nullable(),
+  iconUrl: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  sortOrder: z.coerce.number().default(0),
+  publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
+  isEnabled: z.boolean().default(true),
+  changeSummary: z.string().min(1, "Change summary is required"),
+});
+
+export const serviceSchema = z.object({
+  categoryId: z.string().min(1, "Category is required"),
+  code: z.string().min(1, "Code is required"),
+  slug: z.string().min(1, "Slug is required"),
+  name: z.string().min(1, "Name is required"),
+  shortDescription: z.string().optional().nullable(),
+  longDescription: z.string().optional().nullable(),
+  serviceMode: z.enum(["PICKUP_DELIVERY", "AT_HOME"]),
+  durationEstimateMinutes: z.coerce.number().optional().nullable(),
+  sortOrder: z.coerce.number().default(0),
+  publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
+  isEnabled: z.boolean().default(true),
+  changeSummary: z.string().min(1, "Change summary is required"),
+});
+
+export const itemSchema = z.object({
+  serviceId: z.string().min(1, "Service is required"),
+  code: z.string().min(1, "Code is required"),
+  slug: z.string().min(1, "Slug is required"),
+  name: z.string().min(1, "Name is required"),
+  pricingType: z.string().min(1, "Pricing type is required"),
+  basePrice: z.coerce.number().min(0, "Price must be positive"),
+  currency: z.string().default("INR"),
+  unitLabel: z.string().optional().nullable(),
+  minQty: z.coerce.number().optional().nullable(),
+  maxQty: z.coerce.number().optional().nullable(),
+  sortOrder: z.coerce.number().default(0),
+  publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
+  isEnabled: z.boolean().default(true),
+  changeSummary: z.string().min(1, "Change summary is required"),
+});
+
+export const addOnSchema = z.object({
+  serviceId: z.string().min(1, "Service is required"),
+  code: z.string().min(1, "Code is required"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional().nullable(),
+  pricingType: z.literal("ADD_ON"),
+  price: z.coerce.number().min(0, "Price must be positive"),
+  currency: z.string().default("INR"),
+  unitLabel: z.string().optional().nullable(),
+  maxQty: z.coerce.number().optional().nullable(),
+  sortOrder: z.coerce.number().default(0),
+  publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
+  isEnabled: z.boolean().default(true),
+  changeSummary: z.string().min(1, "Change summary is required"),
+});
