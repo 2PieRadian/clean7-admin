@@ -49,7 +49,7 @@ export function LoginForm() {
         label="Work email"
         type="email"
         name="email"
-        placeholder="ops@washandwow.com"
+        placeholder="ops@clean7.in"
         required
       />
       <Field

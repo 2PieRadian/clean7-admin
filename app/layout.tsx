@@ -4,8 +4,8 @@ import { ManropeFont } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WashAndWow Panel",
-  description: "Director and branch operations panel for WashAndWow",
+  title: "Clean7 Panel",
+  description: "Director and branch operations panel for Clean7",
 };
 
 export default function RootLayout({

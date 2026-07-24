@@ -1,6 +1,6 @@
-# Wash & Wow Product Prompt
+# Clean7 Product Prompt
 
-Wash & Wow is a multi-branch cleaning services platform operating across multiple cities in India. Each active branch serves customers within an 8 km radius using stored branch coordinates and radius-based geo serviceability.
+Clean7 is a multi-branch cleaning services platform operating across multiple cities in India. Each active branch serves customers within an 8 km radius using stored branch coordinates and radius-based geo serviceability.
 
 The platform has 5 roles:
 

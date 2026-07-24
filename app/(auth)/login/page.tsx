@@ -9,7 +9,7 @@ export default function LoginPage() {
           <div className="absolute -right-16 top-10 h-48 w-48 rounded-full bg-[rgba(39,193,165,0.14)] blur-3xl" />
           <div className="relative max-w-xl">
             <p className="text-xs uppercase tracking-[0.24em] text-text-muted">
-              WashAndWow
+              Clean7
             </p>
             <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.02] tracking-[-0.05em] text-foreground md:text-6xl">
               Everything you need to run the business in one place.

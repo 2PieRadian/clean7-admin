@@ -167,7 +167,7 @@ function DesktopSidebar({
                 </div>
                 <div className="min-w-0 leading-tight">
                   <p className="truncate font-display text-[16px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-                    Wash and Wow
+                    Clean7
                   </p>
                   <p className="truncate text-[12px] leading-tight text-text-muted">
                     {panelLabel} · v{version}
@@ -254,7 +254,7 @@ function MobileSidebar({
               </div>
               <div className="min-w-0 leading-tight">
                 <p className="truncate font-display text-[16px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-                  Wash and Wow
+                  Clean7
                 </p>
                 <p className="truncate text-[12px] leading-tight text-text-muted">
                   {panelLabel} · v{version}

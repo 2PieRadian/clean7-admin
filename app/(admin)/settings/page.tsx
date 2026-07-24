@@ -58,7 +58,7 @@ export default function SettingsPage() {
           <div>
             <h2 className="text-base font-semibold text-danger">Danger Zone</h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Irreversible destructive actions for the Wash & Wow system.
+              Irreversible destructive actions for the Clean7 system.
             </p>
           </div>
           <SystemResetButton />
