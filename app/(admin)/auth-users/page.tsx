@@ -11,7 +11,6 @@ export default function ManagedAuthUsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={isDirector ? "Director" : "Branch Admin"}
         title={isDirector ? "Manage staff auth users." : "Create staff logins."}
         description={
           isDirector

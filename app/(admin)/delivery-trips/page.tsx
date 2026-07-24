@@ -116,7 +116,6 @@ export default function DeliveryTripsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
-          eyebrow="Delivery"
           title="Delivery trips"
           description="List trips, filter by branch and status, and batch orders that are ready for delivery."
         />

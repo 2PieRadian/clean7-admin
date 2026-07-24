@@ -153,7 +153,6 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Operations Control Center"
         title="Dashboard"
         description="Monitor today's workload and clear operational bottlenecks."
       />

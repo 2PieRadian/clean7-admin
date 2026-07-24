@@ -143,7 +143,6 @@ export default function BranchDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Branch details"
         title={branch ? branch.name : "Branch details"}
         description="Update branch location metadata and service radius. Schedule closures from Schedule overrides."
       />

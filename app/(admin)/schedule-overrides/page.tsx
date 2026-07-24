@@ -62,7 +62,6 @@ export default function ScheduleOverridesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations"
         title="Schedule overrides"
         description="Close slots or full days for a branch. Directors manage all branches; branch admins only their assigned branch."
       />

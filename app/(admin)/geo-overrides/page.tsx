@@ -48,7 +48,6 @@ export default function GeoOverridesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Catalog"
         title="Branch Prices Override"
         description="Override pricing by branch for services and add-ons."
       />

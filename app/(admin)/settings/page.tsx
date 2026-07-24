@@ -14,7 +14,6 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Settings"
         title="Workspace preferences"
         description="Theme and quick links. There is no backend settings API in the contract—use branch and catalog screens for operational configuration."
       />

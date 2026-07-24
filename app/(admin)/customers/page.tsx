@@ -12,7 +12,6 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Customers"
         title="Look up a customer profile"
         description="Search by email or phone to view or edit contact details."
       />

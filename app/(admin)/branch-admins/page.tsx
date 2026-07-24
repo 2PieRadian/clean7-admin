@@ -16,7 +16,6 @@ export default function BranchAdminsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Director"
         title="Create and manage branch admins."
         description={
           isDirector

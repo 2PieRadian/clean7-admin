@@ -127,7 +127,6 @@ export default function OrdersPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Orders"
         title="View and manage all orders."
         description="Use the filters to find the order you need, then open it to update payment, timing, staff, and status."
       />

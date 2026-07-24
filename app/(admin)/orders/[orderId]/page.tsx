@@ -41,7 +41,6 @@ export default function OrderDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Order details"
         title={
           order
             ? order.orderNumber || order.orderCode || "Order"

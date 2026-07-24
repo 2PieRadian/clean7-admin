@@ -46,7 +46,6 @@ export default function CreateWorkerPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Staff"
         title="Add staff"
         description="Creates sign-in and a worker or rider profile in one step."
       />

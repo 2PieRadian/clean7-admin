@@ -12,7 +12,6 @@ export default function ProfilesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="People details"
         title="Find a customer or staff profile"
         description="Search by email or phone to update contact details and private team notes."
       />

@@ -31,7 +31,6 @@ export default function BranchesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Branches"
         title="View and manage all branches."
         description="Open any branch to update location, radius, and assigned branch admin. Use schedule overrides for slot closures."
       />

@@ -40,7 +40,6 @@ export default function WorkersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Staff"
         title="Workers and riders"
         description="See branch staff, and add new team members."
       />
