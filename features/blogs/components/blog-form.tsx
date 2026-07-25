@@ -169,11 +169,11 @@ export function BlogForm({ initialData }: BlogFormProps) {
               </div>
             </div>
             {imageUrl && (
-              <div className="mt-3">
+              <div className="mt-4 relative w-full aspect-video md:aspect-[21/9] rounded-xl overflow-hidden border border-[var(--border-soft)] shadow-sm group">
                 <img
                   src={imageUrl}
                   alt="Cover Preview"
-                  className="max-h-40 rounded-xl object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
             )}
