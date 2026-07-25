@@ -5,7 +5,7 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-[100svh] w-full grid-cols-1 bg-black font-sans text-white md:grid-cols-2">
       {/* Left Column - Branding */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-black p-8 md:flex md:p-16 lg:p-24">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-black px-8 pb-8 pt-6 md:flex md:px-16 md:pb-16 md:pt-10 lg:px-24 lg:pb-24 lg:pt-12">
         {/* Background Decorative Circles */}
         <div className="absolute -bottom-[20%] -left-[10%] h-[120%] w-[120%] rounded-full border border-white/5 opacity-50" />
         <div className="absolute -bottom-[10%] -left-[5%] h-[100%] w-[100%] rounded-full border border-[#D4AF37]/10" />
@@ -35,7 +35,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-16 max-w-md md:mt-32">
+          <div className="mt-12 max-w-md md:mt-24">
             <h1 className="text-5xl font-serif font-medium leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
               Hello
               <br />
