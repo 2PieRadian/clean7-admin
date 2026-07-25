@@ -20,6 +20,7 @@ import {
   UserCog,
   Users,
   Wallet,
+  BookOpen,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -42,24 +43,55 @@ const navGroups: { title: string; items: NavItem[] }[] = [
   {
     title: "Organization",
     items: [
-      { href: "/branches", label: "Branches", icon: Building2, directorOnly: true },
-      { href: "/catalogue", label: "Services & Pricing", icon: LayoutGrid, directorOnly: true },
-      { href: "/geo-overrides", label: "Area Pricing", icon: Globe2, directorOnly: true },
-      { href: "/schedule-overrides", label: "Schedule overrides", icon: SlidersHorizontal, directorOnly: true },
+      {
+        href: "/branches",
+        label: "Branches",
+        icon: Building2,
+        directorOnly: true,
+      },
+      {
+        href: "/catalogue",
+        label: "Services & Pricing",
+        icon: LayoutGrid,
+        directorOnly: true,
+      },
+      {
+        href: "/geo-overrides",
+        label: "Area Pricing",
+        icon: Globe2,
+        directorOnly: true,
+      },
+      {
+        href: "/schedule-overrides",
+        label: "Schedule overrides",
+        icon: SlidersHorizontal,
+        directorOnly: true,
+      },
+      { href: "/blogs", label: "Blogs", icon: BookOpen },
     ],
   },
   {
     title: "People & customers",
     items: [
       { href: "/workers", label: "Workers", icon: Users },
-      { href: "/branch-admins", label: "Branch Admins", icon: UserCog, directorOnly: true },
+      {
+        href: "/branch-admins",
+        label: "Branch Admins",
+        icon: UserCog,
+        directorOnly: true,
+      },
       { href: "/customers", label: "Customers", icon: ContactRound },
     ],
   },
   {
     title: "Finance",
     items: [
-      { href: "/payments", label: "Payments", icon: Wallet, directorOnly: true },
+      {
+        href: "/payments",
+        label: "Payments",
+        icon: Wallet,
+        directorOnly: true,
+      },
     ],
   },
   {
@@ -104,19 +136,20 @@ export function AdminNav({
               href={item.href}
               title={collapsed ? item.label : undefined}
               onClick={onNavigate}
-              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition mx-2 ${collapsed
-                ? "justify-center p-2"
-                : "gap-2.5 px-3 py-2.5"
-                } ${active
+              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition mx-2 ${
+                collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2.5"
+              } ${
+                active
                   ? "bg-primary/10 text-primary shadow-sm"
                   : "text-text-secondary hover:bg-surface-muted hover:text-foreground"
-                }`}
+              }`}
             >
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition ${active
-                  ? "bg-surface text-primary shadow-sm"
-                  : "bg-transparent text-text-muted group-hover:bg-surface group-hover:text-foreground"
-                  }`}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition ${
+                  active
+                    ? "bg-surface text-primary shadow-sm"
+                    : "bg-transparent text-text-muted group-hover:bg-surface group-hover:text-foreground"
+                }`}
               >
                 <Icon
                   className="h-[19px] w-[19px] shrink-0"
@@ -149,8 +182,9 @@ export function AdminNav({
                   {group.title}
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-text-muted transition-transform duration-300 ease-out motion-reduce:transition-none ${sectionOpen ? "rotate-0" : "-rotate-90"
-                    }`}
+                  className={`h-4 w-4 shrink-0 text-text-muted transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                    sectionOpen ? "rotate-0" : "-rotate-90"
+                  }`}
                   strokeWidth={2}
                   aria-hidden
                 />
@@ -159,8 +193,9 @@ export function AdminNav({
 
             {!collapsed ? (
               <div
-                className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none motion-reduce:duration-0 ${sectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  }`}
+                className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none motion-reduce:duration-0 ${
+                  sectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
                 inert={sectionOpen ? undefined : true}
               >
                 <div className="min-h-0">
@@ -188,11 +223,17 @@ function isActivePath(pathname: string, href: string) {
   }
 
   if (href === "/branch-admins") {
-    return pathname === "/branch-admins" || pathname.startsWith("/branch-admins/");
+    return (
+      pathname === "/branch-admins" || pathname.startsWith("/branch-admins/")
+    );
   }
 
   if (href === "/catalogue") {
     return pathname === "/catalogue" || pathname.startsWith("/catalogue/");
+  }
+
+  if (href === "/blogs") {
+    return pathname === "/blogs" || pathname.startsWith("/blogs/");
   }
 
   if (href === "/customers") {
