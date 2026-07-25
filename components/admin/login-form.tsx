@@ -58,7 +58,7 @@ export function LoginForm() {
           type="email"
           required
           placeholder="Enter your email address"
-          className="w-full rounded-xl border border-white/10 bg-[#121212] px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#C8A04C]"
+          className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#C8A04C]"
         />
       </div>
 
@@ -72,7 +72,7 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             required
             placeholder="Enter your password"
-            className="w-full rounded-xl border border-white/10 bg-[#121212] px-4 py-3 pr-10 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#C8A04C]"
+            className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 pr-10 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#C8A04C]"
           />
           <button
             type="button"
