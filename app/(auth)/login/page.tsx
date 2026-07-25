@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/admin/login-form";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
@@ -16,13 +17,22 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col">
           {/* Logo */}
-          <div className="mb-2">
-            <h2 className="text-3xl font-bold tracking-tight text-white">
-              Clean<span className="text-[#C8A04C]">7</span>
-            </h2>
-            <p className="mt-1 text-[10px] uppercase tracking-widest text-white/50">
-              Premium care, delivered with elegance
-            </p>
+          <div className="mb-2 flex items-center gap-3">
+            <Image
+              src="/images/logo/logo.png"
+              alt="Clean7 Logo"
+              width={48}
+              height={48}
+              className="h-12 w-auto"
+            />
+            <div>
+              <h2 className="text-3xl font-bold leading-none tracking-tight text-white">
+                Clean<span className="text-[#C8A04C]">7</span>
+              </h2>
+              <p className="mt-1 text-[10px] uppercase tracking-widest text-white/50">
+                Premium care, delivered with elegance
+              </p>
+            </div>
           </div>
 
           <div className="mt-32 max-w-md">
