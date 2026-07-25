@@ -9,10 +9,15 @@ export function ThemeToggle() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
+    setIsDarkMode(document.documentElement.classList.contains("dark"));
+  }, []);
 
-  const toggleDarkMode = () => setIsDarkMode((isDark) => !isDark);
+  const toggleDarkMode = () => {
+    const newDark = !isDarkMode;
+    setIsDarkMode(newDark);
+    document.documentElement.classList.toggle("dark", newDark);
+    localStorage.setItem("admin-color-scheme", newDark ? "dark" : "light");
+  };
 
   return (
     <Button
