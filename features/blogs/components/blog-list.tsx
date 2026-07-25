@@ -96,7 +96,7 @@ export function BlogList() {
               </div>
               {isDirector && (
                 <div className="flex items-center gap-2">
-                  <Link href={`/blogs/${blog.id}`}>
+                  <Link href={`/blogs/${blog.slug}`}>
                     <Button
                       variant="secondary"
                       className="h-8 w-8 p-0 flex items-center justify-center text-primary hover:bg-primary/10"
