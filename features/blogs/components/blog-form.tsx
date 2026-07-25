@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Field, TextArea, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import Link from "next/link";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 import type { SimpleEditorRef } from "@/components/tiptap-templates/simple/simple-editor";
 import { useCreateBlog, useUpdateBlog, type Blog } from "../api/blogs-api";
+import { handleImageUpload } from "@/lib/tiptap-utils";
 
 interface BlogFormProps {
   initialData?: Blog;
@@ -31,6 +32,27 @@ export function BlogForm({ initialData }: BlogFormProps) {
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
 
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingImage(true);
+      setError(null);
+      const url = await handleImageUpload(file);
+      setImageUrl(url);
+    } catch (err: any) {
+      setError(err.message || "Failed to upload image");
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,12 +136,48 @@ export function BlogForm({ initialData }: BlogFormProps) {
             />
           </div>
 
-          <Field
-            label="Cover Image URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-          />
+          <div className="space-y-2">
+            <label className="block text-[14px] font-medium leading-[1.25] text-foreground">
+              Cover Image URL
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="flex h-11 w-full rounded-2xl border border-[var(--border-soft)] bg-surface px-4 py-3 text-[14px] text-foreground placeholder-[var(--text-muted)] shadow-[var(--shadow-input)] transition-all hover:border-[var(--border-hover)] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={onFileChange}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                >
+                  {isUploadingImage ? "Uploading..." : "Upload File"}
+                </Button>
+              </div>
+            </div>
+            {imageUrl && (
+              <div className="mt-3">
+                <img
+                  src={imageUrl}
+                  alt="Cover Preview"
+                  className="max-h-40 rounded-xl object-cover"
+                />
+              </div>
+            )}
+          </div>
 
           <TextArea
             label="Excerpt"
@@ -155,7 +213,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
           <label className="block text-sm font-medium text-foreground">
             Content *
           </label>
-          <div className="bg-surface rounded-xl border border-[var(--border-soft)] overflow-hidden shadow-sm">
+          <div className="bg-surface rounded-xl border border-[var(--border-soft)] shadow-sm">
             <SimpleEditor
               ref={editorRef}
               initialContent={

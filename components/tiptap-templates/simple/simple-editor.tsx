@@ -295,6 +295,7 @@ export const SimpleEditor = forwardRef<SimpleEditorRef, SimpleEditorProps>(
           <Toolbar
             ref={toolbarRef}
             style={{
+              backgroundColor: "var(--surface)",
               ...(isMobile
                 ? {
                     bottom: `calc(100% - ${height - rect.y}px)`,

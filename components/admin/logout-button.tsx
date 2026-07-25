@@ -5,7 +5,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/store/auth-store";
 
-export function LogoutButton({ compact = false }: { compact?: boolean }) {
+export function LogoutButton({
+  compact = false,
+  align = "right",
+}: {
+  compact?: boolean;
+  align?: "left" | "right";
+}) {
   const router = useRouter();
   const { logout } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +61,11 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       </button>
 
       {open ? (
-        <div className="absolute bottom-10 right-0 min-w-[170px] rounded-2xl border border-[var(--border-soft)] bg-surface p-1.5 shadow-[var(--shadow-card)]">
+        <div
+          className={`absolute bottom-10 z-50 min-w-[170px] rounded-2xl border border-[var(--border-soft)] bg-surface p-1.5 shadow-[var(--shadow-card)] ${
+            align === "left" ? "left-0" : "right-0"
+          }`}
+        >
           <button
             type="button"
             disabled={isPending}

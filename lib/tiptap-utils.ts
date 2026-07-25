@@ -379,7 +379,7 @@ export const handleImageUpload = async (
   }
 
   const preSignedResponse = await fetch(
-    `${getGatewayUrl()}/api/v1/upload/article-image`,
+    `${getGatewayUrl()}/admin/upload/article-image`,
     {
       method: "POST",
       headers: {

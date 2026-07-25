@@ -1,13 +1,13 @@
 .tiptap-popover {
-  --tt-popover-bg-color: var(--white);
-  --tt-popover-border-color: var(--tt-gray-light-a-100);
-  --tt-popover-text-color: var(--tt-gray-light-a-600);
+  --tt-popover-bg-color: var(--surface);
+  --tt-popover-border-color: var(--border-soft);
+  --tt-popover-text-color: var(--foreground);
 
-  .dark & {
-    --tt-popover-border-color: var(--tt-gray-dark-a-50);
-    --tt-popover-bg-color: var(--tt-gray-dark-50);
-    --tt-popover-text-color: var(--tt-gray-dark-a-600);
-  }
+  background-color: var(--tt-popover-bg-color);
+  border: 1px solid var(--tt-popover-border-color);
+  color: var(--tt-popover-text-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
 }
 
 /* --------------------------------------------

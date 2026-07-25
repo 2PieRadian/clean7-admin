@@ -136,8 +136,10 @@ export function AdminNav({
               href={item.href}
               title={collapsed ? item.label : undefined}
               onClick={onNavigate}
-              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition mx-2 ${
-                collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2.5"
+              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition ${
+                collapsed
+                  ? "justify-center w-11 h-11 mx-auto"
+                  : "gap-2.5 px-3 py-2.5 mx-2"
               } ${
                 active
                   ? "bg-primary/10 text-primary shadow-sm"

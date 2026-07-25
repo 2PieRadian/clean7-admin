@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, LayoutPanelLeft, X } from "lucide-react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { DirectorRouteGate } from "@/components/admin/director-route-gate";
 import { AdminNav } from "@/components/admin/nav";
@@ -59,8 +60,9 @@ export function AdminShell({
   return (
     <div className="flex h-[100svh] overflow-hidden bg-[var(--app-canvas)]">
       <aside
-        className={`hidden shrink-0 flex-col overflow-hidden border-r border-[var(--border-soft)] bg-surface transition-[width] duration-300 ease-out lg:flex ${collapsed ? "w-[84px]" : "w-[312px]"
-          }`}
+        className={`hidden shrink-0 flex-col z-20 border-r border-[var(--border-soft)] bg-surface transition-[width] duration-300 ease-out lg:flex ${
+          collapsed ? "w-[84px]" : "w-[312px]"
+        }`}
       >
         <DesktopSidebar
           collapsed={collapsed}
@@ -74,16 +76,18 @@ export function AdminShell({
       </aside>
 
       <div
-        className={`fixed inset-0 z-40 bg-[rgba(15,23,42,0.34)] transition-opacity duration-300 lg:hidden ${mobileOpen
-          ? "pointer-events-auto opacity-100"
-          : "pointer-events-none opacity-0"
-          }`}
+        className={`fixed inset-0 z-40 bg-[rgba(15,23,42,0.34)] transition-opacity duration-300 lg:hidden ${
+          mobileOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
         onClick={() => setMobileOpen(false)}
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(316px,92vw)] flex-col overflow-hidden border-r border-[var(--border-soft)] bg-surface shadow-[18px_0_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(316px,92vw)] flex-col overflow-hidden border-r border-[var(--border-soft)] bg-surface shadow-[18px_0_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <MobileSidebar
           displayName={displayName}
@@ -101,7 +105,7 @@ export function AdminShell({
           onOpenNav={() => setMobileOpen(true)}
         />
         <main className="admin-content-scroll flex-1 overflow-y-auto p-3 md:p-4">
-          <div className="admin-workspace-type min-h-full rounded-[32px] overflow-hidden border border-[var(--border-soft)] bg-surface px-4 py-4 shadow-[var(--shadow-card)] md:px-5 md:py-5">
+          <div className="admin-workspace-type min-h-full rounded-[32px] border border-[var(--border-soft)] bg-surface px-4 py-4 shadow-[var(--shadow-card)] md:px-5 md:py-5">
             <DirectorRouteGate user={user}>{children}</DirectorRouteGate>
           </div>
         </main>
@@ -137,13 +141,15 @@ function DesktopSidebar({
                 type="button"
                 aria-label="Expand sidebar"
                 onClick={onToggle}
-                className="group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(39,193,165,0.16)] bg-[rgba(39,193,165,0.08)] text-primary transition hover:border-[rgba(39,193,165,0.35)] hover:bg-[rgba(39,193,165,0.14)]"
+                className="group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition hover:bg-surface"
               >
                 <span className="absolute inset-0 flex items-center justify-center opacity-100 transition-opacity duration-150 group-hover:pointer-events-none group-hover:opacity-0">
-                  <LayoutPanelLeft
-                    className="h-5 w-5"
-                    strokeWidth={2.1}
-                    aria-hidden
+                  <Image
+                    src="/images/logo/logo.png"
+                    alt="Clean7 Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
                   />
                 </span>
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -158,11 +164,13 @@ function DesktopSidebar({
           ) : (
             <div className="flex w-full items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(39,193,165,0.16)] bg-[rgba(39,193,165,0.08)] text-primary">
-                  <LayoutPanelLeft
-                    className="h-5 w-5"
-                    strokeWidth={2.1}
-                    aria-hidden
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden">
+                  <Image
+                    src="/images/logo/logo.png"
+                    alt="Clean7 Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
                   />
                 </div>
                 <div className="min-w-0 leading-tight">
@@ -193,10 +201,10 @@ function DesktopSidebar({
       </div>
 
       <div
-        className={`border-t border-[var(--border-soft)] bg-[var(--sidebar-pane)] p-3 ${collapsed ? "px-2" : ""} relative`}
+        className={`border-t border-[var(--border-soft)] bg-[var(--sidebar-pane)] p-3 ${collapsed ? "px-2 py-4" : ""} relative`}
       >
         <div
-          className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}
+          className={`flex items-center ${collapsed ? "flex-col justify-center gap-4" : "gap-3"}`}
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#21252d] text-[13px] font-semibold text-white">
             {userInitials}
@@ -214,8 +222,8 @@ function DesktopSidebar({
               <LogoutButton compact={false} />
             </>
           ) : (
-            <div className="absolute bottom-3 right-1">
-              <LogoutButton compact />
+            <div className="flex w-full items-center justify-center">
+              <LogoutButton compact align="left" />
             </div>
           )}
         </div>
@@ -245,11 +253,13 @@ function MobileSidebar({
         <div className="flex min-h-[var(--admin-header-height)] shrink-0 items-center border-b border-[var(--border-soft)] px-4 py-3 md:py-3.5">
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-[rgba(39,193,165,0.16)] bg-[rgba(39,193,165,0.08)] text-primary">
-                <LayoutPanelLeft
-                  className="h-5 w-5"
-                  strokeWidth={2.1}
-                  aria-hidden
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/logo/logo.png"
+                  alt="Clean7 Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
                 />
               </div>
               <div className="min-w-0 leading-tight">
@@ -287,9 +297,7 @@ function MobileSidebar({
             <p className="truncate text-[14px] font-semibold text-foreground">
               {displayName}
             </p>
-            <p className="truncate text-[12px] text-text-muted">
-              {panelLabel}
-            </p>
+            <p className="truncate text-[12px] text-text-muted">{panelLabel}</p>
           </div>
           <LogoutButton compact={false} />
         </div>
