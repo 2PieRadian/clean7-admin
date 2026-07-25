@@ -398,7 +398,8 @@ export const handleImageUpload = async (
     throw new Error("Failed to get pre-signed URL");
   }
 
-  const { uploadURL, fileURL } = await preSignedResponse.json();
+  const responseData = await preSignedResponse.json();
+  const { uploadURL, fileURL } = responseData.data;
 
   await uploadWithProgress(uploadURL, file, onProgress, abortSignal);
 
