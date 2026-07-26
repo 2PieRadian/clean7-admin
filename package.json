@@ -25,6 +25,7 @@
     "@tiptap/extension-text-align": "^3.29.0",
     "@tiptap/extension-typography": "^3.29.0",
     "@tiptap/extensions": "^3.29.0",
+    "@tiptap/html": "^3.29.0",
     "@tiptap/pm": "^3.29.0",
     "@tiptap/react": "^3.29.0",
     "@tiptap/starter-kit": "^3.29.0",
