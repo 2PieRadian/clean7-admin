@@ -14,9 +14,10 @@ type BadgeProps = {
     | "service-orange";
   value?: string | null;
   variant?: "status" | "fulfillment";
+  className?: string;
 };
 
-export function Badge({ children, tone, value, variant = "status" }: BadgeProps) {
+export function Badge({ children, tone, value, variant = "status", className = "" }: BadgeProps) {
   const resolvedTone =
     tone ??
     (variant === "fulfillment"
@@ -35,7 +36,7 @@ export function Badge({ children, tone, value, variant = "status" }: BadgeProps)
 
   return (
     <span
-      className={`inline-flex items-center rounded-md px-1.5 py-1 text-[10px] font-medium leading-none ${styles[resolvedTone ?? "muted"]}`}
+      className={`inline-flex items-center rounded-md px-1.5 py-1 text-[10px] font-medium leading-none ${styles[resolvedTone ?? "muted"]} ${className}`.trim()}
     >
       {children ?? humanizeToken(value ?? "unknown")}
     </span>
