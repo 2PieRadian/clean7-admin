@@ -17,7 +17,13 @@ type BadgeProps = {
   className?: string;
 };
 
-export function Badge({ children, tone, value, variant = "status", className = "" }: BadgeProps) {
+export function Badge({
+  children,
+  tone,
+  value,
+  variant = "status",
+  className = "",
+}: BadgeProps) {
   const resolvedTone =
     tone ??
     (variant === "fulfillment"
@@ -28,9 +34,9 @@ export function Badge({ children, tone, value, variant = "status", className = "
     success: "bg-success-surface text-success",
     warning: "bg-warning-surface text-warning",
     danger: "bg-danger-surface text-danger",
-    info: "bg-info-surface text-info",
+    info: "bg-info text-white",
     muted: "bg-surface-soft text-text-secondary",
-    "service-blue": "bg-service-blue-surface text-service-blue",
+    "service-blue": "bg-service-blue text-white",
     "service-orange": "bg-service-orange-surface text-service-orange",
   };
 

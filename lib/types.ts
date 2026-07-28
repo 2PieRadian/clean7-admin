@@ -517,3 +517,31 @@ export type ProfileResponse = {
     whatsappOptIn?: boolean;
   };
 };
+
+export interface Career {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  hasVacancies: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CareerApplication {
+  id: string;
+  careerId: string;
+  career?: Career;
+  fullName: string;
+  email: string;
+  phone: string;
+  resumeOriginalName: string;
+  resumeStoredName: string;
+  resumeMimeType: string;
+  resumeSize: number;
+  status: "PENDING" | "REVIEWED" | "SHORTLISTED" | "ACCEPTED" | "REJECTED";
+  reviewedAt: string | null;
+  reviewedByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
