@@ -51,7 +51,9 @@ export default function ApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "ALL">(
+    "ALL",
+  );
   const [careerFilter, setCareerFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -103,7 +105,10 @@ export default function ApplicationsPage() {
     void loadApplications();
   }, [loadApplications]);
 
-  async function handleStatusChange(appId: string, newStatus: ApplicationStatus) {
+  async function handleStatusChange(
+    appId: string,
+    newStatus: ApplicationStatus,
+  ) {
     setUpdatingId(appId);
     try {
       await apiRequest({
@@ -115,7 +120,11 @@ export default function ApplicationsPage() {
       setApplications((prev) =>
         prev.map((app) =>
           app.id === appId
-            ? { ...app, status: newStatus, reviewedAt: new Date().toISOString() }
+            ? {
+                ...app,
+                status: newStatus,
+                reviewedAt: new Date().toISOString(),
+              }
             : app,
         ),
       );
@@ -159,7 +168,9 @@ export default function ApplicationsPage() {
     const total = applications.length;
     const pending = applications.filter((a) => a.status === "PENDING").length;
     const reviewed = applications.filter((a) => a.status === "REVIEWED").length;
-    const shortlisted = applications.filter((a) => a.status === "SHORTLISTED").length;
+    const shortlisted = applications.filter(
+      (a) => a.status === "SHORTLISTED",
+    ).length;
     const accepted = applications.filter((a) => a.status === "ACCEPTED").length;
     const rejected = applications.filter((a) => a.status === "REJECTED").length;
     return { total, pending, reviewed, shortlisted, accepted, rejected };
@@ -328,7 +339,9 @@ export default function ApplicationsPage() {
                 if (stat.label === "Total") {
                   setStatusFilter("ALL");
                 } else {
-                  setStatusFilter(stat.label.toUpperCase() as ApplicationStatus);
+                  setStatusFilter(
+                    stat.label.toUpperCase() as ApplicationStatus,
+                  );
                 }
               }}
             >

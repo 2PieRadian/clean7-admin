@@ -235,8 +235,8 @@ export default function CareersPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Career</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete &quot;{career.name}&quot;?
-                        This will also permanently remove all associated
+                        Are you sure you want to delete &quot;{career.name}
+                        &quot;? This will also permanently remove all associated
                         applications and resume files.
                       </AlertDialogDescription>
                     </AlertDialogHeader>

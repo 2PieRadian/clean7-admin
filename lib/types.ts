@@ -542,6 +542,7 @@ export interface CareerApplication {
   resumeStoredName: string;
   resumeMimeType: string;
   resumeSize: number;
+  experienceSummary: string;
   status: ApplicationStatus;
   reviewedAt: string | null;
   reviewedByAdminId: string | null;

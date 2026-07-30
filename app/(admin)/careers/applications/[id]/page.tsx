@@ -83,7 +83,9 @@ export default function ApplicationDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [application, setApplication] = useState<CareerApplication | null>(null);
+  const [application, setApplication] = useState<CareerApplication | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -180,6 +182,21 @@ export default function ApplicationDetailPage() {
     }
   }
 
+  async function handleDeleteApplication() {
+    if (!application) return;
+    if (!confirm("Are you sure you want to delete this application? This action cannot be undone.")) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/careers/applications/${application.id}`,
+        method: "DELETE",
+      });
+      window.location.href = "/careers/applications";
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error deleting application");
+    }
+  }
+
   // Cleanup preview URL on unmount
   useEffect(() => {
     return () => {
@@ -206,7 +223,10 @@ export default function ApplicationDetailPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <PageHeader title="Application Not Found" description={error ?? "The requested application does not exist."} />
+          <PageHeader
+            title="Application Not Found"
+            description={error ?? "The requested application does not exist."}
+          />
         </div>
       </div>
     );
@@ -231,9 +251,14 @@ export default function ApplicationDetailPage() {
             description={`Application for ${application.career?.name ?? "Unknown Position"}`}
           />
         </div>
-        <Badge value={application.status} className="!text-xs !px-3 !py-1.5">
-          {humanizeToken(application.status)}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge value={application.status} className="!text-xs !px-3 !py-1.5">
+            {humanizeToken(application.status)}
+          </Badge>
+          <Button variant="danger" onClick={handleDeleteApplication}>
+            Delete Application
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -244,7 +269,7 @@ export default function ApplicationDetailPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-4">
               Applicant Information
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
               <InfoRow
                 icon={User}
                 label="Full Name"
@@ -279,6 +304,15 @@ export default function ApplicationDetailPage() {
                   value={formatDateTime(application.reviewedAt)}
                 />
               )}
+            </div>
+
+            <div className="pt-5 border-t border-[var(--border-soft)]">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3">
+                Experience Summary
+              </h3>
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                {application.experienceSummary || "No experience summary provided."}
+              </p>
             </div>
           </Card>
 
@@ -350,7 +384,9 @@ export default function ApplicationDetailPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-4">
               Application Status
             </h2>
-            <div className={`p-4 rounded-xl bg-${statusInfo.variant}-surface/50 border border-[var(--border-soft)]`}>
+            <div
+              className={`p-4 rounded-xl bg-${statusInfo.variant}-surface/50 border border-[var(--border-soft)]`}
+            >
               <div className="flex items-center gap-2.5 mb-2">
                 <StatusIcon className={`w-5 h-5 text-${statusInfo.variant}`} />
                 <span className="font-semibold text-foreground">
@@ -386,7 +422,9 @@ export default function ApplicationDetailPage() {
                         : "bg-surface-muted text-text-secondary hover:bg-surface-soft hover:text-foreground border border-transparent"
                     } disabled:opacity-50`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "text-primary" : ""}`}
+                    />
                     <span className="flex-1">{info.label}</span>
                     {isActive && (
                       <span className="text-[10px] uppercase tracking-wider font-semibold text-primary">
