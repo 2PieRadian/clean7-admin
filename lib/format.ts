@@ -230,7 +230,7 @@ export function getStatusTone(
   if (!value) return "muted";
 
   if (
-    ["PAID", "COD_COLLECTED", "COMPLETED", "VERIFIED", "ACTIVE", "DELIVERED"].includes(value)
+    ["PAID", "COD_COLLECTED", "COMPLETED", "VERIFIED", "ACTIVE", "DELIVERED", "ACCEPTED"].includes(value)
   ) {
     return "success";
   }
@@ -255,9 +255,14 @@ export function getStatusTone(
       "OUT_FOR_DELIVERY",
       "READY_FOR_DELIVERY",
       "RECEIVED_AT_BRANCH",
+      "SHORTLISTED",
     ].includes(value)
   ) {
     return "warning";
+  }
+
+  if (["REVIEWED"].includes(value)) {
+    return "info";
   }
 
   return "info";

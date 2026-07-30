@@ -252,5 +252,9 @@ function isActivePath(pathname: string, href: string) {
     return pathname === "/settings" || pathname.startsWith("/settings/");
   }
 
+  if (href === "/careers") {
+    return pathname === "/careers" || pathname.startsWith("/careers/");
+  }
+
   return pathname.startsWith(`${href}/`);
 }

@@ -518,6 +518,8 @@ export type ProfileResponse = {
   };
 };
 
+export type ApplicationStatus = "PENDING" | "REVIEWED" | "SHORTLISTED" | "ACCEPTED" | "REJECTED";
+
 export interface Career {
   id: string;
   name: string;
@@ -526,6 +528,7 @@ export interface Career {
   hasVacancies: boolean;
   createdAt: string;
   updatedAt: string;
+  _count?: { applications: number };
 }
 
 export interface CareerApplication {
@@ -539,7 +542,7 @@ export interface CareerApplication {
   resumeStoredName: string;
   resumeMimeType: string;
   resumeSize: number;
-  status: "PENDING" | "REVIEWED" | "SHORTLISTED" | "ACCEPTED" | "REJECTED";
+  status: ApplicationStatus;
   reviewedAt: string | null;
   reviewedByAdminId: string | null;
   createdAt: string;

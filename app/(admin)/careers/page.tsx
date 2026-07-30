@@ -5,10 +5,22 @@ import { Card } from "@/components/ui/card";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
-import { Career } from "@/lib/types";
+import type { Career } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Field, TextArea } from "@/components/ui/field";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { ArrowRight, Plus, Pencil } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, Users } from "lucide-react";
 
 export default function CareersPage() {
   const [careers, setCareers] = useState<Career[]>([]);
@@ -23,6 +35,7 @@ export default function CareersPage() {
     description: "",
     hasVacancies: true,
   });
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -43,6 +56,7 @@ export default function CareersPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSaving(true);
     try {
       if (editingId) {
         await apiRequest({
@@ -63,6 +77,8 @@ export default function CareersPage() {
       await load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error saving career");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -76,6 +92,18 @@ export default function CareersPage() {
     setIsFormOpen(true);
   }
 
+  async function handleDelete(id: string) {
+    try {
+      await apiRequest({
+        path: `/admin/careers/${id}`,
+        method: "DELETE",
+      });
+      await load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error deleting career");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -83,7 +111,7 @@ export default function CareersPage() {
           title="Careers"
           description="Manage job postings and see applications."
         />
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <Link href="/careers/applications">
             <Button variant="secondary">
               View Applications <ArrowRight className="ml-2 w-4 h-4" />
@@ -114,45 +142,42 @@ export default function CareersPage() {
             {editingId ? "Edit Career" : "New Career"}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-medium">Job Title</label>
-              <input
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
-                value={formData.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="e.g. Delivery Driver"
-              />
-            </div>
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-medium">Description</label>
-              <textarea
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
-                value={formData.description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                rows={4}
-              />
-            </div>
+            <Field
+              label="Job Title"
+              required
+              value={formData.name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="e.g. Delivery Driver"
+            />
+            <TextArea
+              label="Description"
+              required
+              value={formData.description}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              rows={4}
+            />
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                id="hasVacancies"
+                className="h-4 w-4 rounded border-gray-300 text-primary accent-primary"
                 checked={formData.hasVacancies}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setFormData({ ...formData, hasVacancies: e.target.checked })
                 }
               />
-              <label className="text-sm font-medium">
+              <label htmlFor="hasVacancies" className="text-sm font-medium">
                 Active (Visible on website)
               </label>
             </div>
             <div className="flex gap-2">
-              <Button type="submit">Save</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
               <Button
                 variant="secondary"
                 type="button"
@@ -172,26 +197,65 @@ export default function CareersPage() {
               key={career.id}
               className="p-6 flex items-center justify-between"
             >
-              <div>
-                <h3 className="text-lg font-medium">{career.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2 max-w-2xl">
-                  {career.description}
-                </p>
-                <div className="mt-2 text-sm">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-medium">{career.name}</h3>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs ${career.hasVacancies ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${career.hasVacancies ? "bg-success/10 text-success" : "bg-surface-soft text-text-muted"}`}
                   >
                     {career.hasVacancies ? "Active" : "Hidden"}
                   </span>
                 </div>
+                <p className="text-sm text-text-secondary mt-1 line-clamp-2 max-w-2xl">
+                  {career.description}
+                </p>
+                {career._count != null && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>
+                      {career._count.applications}{" "}
+                      {career._count.applications === 1
+                        ? "application"
+                        : "applications"}
+                    </span>
+                  </div>
+                )}
               </div>
-              <Button variant="ghost" onClick={() => handleEdit(career)}>
-                <Pencil className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-1 ml-4 shrink-0">
+                <Button variant="ghost" onClick={() => handleEdit(career)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost">
+                      <Trash2 className="w-4 h-4 text-danger" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Career</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete &quot;{career.name}&quot;?
+                        This will also permanently remove all associated
+                        applications and resume files.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="!bg-danger !text-white"
+                        onClick={() => handleDelete(career.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </Card>
           ))}
           {careers.length === 0 && (
-            <div className="text-center p-12 text-muted-foreground">
+            <div className="text-center p-12 text-text-muted">
               No careers created yet.
             </div>
           )}
