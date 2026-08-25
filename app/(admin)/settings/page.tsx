@@ -21,7 +21,7 @@ export default function SettingsPage() {
     try {
       // 1. Get pre-signed URL
       const { uploadURL } = await apiRequest<{ uploadURL: string; fileURL: string }>({
-        path: "/api/v1/admin/upload/brochure",
+        path: "/admin/upload/brochure",
         method: "POST",
         body: { fileType: file.type },
       });
@@ -149,7 +149,7 @@ function SocialMediaSettings() {
       setIsLoading(true);
       try {
         const res = await apiRequest<{ data: any }>({
-          path: "/api/v1/admin/settings/social_links",
+          path: "/admin/settings/social_links",
           method: "GET",
         });
         if (res.data && res.data.value) {
@@ -168,7 +168,7 @@ function SocialMediaSettings() {
     setIsSaving(true);
     try {
       await apiRequest({
-        path: "/api/v1/admin/settings/social_links",
+        path: "/admin/settings/social_links",
         method: "PUT",
         body: { value: links },
       });
