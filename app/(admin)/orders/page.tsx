@@ -1,25 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { OrderList } from "@/features/orders/components/order-list";
 import { useOrders } from "@/features/orders/api/order-api";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse, OrderResponse } from "@/lib/types";
-import { slotCodes } from "@/lib/constants";
+import { slotCodes, orderStatuses, paymentStatuses } from "@/lib/constants";
 import { humanizeToken } from "@/lib/format";
-
-type OrderQuery = Record<string, string>;
-
-const SERVICE_CATEGORIES = [
-  { code: "LAUNDRY", label: "Laundry" },
-  { code: "HOME_CLEANING", label: "Home Cleaning" },
-  { code: "CAR_WASH", label: "Door to Door Car Wash" },
-  { code: "PEST_CONTROL", label: "Pest Control" },
-] as const;
 
 /** Statuses where pickup rider should be assigned but isn't. */
 const PICKUP_UNASSIGNED_STATUSES = new Set([
@@ -30,21 +19,6 @@ const PICKUP_UNASSIGNED_STATUSES = new Set([
 /** Status where delivery rider should be assigned (via trip). */
 const DELIVERY_UNASSIGNED_STATUS = "READY_FOR_DELIVERY";
 
-function getQuery(searchParams: URLSearchParams): OrderQuery {
-  const query: OrderQuery = {};
-  for (const key of [
-    "status",
-    "paymentStatus",
-    "serviceCategory",
-    "customerAuthUserId",
-    "scheduledDate",
-  ]) {
-    const value = searchParams.get(key);
-    if (value) query[key] = value;
-  }
-  return query;
-}
-
 function orderLabel(order: OrderResponse) {
   return order.orderNumber || order.orderCode || "Order";
 }
@@ -52,20 +26,16 @@ function orderLabel(order: OrderResponse) {
 type QuickFilter = "" | "pickup_unassigned" | "delivery_unassigned";
 
 export default function OrdersPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
   const [slotFilter, setSlotFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("");
-  const [serviceFilter, setServiceFilter] = useState(
-    searchParams.get("serviceCategory") ?? ""
-  );
 
-  const query = useMemo(() => getQuery(searchParams), [searchParams]);
-
-  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders(query);
+  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders({});
 
   useEffect(() => {
     let cancelled = false;
@@ -86,12 +56,9 @@ export default function OrdersPage() {
     return orders.filter((order) => {
       if (branchFilter && order.branchId !== branchFilter) return false;
       if (slotFilter && order.scheduledSlotCode !== slotFilter) return false;
-
-      // service category local filter
-      if (serviceFilter) {
-        const cat = (order.serviceCategoryCode ?? "").toUpperCase();
-        if (cat !== serviceFilter) return false;
-      }
+      if (dateFilter && order.scheduledDate && !order.scheduledDate.startsWith(dateFilter)) return false;
+      if (statusFilter && order.status !== statusFilter) return false;
+      if (paymentStatusFilter && order.paymentStatus !== paymentStatusFilter) return false;
 
       // quick filters
       if (quickFilter === "pickup_unassigned") {
@@ -111,12 +78,7 @@ export default function OrdersPage() {
         (order.serviceCategoryName ?? order.serviceCategoryCode ?? "").toLowerCase().includes(q)
       );
     });
-  }, [orders, branchFilter, slotFilter, serviceFilter, quickFilter, search]);
-
-  function applyServiceFilter(code: string) {
-    setServiceFilter(code);
-    setQuickFilter("");
-  }
+  }, [orders, branchFilter, slotFilter, dateFilter, statusFilter, paymentStatusFilter, quickFilter, search]);
 
   const quickFilterLabels: Record<QuickFilter, string> = {
     "": "",
@@ -133,25 +95,6 @@ export default function OrdersPage() {
 
       {/* ── Filter bar ── */}
       <Card className="space-y-4">
-        {/* Row 1 — Service category chips */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Service</span>
-          {[{ code: "", label: "All" }, ...SERVICE_CATEGORIES].map(({ code, label }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => applyServiceFilter(code)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
-                serviceFilter === code
-                  ? "bg-primary text-white shadow-md"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
         {/* Row 2 — Quick-filter pills */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Quick</span>
@@ -160,18 +103,16 @@ export default function OrdersPage() {
               key={f}
               type="button"
               onClick={() => setQuickFilter(quickFilter === f ? "" : f)}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
-                quickFilter === f
-                  ? f === "pickup_unassigned"
-                    ? "bg-amber-500 text-white shadow-md"
-                    : "bg-rose-500 text-white shadow-md"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${quickFilter === f
+                ? f === "pickup_unassigned"
+                  ? "bg-amber-500 text-white shadow-md"
+                  : "bg-rose-500 text-white shadow-md"
+                : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground"
+                }`}
             >
               <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${
-                  quickFilter === f ? "bg-white" : f === "pickup_unassigned" ? "bg-amber-400" : "bg-rose-400"
-                }`}
+                className={`inline-block h-1.5 w-1.5 rounded-full ${quickFilter === f ? "bg-white" : f === "pickup_unassigned" ? "bg-amber-400" : "bg-rose-400"
+                  }`}
               />
               {quickFilterLabels[f]}
             </button>
@@ -187,50 +128,37 @@ export default function OrdersPage() {
           ) : null}
         </div>
 
-        {/* Row 3 — API filters */}
-        <details className="group">
-          <summary className="cursor-pointer list-none text-xs font-semibold text-text-muted hover:text-foreground flex items-center gap-1.5">
-            <svg className="h-3.5 w-3.5 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            Advanced API filters
-          </summary>
-          <form
-            className="mt-3 grid gap-3 md:grid-cols-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget);
-              const params = new URLSearchParams();
-              for (const [key, value] of formData.entries()) {
-                const trimmed = String(value).trim();
-                if (trimmed) params.set(key, trimmed);
-              }
-              router.push(params.toString() ? `/orders?${params.toString()}` : "/orders");
-            }}
-          >
-            <input name="status" defaultValue={query.status} placeholder="Order status" className="input-surface px-3 py-2 text-sm" />
-            <input name="paymentStatus" defaultValue={query.paymentStatus} placeholder="Payment status" className="input-surface px-3 py-2 text-sm" />
-            <input name="serviceCategory" defaultValue={query.serviceCategory} placeholder="Category code" className="input-surface px-3 py-2 text-sm" />
-            <input name="customerAuthUserId" defaultValue={query.customerAuthUserId} placeholder="Customer ID" className="input-surface px-3 py-2 text-sm" />
-            <input name="scheduledDate" defaultValue={query.scheduledDate} placeholder="YYYY-MM-DD" className="input-surface px-3 py-2 text-sm" />
-            <div className="flex gap-2 md:col-span-5">
-              <button type="submit" className="inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90">
-                Apply
-              </button>
-              <Link href="/orders" className="inline-flex items-center rounded-xl border border-[var(--border-soft)] px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted hover:text-foreground">
-                Clear
-              </Link>
-            </div>
-          </form>
-        </details>
-
-        {/* Row 4 — Local filters */}
+        {/* Row 3 — Local filters */}
         <div className="grid gap-3 border-t border-[var(--border-soft)] pt-4 md:grid-cols-3">
+          <select
+            className="input-surface px-3 py-2 text-sm"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filter by order status"
+          >
+            <option value="">Order Status</option>
+            {orderStatuses.map((s) => (
+              <option key={s} value={s}>{humanizeToken(s)}</option>
+            ))}
+          </select>
+          <select
+            className="input-surface px-3 py-2 text-sm"
+            value={paymentStatusFilter}
+            onChange={(e) => setPaymentStatusFilter(e.target.value)}
+            aria-label="Filter by payment status"
+          >
+            <option value="">Payment Status</option>
+            {paymentStatuses.map((s) => (
+              <option key={s} value={s}>{humanizeToken(s)}</option>
+            ))}
+          </select>
           <select
             className="input-surface px-3 py-2 text-sm"
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
             aria-label="Filter by branch"
           >
-            <option value="">All branches</option>
+            <option value="">Select Branch</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
@@ -241,11 +169,23 @@ export default function OrdersPage() {
             onChange={(e) => setSlotFilter(e.target.value)}
             aria-label="Filter by slot"
           >
-            <option value="">All time slots</option>
+            <option value="">Time Slot</option>
             {slotCodes.map((s) => (
               <option key={s} value={s}>{humanizeToken(s)}</option>
             ))}
           </select>
+          <input
+            type="date"
+            className="input-surface px-3 py-2 text-sm cursor-pointer"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            onClick={(e) => {
+              try {
+                (e.target as HTMLInputElement).showPicker();
+              } catch (err) { }
+            }}
+            aria-label="Filter by date"
+          />
           <input
             className="input-surface px-3 py-2 text-sm"
             value={search}
