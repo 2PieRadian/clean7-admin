@@ -90,18 +90,6 @@ export default function LoginPage() {
           </div>
 
           <LoginForm />
-
-          <div className="mt-8 rounded-lg border border-[#C8A04C]/20 bg-black p-4">
-            <p className="text-[10px] font-semibold text-[#C8A04C] md:text-xs">
-              Developer Login Hint:
-            </p>
-            <p className="mt-1 text-[10px] text-white/60 md:text-xs">
-              Email: admin@gmail.com
-            </p>
-            <p className="text-[10px] text-white/60 md:text-xs">
-              Password: admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

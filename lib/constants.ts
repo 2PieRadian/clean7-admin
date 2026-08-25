@@ -7,7 +7,7 @@ import type {
   PublishState,
   ServiceMode,
   SlotCode,
-  WorkerStatus,
+  OperatorStatus,
 } from "@/lib/types";
 
 export const orderStatuses: OrderStatus[] = [
@@ -40,9 +40,9 @@ export const slotCodes: SlotCode[] = ["MORNING", "AFTERNOON", "EVENING"];
 
 export const serviceModes: ServiceMode[] = ["PICKUP_DELIVERY", "AT_HOME"];
 
-export const workerStatuses: WorkerStatus[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
+export const operatorStatuses: OperatorStatus[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
-export const staffRoles = ["WORKER", "RIDER"] as const;
+export const staffRoles = ["OPERATOR", "RIDER"] as const;
 
 export const publishStates: PublishState[] = ["DRAFT", "ACTIVE", "INACTIVE"];
 

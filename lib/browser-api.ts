@@ -11,7 +11,7 @@ import {
 
 type ApiOptions = {
   path: string;
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined | null>;
   headers?: Record<string, string>;
@@ -42,7 +42,7 @@ function redirectToLoginIfClient() {
 
 function isMutating(method: string | undefined) {
   const m = method ?? "GET";
-  return m === "POST" || m === "PATCH" || m === "DELETE";
+  return m === "POST" || m === "PUT" || m === "PATCH" || m === "DELETE";
 }
 
 async function requestWithToken<T>(token: string | null, options: ApiOptions) {

@@ -70,7 +70,7 @@ const BLOCKER_LABELS: Record<string, string> = {
   pickup_rider_missing: "No pickup rider assigned",
   delivery_rider_missing: "No delivery rider assigned",
   intake_not_done: "Laundry intake not recorded",
-  worker_missing: "Worker not assigned",
+  operator_missing: "Operator not assigned",
   address_missing: "Service address missing",
   slot_conflict: "Time slot conflict",
   item_count_mismatch: "Item count mismatch",
@@ -96,7 +96,7 @@ export function scheduledSlotLabel(code: string | undefined | null) {
 const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: "Order Placed",
   CONFIRMED: "Confirmed",
-  IN_PROGRESS: "In Progress",
+  IN_PROGRESS: "Pickup Completed",
   PICKUP_FAILED: "Pickup Failed",
   RECEIVED_AT_BRANCH: "Received at Branch",
   PROCESSING: "Currently Being Processed",
@@ -191,7 +191,7 @@ export function getCurrentResponsibility(order: OrderResponse): string {
 
 export function getStuckOrderReasoning(order: OrderResponse): string | null {
   const s = order.status as OrderStatus;
-  
+
   if (order.fulfillment?.blockers?.length) {
     return humanizeBlocker(order.fulfillment.blockers[0]);
   }
@@ -199,7 +199,7 @@ export function getStuckOrderReasoning(order: OrderResponse): string | null {
   if ((s === "CONFIRMED" || s === "IN_PROGRESS") && !order.pickupRiderAuthUserId) {
     return "Waiting for pickup assignment.";
   }
-  
+
   if (s === "READY_FOR_DELIVERY") {
     // Delivery rider is assigned via Delivery Trip, but we just flag it here if it's waiting
     return "Ready for delivery but no rider assigned.";
@@ -209,7 +209,7 @@ export function getStuckOrderReasoning(order: OrderResponse): string | null {
     const updatedDate = new Date(order.updatedAt).getTime();
     const now = Date.now();
     const hours = Math.floor((now - updatedDate) / (1000 * 60 * 60));
-    
+
     if (hours >= 24) {
       if (s === "PROCESSING") return `Processing not updated for ${hours} hours.`;
       if (s === "PENDING") return `Pending confirmation for ${hours} hours.`;

@@ -13,19 +13,19 @@ import type {
   DeliveryTripResponse,
   OrderResponse,
   OrderStatus,
-  WorkerProfileResponse,
+  OperatorProfileResponse,
 } from "@/lib/types";
 
 type DashboardState = {
   orders: OrderResponse[];
-  workers: WorkerProfileResponse[];
+  operators: OperatorProfileResponse[];
   branches: BranchAdminResponse[];
   trips: DeliveryTripResponse[];
 };
 
 const emptyState: DashboardState = {
   orders: [],
-  workers: [],
+  operators: [],
   branches: [],
   trips: [],
 };
@@ -66,15 +66,15 @@ export default function DashboardPage() {
       setError(null);
 
       try {
-        const [orders, workers, branches, trips] = await Promise.all([
+        const [orders, operators, branches, trips] = await Promise.all([
           apiRequest<OrderResponse[]>({ path: "/admin/orders" }),
-          apiRequest<WorkerProfileResponse[]>({ path: "/admin/workers" }),
+          apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" }),
           apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" }),
           apiRequest<DeliveryTripResponse[]>({ path: "/admin/delivery-trips" }),
         ]);
 
         if (cancelled) return;
-        setData({ orders, workers, branches, trips });
+        setData({ orders, operators, branches, trips });
       } catch (nextError) {
         if (cancelled) return;
         setError(
@@ -123,14 +123,14 @@ export default function DashboardPage() {
       return hours >= 24;
     });
 
-    const assignedWorkerIds = new Set(orders.filter(o => !isTerminalOrderStatus(o.status)).flatMap(o => [o.assignedWorkerAuthUserId, o.pickupRiderAuthUserId]).filter(Boolean));
-    const idleWorkersCount = data.workers.filter(w => w.status === "ACTIVE" && !assignedWorkerIds.has(w.authUserId)).length;
+    const assignedOperatorIds = new Set(orders.filter(o => !isTerminalOrderStatus(o.status)).flatMap(o => [o.assignedOperatorAuthUserId, o.pickupRiderAuthUserId]).filter(Boolean));
+    const idleOperatorsCount = data.operators.filter(w => w.status === "ACTIVE" && !assignedOperatorIds.has(w.authUserId)).length;
 
     const todayOrders = orders.filter((o) => scheduledLocalDate(o) === today).length;
     const ordersProcessing = orders.filter((o) => o.status === "PROCESSING").length;
     const deliveriesRemaining = orders.filter((o) => o.status === "OUT_FOR_DELIVERY" || o.status === "READY_FOR_DELIVERY").length;
-    const workersActive = data.workers.filter(w => w.status === "ACTIVE" && w.role === "WORKER").length;
-    const ridersActive = data.workers.filter(w => w.status === "ACTIVE" && w.role === "RIDER").length;
+    const operatorsActive = data.operators.filter(w => w.status === "ACTIVE" && w.role === "OPERATOR").length;
+    const ridersActive = data.operators.filter(w => w.status === "ACTIVE" && w.role === "RIDER").length;
 
     return {
       needsPickupAssignment,
@@ -140,15 +140,15 @@ export default function DashboardPage() {
       readyForDelivery,
       delayedOrders,
       stuckOrders,
-      idleWorkersCount,
+      idleOperatorsCount,
       todayOrders,
       pendingPickups: needsPickupAssignment + waitingForPickup,
       ordersProcessing,
       deliveriesRemaining,
-      workersActive,
+      operatorsActive,
       ridersActive
     };
-  }, [data.orders, data.trips, data.workers, today]);
+  }, [data.orders, data.trips, data.operators, today]);
 
   return (
     <div className="space-y-8">
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                 ["Pending Pickups", metrics.pendingPickups],
                 ["Orders Processing", metrics.ordersProcessing],
                 ["Deliveries Remaining", metrics.deliveriesRemaining],
-                ["Workers Active", metrics.workersActive],
+                ["Operators Active", metrics.operatorsActive],
                 ["Riders Active", metrics.ridersActive],
               ].map(([label, value]) => (
                 <Card key={label} className="bg-surface-primary shadow-sm border border-[var(--border-soft)]">
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 ["Ready for Delivery", metrics.readyForDelivery, false],
                 ["Delayed Orders", metrics.delayedOrders.length, metrics.delayedOrders.length > 0],
                 ["Orders Stuck > 24h", metrics.stuckOrders.length, metrics.stuckOrders.length > 0],
-                ["Idle Workers", metrics.idleWorkersCount, false],
+                ["Idle Operators", metrics.idleOperatorsCount, false],
               ].map(([label, value, urgent]) => (
                 <Link key={label as string} href="/orders" className="block">
                   <Card className={`rounded-[24px] transition hover:shadow-md ${urgent ? "border-amber-400 bg-amber-500/5 ring-1 ring-amber-400/20" : "bg-surface"}`}>

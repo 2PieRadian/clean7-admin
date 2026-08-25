@@ -75,7 +75,7 @@ export function useOrderPaymentCodCollect() {
 export function useUpdateOrderAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, ...body }: { orderId: string; assignedWorkerAuthUserId: string; note?: string | null; forceOverride?: boolean; overrideReason?: string | null }) =>
+    mutationFn: ({ orderId, ...body }: { orderId: string; assignedOperatorAuthUserId: string; note?: string | null; forceOverride?: boolean; overrideReason?: string | null }) =>
       apiRequest({
         path: `/admin/orders/${orderId}/assignment`,
         method: "PATCH",

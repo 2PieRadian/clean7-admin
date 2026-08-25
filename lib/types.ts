@@ -20,7 +20,7 @@ export type ApiEnvelope<T> =
   };
 
 /** Roles returned by auth; admin web allows only DIRECTOR and BRANCH_ADMIN. */
-export type UserRole = "USER" | "DIRECTOR" | "BRANCH_ADMIN" | "WORKER" | "RIDER";
+export type UserRole = "USER" | "DIRECTOR" | "BRANCH_ADMIN" | "OPERATOR" | "RIDER";
 
 export type AdminRole = "DIRECTOR" | "BRANCH_ADMIN";
 
@@ -35,7 +35,7 @@ export type AuthUser = {
   updatedAt?: string;
 };
 
-export type ManagedAuthUserRole = "DIRECTOR" | "BRANCH_ADMIN" | "WORKER" | "RIDER";
+export type ManagedAuthUserRole = "DIRECTOR" | "BRANCH_ADMIN" | "OPERATOR" | "RIDER";
 
 export type ManagedAuthUser = {
   id: string;
@@ -122,9 +122,9 @@ export type ProofStatus =
   | "VERIFIED"
   | "REJECTED";
 
-export type WorkerStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+export type OperatorStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
-export type StaffRole = "WORKER" | "RIDER";
+export type StaffRole = "OPERATOR" | "RIDER";
 
 export type LaundryStageCode = "WASHING" | "DRYING" | "IRONING" | "DRY_CLEANING";
 
@@ -276,12 +276,12 @@ export type ScheduleOverrideResponse = {
   updatedAt?: string;
 };
 
-export type WorkerProfileResponse = {
+export type OperatorProfileResponse = {
   authUserId: string;
   displayName: string;
   phoneNumber: string | null;
   role: StaffRole;
-  status: WorkerStatus;
+  status: OperatorStatus;
   branchId: string | null;
   serviceCategoryCodes: string[];
   serviceZones: string[];
@@ -322,7 +322,7 @@ export type StaffCreateResponse = {
   phoneNumber: string | null;
   role: StaffRole;
   branchId: string;
-  status: WorkerStatus;
+  status: OperatorStatus;
   onboardingStatus?: string;
   serviceCategoryCodes: string[];
   dateOfBirth?: string | null;
@@ -400,7 +400,7 @@ export type LaundryStageTask = {
   sequence: number;
   status: LaundryStageStatus | string;
   claimedByAuthUserId?: string | null;
-  assignedWorkerAuthUserId?: string | null;
+  assignedOperatorAuthUserId?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
   dueAt?: string | null;
@@ -470,7 +470,7 @@ export type OrderResponse = {
   items: OrderLineItemResponse[];
   fulfillment?: OrderFulfillmentSummary;
   /** May appear on detailed responses */
-  assignedWorkerAuthUserId?: string | null;
+  assignedOperatorAuthUserId?: string | null;
   pickupRiderAuthUserId?: string | null;
   /** Legacy alias */
   orderCode?: string;

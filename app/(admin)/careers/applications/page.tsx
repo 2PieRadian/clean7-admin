@@ -24,6 +24,7 @@ import {
   XCircle,
   Star,
   ClipboardCheck,
+  Trash2,
 } from "lucide-react";
 import { getGatewayUrl } from "@/lib/env";
 import { getStoredSession } from "@/lib/browser-session";
@@ -121,10 +122,10 @@ export default function ApplicationsPage() {
         prev.map((app) =>
           app.id === appId
             ? {
-                ...app,
-                status: newStatus,
-                reviewedAt: new Date().toISOString(),
-              }
+              ...app,
+              status: newStatus,
+              reviewedAt: new Date().toISOString(),
+            }
             : app,
         ),
       );
@@ -132,6 +133,19 @@ export default function ApplicationsPage() {
       alert(e instanceof Error ? e.message : "Error updating status");
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleDeleteApplication(appId: string) {
+    if (!confirm("Are you sure you want to delete this application?")) return;
+    try {
+      await apiRequest({
+        path: `/admin/careers/applications/${appId}`,
+        method: "DELETE",
+      });
+      setApplications(prev => prev.filter(a => a.id !== appId));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error deleting application");
     }
   }
 
@@ -260,6 +274,14 @@ export default function ApplicationsPage() {
                 <Eye className="w-3.5 h-3.5" />
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              className="!p-1.5 text-danger hover:text-danger-hover"
+              onClick={() => handleDeleteApplication(app.id)}
+              title="Delete Application"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
           </div>
         ),
       },
@@ -373,11 +395,10 @@ export default function ApplicationsPage() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("ALL")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  statusFilter === "ALL"
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${statusFilter === "ALL"
                     ? "bg-primary text-white shadow-sm"
                     : "bg-surface-muted text-text-secondary hover:bg-surface-soft"
-                }`}
+                  }`}
               >
                 All
               </button>
@@ -388,11 +409,10 @@ export default function ApplicationsPage() {
                     key={s}
                     type="button"
                     onClick={() => setStatusFilter(s)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      statusFilter === s
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${statusFilter === s
                         ? "bg-primary text-white shadow-sm"
                         : "bg-surface-muted text-text-secondary hover:bg-surface-soft"
-                    }`}
+                      }`}
                   >
                     <Icon className="w-3 h-3" />
                     {humanizeToken(s)}

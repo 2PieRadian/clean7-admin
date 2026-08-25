@@ -22,6 +22,7 @@ import {
   Wallet,
   BookOpen,
   Briefcase,
+  Mail,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -68,14 +69,14 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         icon: SlidersHorizontal,
         directorOnly: true,
       },
-      { href: "/blogs", label: "Blogs", icon: BookOpen },
+      { href: "/blogs", label: "Blogs", icon: BookOpen, directorOnly: true },
     ],
   },
   {
     title: "People & customers",
     items: [
-      { href: "/workers", label: "Workers", icon: Users },
-      { href: "/careers", label: "Careers", icon: Briefcase },
+      { href: "/operators", label: "Operators", icon: Users },
+      { href: "/careers", label: "Careers", icon: Briefcase, directorOnly: true },
       {
         href: "/branch-admins",
         label: "Branch Admins",
@@ -83,6 +84,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         directorOnly: true,
       },
       { href: "/customers", label: "Customers", icon: ContactRound },
+      { href: "/newsletters", label: "Newsletters", icon: Mail, directorOnly: true },
     ],
   },
   {
@@ -138,22 +140,19 @@ export function AdminNav({
               href={item.href}
               title={collapsed ? item.label : undefined}
               onClick={onNavigate}
-              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition ${
-                collapsed
-                  ? "justify-center w-11 h-11 mx-auto"
-                  : "gap-2.5 px-3 py-2.5 mx-2"
-              } ${
-                active
+              className={`group flex items-center rounded-2xl text-[14px] font-medium leading-snug transition ${collapsed
+                ? "justify-center w-11 h-11 mx-auto"
+                : "gap-2.5 px-3 py-2.5 mx-2"
+                } ${active
                   ? "bg-primary/10 text-primary shadow-sm"
                   : "text-text-secondary hover:bg-surface-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition ${
-                  active
-                    ? "bg-surface text-primary shadow-sm"
-                    : "bg-transparent text-text-muted group-hover:bg-surface group-hover:text-foreground"
-                }`}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition ${active
+                  ? "bg-surface text-primary shadow-sm"
+                  : "bg-transparent text-text-muted group-hover:bg-surface group-hover:text-foreground"
+                  }`}
               >
                 <Icon
                   className="h-[19px] w-[19px] shrink-0"
@@ -186,9 +185,8 @@ export function AdminNav({
                   {group.title}
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-text-muted transition-transform duration-300 ease-out motion-reduce:transition-none ${
-                    sectionOpen ? "rotate-0" : "-rotate-90"
-                  }`}
+                  className={`h-4 w-4 shrink-0 text-text-muted transition-transform duration-300 ease-out motion-reduce:transition-none ${sectionOpen ? "rotate-0" : "-rotate-90"
+                    }`}
                   strokeWidth={2}
                   aria-hidden
                 />
@@ -197,9 +195,8 @@ export function AdminNav({
 
             {!collapsed ? (
               <div
-                className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none motion-reduce:duration-0 ${
-                  sectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                }`}
+                className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none motion-reduce:duration-0 ${sectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
                 inert={sectionOpen ? undefined : true}
               >
                 <div className="min-h-0">
@@ -254,6 +251,10 @@ function isActivePath(pathname: string, href: string) {
 
   if (href === "/careers") {
     return pathname === "/careers" || pathname.startsWith("/careers/");
+  }
+
+  if (href === "/newsletters") {
+    return pathname === "/newsletters" || pathname.startsWith("/newsletters/");
   }
 
   return pathname.startsWith(`${href}/`);

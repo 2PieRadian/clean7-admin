@@ -299,10 +299,10 @@ export default function BranchDetailPage() {
               >
                 <option value="">Unassigned</option>
                 {branch.assignedBranchAdminAuthUserId &&
-                !branchAdmins.some(
-                  (branchAdmin) =>
-                    branchAdmin.id === branch.assignedBranchAdminAuthUserId,
-                ) ? (
+                  !branchAdmins.some(
+                    (branchAdmin) =>
+                      branchAdmin.id === branch.assignedBranchAdminAuthUserId,
+                  ) ? (
                   <option value={branch.assignedBranchAdminAuthUserId}>
                     Current: {branch.assignedBranchAdminAuthUserId}
                   </option>
@@ -332,16 +332,14 @@ export default function BranchDetailPage() {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="danger" type="button" disabled={isPending}>
-                        Deactivate branch
+                        Delete branch
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Deactivate {branch.name}?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete {branch.name}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will set the branch to inactive. It will no longer accept
-                          new orders, but existing history and assignments will be
-                          preserved.
+                          This will permanently delete the branch and all its operators and assignments.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -357,19 +355,19 @@ export default function BranchDetailPage() {
                                   path: `/admin/branches/${branch.id}`,
                                   method: "DELETE",
                                 });
-                                setMessage("Branch deactivated.");
+                                setMessage("Branch deleted.");
                                 await load();
                               } catch (nextError) {
                                 setError(
                                   nextError instanceof Error
                                     ? nextError.message
-                                    : "Could not deactivate branch.",
+                                    : "Could not delete branch.",
                                 );
                               }
                             });
                           }}
                         >
-                          Confirm Deactivation
+                          Confirm Deletion
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

@@ -11,7 +11,7 @@ This document covers the current admin routes exposed through the API gateway:
 - catalog administration
 - order operations
 - branch operations
-- worker operations
+- operator operations
 - staff and auth-user administration
 - admin profile management
 - system reset
@@ -71,8 +71,8 @@ type ServiceMode = "PICKUP_DELIVERY" | "AT_HOME";
 type PricingType = "FIXED" | "PER_ITEM" | "ADD_ON";
 type OverrideTargetType = "ITEM" | "ADDON";
 type SlotCode = "MORNING" | "AFTERNOON" | "EVENING";
-type WorkerStatus = "ACTIVE" | "INACTIVE" | "ON_LEAVE";
-type Role = "DIRECTOR" | "BRANCH_ADMIN" | "WORKER" | "RIDER";
+type OperatorStatus = "ACTIVE" | "INACTIVE" | "ON_LEAVE";
+type Role = "DIRECTOR" | "BRANCH_ADMIN" | "OPERATOR" | "RIDER";
 ```
 
 ## Shared Objects
@@ -245,11 +245,11 @@ Lightweight branch record for admin select inputs such as geo override pricing.
 }
 ```
 
-### Worker Profile
+### Operator Profile
 
 ```json
 {
-  "id": "worker-profile-id",
+  "id": "operator-profile-id",
   "authUserId": "auth-user-id",
   "displayName": "Rider One",
   "branchId": "branch-id",
@@ -290,11 +290,11 @@ Lightweight branch record for admin select inputs such as geo override pricing.
 
 ```json
 {
-  "id": "worker-profile-id",
-  "fullName": "Worker One",
-  "email": "worker@example.com",
+  "id": "operator-profile-id",
+  "fullName": "Operator One",
+  "email": "operator@example.com",
   "phoneNumber": "+919999999999",
-  "role": "WORKER",
+  "role": "OPERATOR",
   "branchId": "branch-id",
   "status": "ACTIVE",
   "onboardingStatus": "APPROVED",
@@ -636,7 +636,7 @@ Request:
 
 ```json
 {
-  "assignedWorkerAuthUserId": "worker-auth-user-id",
+  "assignedOperatorAuthUserId": "operator-auth-user-id",
   "note": "Manual assignment",
   "forceOverride": false,
   "overrideReason": null
@@ -724,25 +724,25 @@ RECEIVED_AT_BRANCH -> PROCESSING -> READY_FOR_DELIVERY
 
 `LaundryStageTask` is deprecated. No new records are created, no business logic depends on it, and no frontend should consume it.
 
-### `POST /admin/orders/:orderId/assign-worker`
+### `POST /admin/orders/:orderId/assign-operator`
 
 Request:
 
 ```json
 {
-  "workerId": "worker-profile-id"
+  "operatorId": "operator-profile-id"
 }
 ```
 
 Success `200`: `SuccessEnvelope<Order>`
 
-### `POST /admin/orders/:orderId/reassign-worker`
+### `POST /admin/orders/:orderId/reassign-operator`
 
 Request:
 
 ```json
 {
-  "workerId": "worker-profile-id"
+  "operatorId": "operator-profile-id"
 }
 ```
 
@@ -944,13 +944,13 @@ Success `200`: `SuccessEnvelope<object>`
 
 Success `200`: `SuccessEnvelope<object>`
 
-## Worker Admin APIs
+## Operator Admin APIs
 
-### `GET /admin/workers`
+### `GET /admin/operators`
 
-Success `200`: `SuccessEnvelope<WorkerProfile[]>`
+Success `200`: `SuccessEnvelope<OperatorProfile[]>`
 
-### `POST /admin/workers`
+### `POST /admin/operators`
 
 Request:
 
@@ -968,9 +968,9 @@ Request:
 }
 ```
 
-Success `201`: `SuccessEnvelope<WorkerProfile>`
+Success `201`: `SuccessEnvelope<OperatorProfile>`
 
-### `PATCH /admin/workers/:authUserId/status`
+### `PATCH /admin/operators/:authUserId/status`
 
 Request:
 
@@ -980,11 +980,11 @@ Request:
 }
 ```
 
-Success `200`: `SuccessEnvelope<WorkerProfile>`
+Success `200`: `SuccessEnvelope<OperatorProfile>`
 
-### `DELETE /admin/workers/:authUserId`
+### `DELETE /admin/operators/:authUserId`
 
-Success `200`: `SuccessEnvelope<WorkerProfile>`
+Success `200`: `SuccessEnvelope<OperatorProfile>`
 
 ## Auth User Admin APIs
 
@@ -1070,11 +1070,11 @@ Request:
 
 ```json
 {
-  "fullName": "Worker One",
-  "email": "worker@example.com",
+  "fullName": "Operator One",
+  "email": "operator@example.com",
   "password": "password123",
   "phoneNumber": "+919999999999",
-  "role": "WORKER",
+  "role": "OPERATOR",
   "branchId": "branch-id",
   "serviceCategoryCodes": ["HOME_CLEANING"]
 }

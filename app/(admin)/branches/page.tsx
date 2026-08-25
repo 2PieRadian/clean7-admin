@@ -9,8 +9,9 @@ import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import { useAuth } from "@/features/auth/store/auth-store";
-import { useBranches } from "@/features/branches/api/branch-api";
+import { useBranches, useDeleteBranch } from "@/features/branches/api/branch-api";
 import { defaultServiceRadiusKm } from "@/lib/branch-form";
 import type { BranchAdminResponse } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
@@ -26,7 +27,14 @@ export default function BranchesPage() {
   }
 
   const { data: branches = [], isLoading: loading, error: branchError } = useBranches();
+  const deleteBranch = useDeleteBranch();
   const error = branchError instanceof Error ? branchError.message : null;
+
+  const handleDelete = async (branchId: string) => {
+    if (confirm("Are you sure you want to delete this branch?")) {
+      await deleteBranch.mutateAsync(branchId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -94,7 +102,7 @@ export default function BranchesPage() {
                 header: "Assignment radius",
                 render: (branch) =>
                   typeof branch.latitude === "number" &&
-                  typeof branch.longitude === "number"
+                    typeof branch.longitude === "number"
                     ? `${branch.serviceRadiusKm ?? defaultServiceRadiusKm} km`
                     : "No coordinates",
               },
@@ -103,6 +111,26 @@ export default function BranchesPage() {
                 header: "City / PIN",
                 render: (branch) => [branch.city, branch.postalCode].filter(Boolean).join(" · ") || "—",
               },
+              ...(isDirector
+                ? [
+                  {
+                    key: "actions",
+                    header: "",
+                    render: (branch: any) => (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(branch.id)}
+                          loading={deleteBranch.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ),
+                  },
+                ]
+                : []),
             ]}
           />
         </Card>

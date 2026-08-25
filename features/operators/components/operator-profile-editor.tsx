@@ -6,18 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { MutationStatus } from "@/components/admin/mutation-status";
 import { apiRequest } from "@/lib/browser-api";
-import type { WorkerProfileResponse, StaffCreateResponse } from "@/lib/types";
+import type { OperatorProfileResponse, StaffCreateResponse } from "@/lib/types";
 
-export function WorkerProfileEditor({
-  worker,
+export function OperatorProfileEditor({
+  operator,
   onSuccess,
 }: {
-  worker: WorkerProfileResponse;
+  operator: OperatorProfileResponse;
   onSuccess?: () => void;
 }) {
   const { user } = useAuth();
   const isAdmin = user?.role === "DIRECTOR" || user?.role === "BRANCH_ADMIN";
-  const isRider = worker.role === "RIDER";
+  const isRider = operator.role === "RIDER";
 
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function WorkerProfileEditor({
       <div>
         <h2 className="text-xl font-semibold text-foreground">Edit Profile</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Update operational and identity information for {worker.displayName}.
+          Update operational and identity information for {operator.displayName}.
         </p>
       </div>
 
@@ -70,9 +70,9 @@ export function WorkerProfileEditor({
                 body.drivingLicenseUrl = String(formData.get("drivingLicenseUrl") ?? "").trim() || null;
               }
 
-              // Use the new endpoint implemented in worker-service
+              // Use the new endpoint implemented in operator-service
               await apiRequest<StaffCreateResponse>({
-                path: `/admin/workers/${worker.authUserId}`,
+                path: `/admin/operators/${operator.authUserId}`,
                 method: "PATCH",
                 body,
               });
@@ -96,30 +96,30 @@ export function WorkerProfileEditor({
           Basic Details
         </div>
         <div className="md:col-span-2">
-          <Field label="Full name" name="fullName" defaultValue={worker.displayName} required />
+          <Field label="Full name" name="fullName" defaultValue={operator.displayName} required />
         </div>
-        <Field label="Phone number" name="phoneNumber" type="tel" defaultValue={worker.phoneNumber ?? ""} />
-        <Select label="Gender" name="gender" defaultValue={worker.gender ?? ""}>
+        <Field label="Phone number" name="phoneNumber" type="tel" defaultValue={operator.phoneNumber ?? ""} />
+        <Select label="Gender" name="gender" defaultValue={operator.gender ?? ""}>
           <option value="">Select Gender</option>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
           <option value="Other">Other</option>
         </Select>
-        <Field label="Date of Birth" name="dateOfBirth" type="date" defaultValue={worker.dateOfBirth ? new Date(worker.dateOfBirth).toISOString().split('T')[0] : ""} />
+        <Field label="Date of Birth" name="dateOfBirth" type="date" defaultValue={operator.dateOfBirth ? new Date(operator.dateOfBirth).toISOString().split('T')[0] : ""} />
         <div className="md:col-span-2">
-          <Field label="Full Address" name="fullAddress" defaultValue={worker.fullAddress ?? ""} />
+          <Field label="Full Address" name="fullAddress" defaultValue={operator.fullAddress ?? ""} />
         </div>
 
         <div className="md:col-span-2 text-sm font-semibold text-text-primary border-b border-[var(--border-soft)] pb-2 mt-4">
           Emergency Contact
         </div>
-        <Field label="Emergency Contact Name" name="emergencyContactName" defaultValue={worker.emergencyContactName ?? ""} />
-        <Field label="Emergency Contact Phone" name="emergencyContactPhone" type="tel" defaultValue={worker.emergencyContactPhone ?? ""} />
+        <Field label="Emergency Contact Name" name="emergencyContactName" defaultValue={operator.emergencyContactName ?? ""} />
+        <Field label="Emergency Contact Phone" name="emergencyContactPhone" type="tel" defaultValue={operator.emergencyContactPhone ?? ""} />
 
         <div className="md:col-span-2 text-sm font-semibold text-text-primary border-b border-[var(--border-soft)] pb-2 mt-4">
           Identity & Documents (URL Inputs)
         </div>
-        <Select label="Government ID Type" name="governmentIdType" defaultValue={worker.governmentIdType ?? ""}>
+        <Select label="Government ID Type" name="governmentIdType" defaultValue={operator.governmentIdType ?? ""}>
           <option value="">Select ID Type</option>
           <option value="Aadhar">Aadhar</option>
           <option value="PAN">PAN</option>
@@ -127,27 +127,27 @@ export function WorkerProfileEditor({
           <option value="Driving License">Driving License</option>
           <option value="Voter ID">Voter ID</option>
         </Select>
-        <Field label="Government ID Number" name="governmentIdNumber" defaultValue={worker.governmentIdNumber ?? ""} />
-        <Field label="Profile Photo URL" name="profilePhotoUrl" type="url" defaultValue={worker.profilePhotoUrl ?? ""} />
-        <Field label="Government ID Proof URL" name="governmentIdProofUrl" type="url" defaultValue={worker.governmentIdProofUrl ?? ""} />
+        <Field label="Government ID Number" name="governmentIdNumber" defaultValue={operator.governmentIdNumber ?? ""} />
+        <Field label="Profile Photo URL" name="profilePhotoUrl" type="url" defaultValue={operator.profilePhotoUrl ?? ""} />
+        <Field label="Government ID Proof URL" name="governmentIdProofUrl" type="url" defaultValue={operator.governmentIdProofUrl ?? ""} />
 
         {isRider && (
           <>
             <div className="md:col-span-2 text-sm font-semibold text-text-primary border-b border-[var(--border-soft)] pb-2 mt-4">
               Rider Details
             </div>
-            <Select label="Vehicle Type" name="vehicleType" defaultValue={worker.vehicleType ?? ""}>
+            <Select label="Vehicle Type" name="vehicleType" defaultValue={operator.vehicleType ?? ""}>
               <option value="">Select Vehicle</option>
               <option value="BIKE">Bike</option>
               <option value="SCOOTER">Scooter</option>
               <option value="VAN">Van</option>
               <option value="TRUCK">Truck</option>
             </Select>
-            <Field label="Vehicle Number" name="vehicleNumber" defaultValue={worker.vehicleNumber ?? ""} />
-            <Field label="Driving License Number" name="drivingLicenseNumber" defaultValue={worker.drivingLicenseNumber ?? ""} />
-            <Field label="Driving License Expiry" name="drivingLicenseExpiry" type="date" defaultValue={worker.drivingLicenseExpiry ? new Date(worker.drivingLicenseExpiry).toISOString().split('T')[0] : ""} />
+            <Field label="Vehicle Number" name="vehicleNumber" defaultValue={operator.vehicleNumber ?? ""} />
+            <Field label="Driving License Number" name="drivingLicenseNumber" defaultValue={operator.drivingLicenseNumber ?? ""} />
+            <Field label="Driving License Expiry" name="drivingLicenseExpiry" type="date" defaultValue={operator.drivingLicenseExpiry ? new Date(operator.drivingLicenseExpiry).toISOString().split('T')[0] : ""} />
             <div className="md:col-span-2">
-              <Field label="Driving License URL" name="drivingLicenseUrl" type="url" defaultValue={worker.drivingLicenseUrl ?? ""} />
+              <Field label="Driving License URL" name="drivingLicenseUrl" type="url" defaultValue={operator.drivingLicenseUrl ?? ""} />
             </div>
           </>
         )}
@@ -163,11 +163,11 @@ export function WorkerProfileEditor({
               type="checkbox"
               name="isVerified"
               id="isVerified"
-              defaultChecked={worker.isVerified}
+              defaultChecked={operator.isVerified}
               className="w-4 h-4 text-primary bg-surface border-gray-300 rounded focus:ring-primary"
             />
             <label htmlFor="isVerified" className="text-sm font-medium text-foreground">
-              Mark worker profile and documents as verified
+              Mark operator profile and documents as verified
             </label>
           </div>
         )}

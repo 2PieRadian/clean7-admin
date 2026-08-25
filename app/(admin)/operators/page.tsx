@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WorkerManager } from "@/features/workers/components/worker-manager";
+import { OperatorManager } from "@/features/operators/components/operator-manager";
 import { Card } from "@/components/ui/card";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
-import type { BranchAdminResponse, WorkerProfileResponse } from "@/lib/types";
+import type { BranchAdminResponse, OperatorProfileResponse } from "@/lib/types";
 
-export default function WorkersPage() {
-  const [workers, setWorkers] = useState<WorkerProfileResponse[]>([]);
+export default function OperatorsPage() {
+  const [operators, setOperators] = useState<OperatorProfileResponse[]>([]);
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,11 +18,11 @@ export default function WorkersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextWorkers, nextBranches] = await Promise.all([
-        apiRequest<WorkerProfileResponse[]>({ path: "/admin/workers" }),
+      const [nextOperators, nextBranches] = await Promise.all([
+        apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" }),
         apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" }),
       ]);
-      setWorkers(nextWorkers);
+      setOperators(nextOperators);
       setBranches(nextBranches);
     } catch (nextError) {
       setError(
@@ -40,7 +40,7 @@ export default function WorkersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Workers and riders"
+        title="Operators and riders"
         description="See branch staff, and add new team members."
       />
 
@@ -53,7 +53,7 @@ export default function WorkersPage() {
       ) : null}
 
       {!loading && !error ? (
-        <WorkerManager workers={workers} branches={branches} onReload={load} />
+        <OperatorManager operators={operators} branches={branches} onReload={load} />
       ) : null}
     </div>
   );

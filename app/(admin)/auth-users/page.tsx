@@ -14,8 +14,8 @@ export default function ManagedAuthUsersPage() {
         title={isDirector ? "Manage staff auth users." : "Create staff logins."}
         description={
           isDirector
-            ? "Create and manage worker, rider, and director auth accounts. Branch Admin accounts now live in their own screen."
-            : "Create worker and rider auth users here before attaching them to your branch staff roster."
+            ? "Create and manage operator, rider, and director auth accounts. Branch Admin accounts now live in their own screen."
+            : "Create operator and rider auth users here before attaching them to your branch staff roster."
         }
       />
       <AuthUserManager />

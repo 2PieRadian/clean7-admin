@@ -19,7 +19,7 @@ export default function BranchAdminsPage() {
         title="Create and manage branch admins."
         description={
           isDirector
-            ? "Use this screen to manage branch admin login accounts separately from worker and rider auth users."
+            ? "Use this screen to manage branch admin login accounts separately from operator and rider auth users."
             : "Only Directors can manage branch admin accounts."
         }
       />

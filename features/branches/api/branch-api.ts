@@ -53,3 +53,17 @@ export function useUpdateBranch() {
     },
   });
 }
+
+export function useDeleteBranch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (branchId: string) =>
+      apiRequest({
+        path: `/admin/branches/${branchId}`,
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] });
+    },
+  });
+}

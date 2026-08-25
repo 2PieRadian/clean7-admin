@@ -106,7 +106,7 @@ export function useCreateAddOn() {
 export function useUpdateItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; basePrice: number; changeSummary: string }) => 
+    mutationFn: ({ id, ...body }: { id: string; basePrice: number; changeSummary: string }) =>
       apiRequest({ path: `/admin/items/${id}`, method: "PATCH", body }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
   });
@@ -115,8 +115,37 @@ export function useUpdateItem() {
 export function useUpdateAddOn() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; price: number; changeSummary: string }) => 
+    mutationFn: ({ id, ...body }: { id: string; price: number; changeSummary: string }) =>
       apiRequest({ path: `/admin/addons/${id}`, method: "PATCH", body }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiRequest({ path: `/admin/categories/${id}`, method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
+  });
+}
+
+export function useDeleteItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiRequest({ path: `/admin/items/${id}`, method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
+  });
+}
+
+export function useDeleteAddOn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiRequest({ path: `/admin/addons/${id}`, method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["addons"] }),
   });
 }

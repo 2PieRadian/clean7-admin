@@ -184,7 +184,7 @@ export function OrderList({
         }
         if (quickFilter === "AWAITING_ASSIGNMENT") {
           const alert = getAlertLabel(o);
-          if (!alert && !(!o.assignedWorkerAuthUserId && o.serviceMode === "AT_HOME" && (o.status === "PENDING" || o.status === "CONFIRMED"))) {
+          if (!alert && !(!o.assignedOperatorAuthUserId && o.serviceMode === "AT_HOME" && (o.status === "PENDING" || o.status === "CONFIRMED"))) {
             return false;
           }
         }

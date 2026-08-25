@@ -23,7 +23,7 @@ The backend can return these roles:
 - `USER`
 - `DIRECTOR`
 - `BRANCH_ADMIN`
-- `WORKER`
+- `OPERATOR`
 - `RIDER`
 
 Public signup creates only `USER`.
@@ -375,7 +375,7 @@ Suggested routing:
 - `USER` -> customer app
 - `DIRECTOR` -> admin dashboard
 - `BRANCH_ADMIN` -> branch admin dashboard
-- `WORKER` -> worker app
+- `OPERATOR` -> operator app
 - `RIDER` -> rider app
 
 If your client supports only one role type, reject the others after login.

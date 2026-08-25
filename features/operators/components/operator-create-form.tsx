@@ -8,7 +8,7 @@ import { MutationStatus } from "@/components/admin/mutation-status";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse, StaffCreateResponse } from "@/lib/types";
 
-export function WorkerCreateForm({
+export function OperatorCreateForm({
   branches,
   onSuccess,
 }: {
@@ -21,14 +21,14 @@ export function WorkerCreateForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [selectedRole, setSelectedRole] = useState("WORKER");
+  const [selectedRole, setSelectedRole] = useState("OPERATOR");
 
   return (
     <div className="w-full bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6 space-y-5">
       <div>
         <h2 className="text-xl font-semibold text-foreground">Add staff</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Creates login access and a worker or rider profile in one step.
+          Creates login access and a operator or rider profile in one step.
         </p>
       </div>
 
@@ -68,7 +68,7 @@ export function WorkerCreateForm({
                   password: String(formData.get("password") ?? ""),
                   phoneNumber:
                     String(formData.get("phoneNumber") ?? "").trim() || undefined,
-                  role: String(formData.get("role") ?? "WORKER"),
+                  role: String(formData.get("role") ?? "OPERATOR"),
                   branchId: resolvedBranchId,
                   dateOfBirth: String(formData.get("dateOfBirth") ?? "").trim() || undefined,
                   gender: String(formData.get("gender") ?? "").trim() || undefined,
@@ -127,7 +127,7 @@ export function WorkerCreateForm({
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
         >
-          <option value="WORKER">Worker (at-home services)</option>
+          <option value="OPERATOR">Operator (at-home services)</option>
           <option value="RIDER">Rider (pickup & delivery)</option>
         </Select>
         {isDirector ? (

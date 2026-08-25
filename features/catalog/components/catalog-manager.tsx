@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Tags, Package, LayoutList, Edit2, Check, X as XIcon } from "lucide-react";
-import { useCategories, useUpdateItem, useUpdateAddOn } from "../api/catalog-api";
+import { ChevronDown, ChevronRight, Plus, Tags, Package, LayoutList, Edit2, Check, X as XIcon, Trash } from "lucide-react";
+import { useCategories, useUpdateItem, useUpdateAddOn, useDeleteCategory, useDeleteItem, useDeleteAddOn } from "../api/catalog-api";
 import { CategoryForm } from "./category-tab";
 import { ServiceForm } from "./service-tab";
 import { ItemForm } from "./item-tab";
@@ -10,6 +10,48 @@ import { AddOnForm } from "./addon-tab";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { DeleteServiceAction } from "./delete-service-action";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+function DeleteAction({ name, onConfirm }: { name: string, onConfirm: () => Promise<unknown> | void }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button onClick={e => e.stopPropagation()} className="p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors ml-2">
+          <Trash className="h-3.5 w-3.5" />
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {name}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the item and its nested components.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={onConfirm}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 function InlinePriceEditor({ id, initialPrice, type }: { id: string, initialPrice: number, type: "item" | "addon" }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -81,6 +123,9 @@ type ActiveForm =
 
 export function CatalogManager() {
   const { data: categories = [], isLoading: catLoading } = useCategories();
+  const deleteCategory = useDeleteCategory();
+  const deleteItem = useDeleteItem();
+  const deleteAddOn = useDeleteAddOn();
 
   const [activeForm, setActiveForm] = useState<ActiveForm>({ type: "none" });
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
@@ -152,12 +197,15 @@ export function CatalogManager() {
                       {isExpanded ? <ChevronDown className="h-5 w-5 text-text-muted" /> : <ChevronRight className="h-5 w-5 text-text-muted" />}
                       {cat.name}
                     </button>
-                    <button
-                      onClick={() => setActiveForm({ type: "service", defaultCategoryId: cat.id })}
-                      className="text-xs font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1 bg-primary/5 px-3 py-1 rounded-full transition-colors"
-                    >
-                      <Plus className="h-3 w-3" /> Add Service
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setActiveForm({ type: "service", defaultCategoryId: cat.id })}
+                        className="text-xs font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1 bg-primary/5 px-3 py-1 rounded-full transition-colors"
+                      >
+                        <Plus className="h-3 w-3" /> Add Service
+                      </button>
+                      <DeleteAction name={cat.name} onConfirm={() => deleteCategory.mutateAsync(cat.id).catch(e => alert(e.message))} />
+                    </div>
                   </div>
 
                   {isExpanded && (
@@ -176,7 +224,10 @@ export function CatalogManager() {
                                   {isSvcExpanded ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
                                   {svc.name}
                                 </button>
-                                <Badge variant="fulfillment" value={svc.serviceMode} />
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="fulfillment" value={svc.serviceMode} />
+                                  <DeleteServiceAction serviceId={svc.id} serviceName={svc.name} />
+                                </div>
                               </div>
 
                               {isSvcExpanded && (
@@ -193,7 +244,10 @@ export function CatalogManager() {
                                       {svcItems.map(item => (
                                         <li key={item.id} className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)]">
                                           <span className="font-medium text-foreground">{item.name}</span>
-                                          <InlinePriceEditor id={item.id} initialPrice={Number(item.price)} type="item" />
+                                          <div className="flex items-center gap-2">
+                                            <InlinePriceEditor id={item.id} initialPrice={Number(item.price)} type="item" />
+                                            <DeleteAction name={item.name} onConfirm={() => deleteItem.mutateAsync(item.id).catch(e => alert(e.message))} />
+                                          </div>
                                         </li>
                                       ))}
                                     </ul>
@@ -210,7 +264,10 @@ export function CatalogManager() {
                                       {svcAddons.map(addon => (
                                         <li key={addon.id} className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)]">
                                           <span className="font-medium text-foreground">{addon.name}</span>
-                                          <InlinePriceEditor id={addon.id} initialPrice={Number(addon.price)} type="addon" />
+                                          <div className="flex items-center gap-2">
+                                            <InlinePriceEditor id={addon.id} initialPrice={Number(addon.price)} type="addon" />
+                                            <DeleteAction name={addon.name} onConfirm={() => deleteAddOn.mutateAsync(addon.id).catch(e => alert(e.message))} />
+                                          </div>
                                         </li>
                                       ))}
                                     </ul>

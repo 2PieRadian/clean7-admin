@@ -15,7 +15,7 @@ import type {
   BranchAdminResponse,
   DeliveryTripResponse,
   OrderResponse,
-  WorkerProfileResponse,
+  OperatorProfileResponse,
 } from "@/lib/types";
 import {
   formatDateTime,
@@ -28,7 +28,7 @@ export default function DeliveryTripsPage() {
   const isDirector = user?.role === "DIRECTOR";
   const [trips, setTrips] = useState<DeliveryTripResponse[]>([]);
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
-  const [workers, setWorkers] = useState<WorkerProfileResponse[]>([]);
+  const [operators, setOperators] = useState<OperatorProfileResponse[]>([]);
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -55,12 +55,12 @@ export default function DeliveryTripsPage() {
           query,
         }),
         apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" }),
-        apiRequest<WorkerProfileResponse[]>({ path: "/admin/workers" }),
+        apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" }),
         apiRequest<OrderResponse[]>({ path: "/admin/orders" }),
       ]);
       setTrips(t);
       setBranches(b);
-      setWorkers(w);
+      setOperators(w);
       setOrders(o);
       if (!branchFilter && !isDirector && b[0]?.id) {
         setBranchFilter(b[0].id);
@@ -90,8 +90,8 @@ export default function DeliveryTripsPage() {
   );
 
   const riderDisplayByAuthId = useMemo(
-    () => Object.fromEntries(workers.map((w) => [w.authUserId, w.displayName])),
-    [workers],
+    () => Object.fromEntries(operators.map((w) => [w.authUserId, w.displayName])),
+    [operators],
   );
 
   const orderById = useMemo(
@@ -385,7 +385,7 @@ export default function DeliveryTripsPage() {
           </Select>
           <Select label="Rider" name="riderAuthUserId" required>
             <option value="">Select rider</option>
-            {workers
+            {operators
               .filter(
                 (w) =>
                   w.role === "RIDER" &&

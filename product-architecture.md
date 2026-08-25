@@ -7,10 +7,10 @@ The platform has 5 roles:
 - `USER`
 - `DIRECTOR`
 - `BRANCH_ADMIN`
-- `WORKER`
+- `OPERATOR`
 - `RIDER`
 
-`DIRECTOR` has full system access. `BRANCH_ADMIN` is limited to assigned branch operations. `USER`, `WORKER`, and `RIDER` primarily use mobile flows, while `DIRECTOR` and `BRANCH_ADMIN` use the web admin panel.
+`DIRECTOR` has full system access. `BRANCH_ADMIN` is limited to assigned branch operations. `USER`, `OPERATOR`, and `RIDER` primarily use mobile flows, while `DIRECTOR` and `BRANCH_ADMIN` use the web admin panel.
 
 ## Current Catalog Architecture
 
@@ -118,9 +118,9 @@ Examples:
 Flow:
 
 1. User books service, variant, address, date, and slot.
-2. Branch Admin manually assigns a worker.
-3. Worker navigates to customer location.
-4. Worker updates progress through operational statuses.
+2. Branch Admin manually assigns a operator.
+3. Operator navigates to customer location.
+4. Operator updates progress through operational statuses.
 
 ### Laundry services
 
@@ -153,7 +153,7 @@ Payment status is tracked separately from order execution status.
 Branch Admins can:
 
 - manage branch orders
-- assign workers and riders
+- assign operators and riders
 - create delivery trips
 - manage branch schedule overrides
 - monitor branch metrics

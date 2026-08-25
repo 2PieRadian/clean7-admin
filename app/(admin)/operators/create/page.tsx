@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WorkerCreateForm } from "@/features/workers/components/worker-create-form";
+import { OperatorCreateForm } from "@/features/operators/components/operator-create-form";
 import { Card } from "@/components/ui/card";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse } from "@/lib/types";
 
-export default function CreateWorkerPage() {
+export default function CreateOperatorPage() {
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export default function CreateWorkerPage() {
     <div className="space-y-6">
       <PageHeader
         title="Add staff"
-        description="Creates sign-in and a worker or rider profile in one step."
+        description="Creates sign-in and a operator or rider profile in one step."
       />
 
       {loading ? <InlineLoadingCard lines={7} /> : null}
@@ -58,7 +58,7 @@ export default function CreateWorkerPage() {
         </Card>
       ) : null}
 
-      {!loading ? <WorkerCreateForm branches={branches} /> : null}
+      {!loading ? <OperatorCreateForm branches={branches} /> : null}
     </div>
   );
 }

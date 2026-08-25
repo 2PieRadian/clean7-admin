@@ -8,30 +8,30 @@ import { Card } from "@/components/ui/card";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
-import type { WorkerProfileResponse } from "@/lib/types";
+import type { OperatorProfileResponse } from "@/lib/types";
 
 export default function OrderDetailPage() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId ?? "");
-  const [workers, setWorkers] = useState<WorkerProfileResponse[]>([]);
+  const [operators, setOperators] = useState<OperatorProfileResponse[]>([]);
   
   const { data: order, isLoading: loadingOrder, error: orderError } = useOrder(orderId);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadWorkers() {
+    async function loadOperators() {
       try {
-        const nextWorkers = await apiRequest<WorkerProfileResponse[]>({ path: "/admin/workers" });
+        const nextOperators = await apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" });
         if (!cancelled) {
-          setWorkers(nextWorkers);
+          setOperators(nextOperators);
         }
       } catch (e) {
-        console.error("Failed to load workers", e);
+        console.error("Failed to load operators", e);
       }
     }
     
-    void loadWorkers();
+    void loadOperators();
 
     return () => {
       cancelled = true;
@@ -60,7 +60,7 @@ export default function OrderDetailPage() {
       ) : null}
 
       {!loadingOrder && order ? (
-        <OrderDetailManager order={order} workers={workers} />
+        <OrderDetailManager order={order} operators={operators} />
       ) : null}
     </div>
   );

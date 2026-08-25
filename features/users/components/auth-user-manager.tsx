@@ -24,7 +24,7 @@ import { apiRequest } from "@/lib/browser-api";
 import { humanizeToken } from "@/lib/format";
 import type { ManagedAuthUser, ManagedAuthUserRole } from "@/lib/types";
 
-const branchAdminAllowedRoles: ManagedAuthUserRole[] = ["WORKER", "RIDER"];
+const branchAdminAllowedRoles: ManagedAuthUserRole[] = ["OPERATOR", "RIDER"];
 
 type AuthUserManagerMode = "managed-users" | "branch-admins";
 
@@ -39,7 +39,7 @@ export function AuthUserManager({
   const allowedRoles = isDirector
     ? isBranchAdminMode
       ? (["BRANCH_ADMIN"] as ManagedAuthUserRole[])
-      : (["DIRECTOR", "WORKER", "RIDER"] as ManagedAuthUserRole[])
+      : (["DIRECTOR", "OPERATOR", "RIDER"] as ManagedAuthUserRole[])
     : branchAdminAllowedRoles;
   const [users, setUsers] = useState<ManagedAuthUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -207,7 +207,10 @@ export function AuthUserManager({
       try {
         await apiRequest({
           path: `/admin/auth-users/${authUserId}`,
-          method: "DELETE",
+          method: "PATCH",
+          body: {
+            isActive: false,
+          },
         });
         setMessage("User deactivated and sessions revoked.");
         await load();
@@ -216,6 +219,28 @@ export function AuthUserManager({
           nextError instanceof Error
             ? nextError.message
             : "Unable to deactivate user.",
+        );
+      }
+    });
+  }
+
+  function deleteUser(authUserId: string) {
+    startTransition(async () => {
+      setError(null);
+      setMessage(null);
+
+      try {
+        await apiRequest({
+          path: `/admin/auth-users/${authUserId}`,
+          method: "DELETE",
+        });
+        setMessage("User deleted completely.");
+        await load();
+      } catch (nextError) {
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete user.",
         );
       }
     });
@@ -236,10 +261,10 @@ export function AuthUserManager({
       <Card className="max-w-3xl space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">
-            Create worker or rider login
+            Create operator or rider login
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Branch Admins can create auth accounts only for worker and rider staff.
+            Branch Admins can create auth accounts only for operator and rider staff.
           </p>
         </div>
 
@@ -265,7 +290,7 @@ export function AuthUserManager({
             minLength={8}
             required
           />
-          <Select label="Role" name="role" defaultValue="WORKER">
+          <Select label="Role" name="role" defaultValue="OPERATOR">
             {allowedRoles.map((role) => (
               <option key={role} value={role}>
                 {humanizeToken(role)}
@@ -299,7 +324,7 @@ export function AuthUserManager({
                     Branch admins
                   </h2>
                   <p className="mt-1 text-sm text-text-secondary">
-                    Director-only auth accounts for branch administration. Create, update, deactivate, and reset passwords here.
+                    Director-only auth accounts for branch administration. Create, update, delete, and reset passwords here.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -432,24 +457,24 @@ export function AuthUserManager({
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="danger" type="button" disabled={isPending}>
-                        Deactivate account
+                      <Button variant="danger" className="flex-1">
+                        Delete account
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Deactivate {selectedUser.name || selectedUser.email}?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete {selectedUser.name || selectedUser.email}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will disable the branch admin account and immediately revoke all active sessions.
+                          This action cannot be undone. It will permanently delete their account and staff profile.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          className="bg-danger text-white hover:bg-danger-hover"
-                          onClick={() => deactivateUser(selectedUser.id)}
+                          onClick={() => deleteUser(selectedUser.id)}
+                          className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
                         >
-                          Confirm Deactivation
+                          Yes, delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -582,7 +607,7 @@ export function AuthUserManager({
                 Managed users
               </h2>
               <p className="mt-1 text-sm text-text-secondary">
-                Director-only auth accounts for workers, riders, and director staff.
+                Director-only auth accounts for operators, riders, and director staff.
               </p>
             </div>
             <Badge tone="service-blue">{users.length} users</Badge>
@@ -707,7 +732,7 @@ export function AuthUserManager({
               minLength={8}
               required
             />
-            <Select label="Role" name="role" defaultValue="WORKER">
+            <Select label="Role" name="role" defaultValue="OPERATOR">
               {allowedRoles.map((role) => (
                 <option key={role} value={role}>
                   {humanizeToken(role)}

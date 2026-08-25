@@ -21,7 +21,7 @@ import {
 import type {
   OrderLineItemResponse,
   OrderResponse,
-  WorkerProfileResponse,
+  OperatorProfileResponse,
   DeliveryTripResponse,
 } from "@/lib/types";
 import {
@@ -40,16 +40,16 @@ import {
   X,
 } from "lucide-react";
 
-function getWorkerDisplay(
+function getOperatorDisplay(
   authUserId: string | null | undefined,
-  workers: WorkerProfileResponse[],
+  operators: OperatorProfileResponse[],
 ) {
   if (!authUserId) return "—";
-  const worker = workers.find((w) => w.authUserId === authUserId);
-  if (!worker) return "Unknown";
-  return worker.phoneNumber
-    ? `${worker.displayName} · ${worker.phoneNumber}`
-    : worker.displayName;
+  const operator = operators.find((w) => w.authUserId === authUserId);
+  if (!operator) return "Unknown";
+  return operator.phoneNumber
+    ? `${operator.displayName} · ${operator.phoneNumber}`
+    : operator.displayName;
 }
 
 function orderLabel(order: OrderResponse) {
@@ -77,11 +77,11 @@ function groupItemsByService(items: OrderLineItemResponse[]) {
 }
 
 function sameBranchStaff(
-  workers: WorkerProfileResponse[],
+  operators: OperatorProfileResponse[],
   order: OrderResponse,
-  role: "WORKER" | "RIDER",
+  role: "OPERATOR" | "RIDER",
 ) {
-  const filtered = workers.filter(
+  const filtered = operators.filter(
     (w) =>
       w.role === role &&
       w.branchId != null &&
@@ -149,17 +149,17 @@ function Modal({
 
 export function OrderDetailManager({
   order,
-  workers,
+  operators,
 }: {
   order: OrderResponse;
-  workers: WorkerProfileResponse[];
+  operators: OperatorProfileResponse[];
 }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Modals state
   const [modals, setModals] = useState({
-    worker: false,
+    operator: false,
     pickupRider: false,
     delivery: false,
     intake: false,
@@ -217,7 +217,7 @@ export function OrderDetailManager({
       setConfirmAction(null);
       // Close all modals on success
       setModals({
-        worker: false,
+        operator: false,
         pickupRider: false,
         delivery: false,
         intake: false,
@@ -567,25 +567,25 @@ export function OrderDetailManager({
               Order Management Actions
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Assign Worker */}
+              {/* Assign Operator */}
               {serviceMode === "AT_HOME" && (
                 <Button
                   variant="secondary"
                   className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
-                  onClick={() => openModal("worker")}
+                  onClick={() => openModal("operator")}
                 >
                   <Users
                     size={16}
                     className={
-                      order.assignedWorkerAuthUserId
+                      order.assignedOperatorAuthUserId
                         ? "text-primary"
                         : "text-amber-500"
                     }
                   />
                   <span className="truncate">
-                    {order.assignedWorkerAuthUserId
-                      ? "Reassign Worker"
-                      : "Assign Worker"}
+                    {order.assignedOperatorAuthUserId
+                      ? "Reassign Operator"
+                      : "Assign Operator"}
                   </span>
                 </Button>
               )}
@@ -699,13 +699,13 @@ export function OrderDetailManager({
                 ...(serviceMode === "AT_HOME"
                   ? [
                       {
-                        label: "Worker",
-                        value: getWorkerDisplay(
-                          order.assignedWorkerAuthUserId,
-                          workers,
+                        label: "Operator",
+                        value: getOperatorDisplay(
+                          order.assignedOperatorAuthUserId,
+                          operators,
                         ),
                         warn:
-                          !order.assignedWorkerAuthUserId &&
+                          !order.assignedOperatorAuthUserId &&
                           serviceMode === "AT_HOME",
                       },
                     ]
@@ -714,9 +714,9 @@ export function OrderDetailManager({
                   ? [
                       {
                         label: "Pickup Rider",
-                        value: getWorkerDisplay(
+                        value: getOperatorDisplay(
                           order.pickupRiderAuthUserId,
-                          workers,
+                          operators,
                         ),
                         warn:
                           !order.pickupRiderAuthUserId &&
@@ -725,9 +725,9 @@ export function OrderDetailManager({
                       },
                       {
                         label: "Delivery Rider",
-                        value: getWorkerDisplay(
+                        value: getOperatorDisplay(
                           deliveryRiderAuthUserId,
-                          workers,
+                          operators,
                         ),
                         warn:
                           !deliveryRiderAuthUserId &&
@@ -906,9 +906,9 @@ export function OrderDetailManager({
       {/* ── Individual Modals ── */}
 
       <Modal
-        isOpen={modals.worker}
-        onClose={() => closeModal("worker")}
-        title="Assign Worker"
+        isOpen={modals.operator}
+        onClose={() => closeModal("operator")}
+        title="Assign Operator"
       >
         <form
           className="space-y-5"
@@ -920,28 +920,28 @@ export function OrderDetailManager({
                 `/admin/orders/${order.id}/assignment`,
                 "PATCH",
                 {
-                  assignedWorkerAuthUserId: formData.get(
-                    "assignedWorkerAuthUserId",
+                  assignedOperatorAuthUserId: formData.get(
+                    "assignedOperatorAuthUserId",
                   ),
                   note: formData.get("note"),
                   forceOverride: formData.get("forceOverride") === "on",
                   overrideReason: formData.get("overrideReason"),
                 },
-                "Worker assigned successfully.",
+                "Operator assigned successfully.",
               ),
             );
           }}
         >
           <div className="space-y-4">
             <Select
-              label="Assign worker (at home)"
-              name="assignedWorkerAuthUserId"
-              defaultValue={order.assignedWorkerAuthUserId ?? ""}
+              label="Assign operator (at home)"
+              name="assignedOperatorAuthUserId"
+              defaultValue={order.assignedOperatorAuthUserId ?? ""}
             >
-              <option value="">Select worker</option>
-              {sameBranchStaff(workers, order, "WORKER").map((worker) => (
-                <option key={worker.authUserId} value={worker.authUserId}>
-                  {worker.displayName}
+              <option value="">Select operator</option>
+              {sameBranchStaff(operators, order, "OPERATOR").map((operator) => (
+                <option key={operator.authUserId} value={operator.authUserId}>
+                  {operator.displayName}
                 </option>
               ))}
             </Select>
@@ -960,7 +960,7 @@ export function OrderDetailManager({
             <Button
               variant="ghost"
               type="button"
-              onClick={() => closeModal("worker")}
+              onClick={() => closeModal("operator")}
             >
               Cancel
             </Button>
@@ -1000,9 +1000,9 @@ export function OrderDetailManager({
             required
           >
             <option value="">Select rider...</option>
-            {sameBranchStaff(workers, order, "RIDER").map((worker) => (
-              <option key={worker.authUserId} value={worker.authUserId}>
-                {worker.displayName}
+            {sameBranchStaff(operators, order, "RIDER").map((operator) => (
+              <option key={operator.authUserId} value={operator.authUserId}>
+                {operator.displayName}
               </option>
             ))}
           </Select>
