@@ -2,7 +2,6 @@ import { z } from "zod";
 import { indianStates } from "@/lib/constants";
 
 export const branchCreateSchema = z.object({
-  code: z.string().min(1, "Code is required"),
   name: z.string().min(1, "Name is required"),
   city: z.string().optional().nullable(),
   state: z.enum(indianStates as unknown as [string, ...string[]]).optional().nullable(),

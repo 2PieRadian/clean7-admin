@@ -178,7 +178,6 @@ export default function BranchDetailPage() {
               <h2 className="text-xl font-semibold text-foreground">
                 {branch.name}
               </h2>
-              <p className="mt-1 text-sm text-text-secondary">{branch.code}</p>
             </div>
             <Badge value={branch.isActive ? "ACTIVE" : "INACTIVE"} />
           </div>
@@ -214,12 +213,6 @@ export default function BranchDetailPage() {
               });
             }}
           >
-            <Field
-              label="Short code"
-              name="code"
-              defaultValue={branch.code}
-              required
-            />
             <Field
               label="Branch name"
               name="name"

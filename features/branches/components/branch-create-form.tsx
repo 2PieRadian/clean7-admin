@@ -55,7 +55,6 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit as any)}>
-        <Field label="Short code" placeholder="DELHI_CENTRAL" required {...register("code")} hint={errors.code?.message} />
         <Field label="Branch name" placeholder="Delhi Central" required {...register("name")} hint={errors.name?.message} />
         <Field label="City" placeholder="Bengaluru" {...register("city")} hint={errors.city?.message} />
         <Select label="State" {...register("state")} hint={errors.state?.message}>
