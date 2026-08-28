@@ -17,7 +17,7 @@ type BranchFormData = z.infer<typeof branchCreateSchema>;
 export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
   const { user } = useAuth();
   const isDirector = user?.role === "DIRECTOR";
-  
+
   const { data: branchAdmins = [] } = useAuthUsers({ role: "BRANCH_ADMIN", isActive: true });
   const createBranch = useCreateBranch();
 
@@ -25,7 +25,6 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
     resolver: zodResolver(branchCreateSchema) as any,
     defaultValues: {
       serviceRadiusKm: defaultServiceRadiusKm,
-      isActive: true,
     }
   });
 
@@ -63,10 +62,10 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
             <option key={s} value={s}>{s}</option>
           ))}
         </Select>
-        
+
         <Field className="md:col-span-2" label="Address line 1" placeholder="12 Example Road" {...register("addressLine1")} hint={errors.addressLine1?.message} />
         <Field className="md:col-span-2" label="Address line 2" placeholder="Near Metro Station" {...register("addressLine2")} hint={errors.addressLine2?.message} />
-        
+
         <Field label="Branch postal code" placeholder="560038" {...register("postalCode")} hint={errors.postalCode?.message} />
         <Field
           label="Service radius (km)"
@@ -76,7 +75,7 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
           {...register("serviceRadiusKm")}
           hint={errors.serviceRadiusKm?.message || "Defaults to 8 km."}
         />
-        
+
         <Field
           label="Latitude"
           type="number"
@@ -85,7 +84,7 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
           max={90}
           placeholder="12.9716"
           {...register("latitude")}
-          hint={errors.latitude?.message || "Required when the branch is active."}
+          hint={errors.latitude?.message}
         />
         <Field
           label="Longitude"
@@ -95,9 +94,9 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
           max={180}
           placeholder="77.6412"
           {...register("longitude")}
-          hint={errors.longitude?.message || "Required when the branch is active."}
+          hint={errors.longitude?.message}
         />
-        
+
         <Select label="Assigned Branch Admin" {...register("assignedBranchAdminAuthUserId")} hint={errors.assignedBranchAdminAuthUserId?.message}>
           <option value="">Unassigned</option>
           {branchAdmins.map((branchAdmin) => (
@@ -106,12 +105,8 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
             </option>
           ))}
         </Select>
-        
-        <label className="md:col-span-2 text-sm text-text-secondary flex items-center">
-          <input className="mr-2" type="checkbox" {...register("isActive")} />
-          This branch is active
-        </label>
-        
+
+
         <div className="md:col-span-2 flex items-center justify-between gap-3">
           <div>
             {createBranch.isSuccess && <p className="text-sm text-green-500">Branch added successfully!</p>}

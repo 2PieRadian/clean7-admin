@@ -12,7 +12,6 @@ export const branchCreateSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
   longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
   assignedBranchAdminAuthUserId: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
 });
 
 export const branchUpdateSchema = branchCreateSchema;

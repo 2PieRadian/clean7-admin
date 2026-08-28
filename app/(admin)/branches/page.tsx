@@ -66,7 +66,7 @@ export default function BranchesPage() {
             <div>
               <h2 className="text-xl font-semibold text-foreground">Branches</h2>
               <p className="mt-1 text-sm text-text-secondary">
-                Open any branch to update the name, covered areas, and active status.
+                Open any branch to update the name and covered areas.
               </p>
             </div>
             <Badge tone="service-blue">{branches.length} branches</Badge>
@@ -90,13 +90,7 @@ export default function BranchesPage() {
                   </div>
                 ),
               },
-              {
-                key: "status",
-                header: "Status",
-                render: (branch) => (
-                  <Badge value={branch.isActive ? "ACTIVE" : "INACTIVE"} />
-                ),
-              },
+
               {
                 key: "coverage",
                 header: "Assignment radius",

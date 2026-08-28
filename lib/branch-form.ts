@@ -43,13 +43,9 @@ export function buildBranchPayload(
   formData: FormData,
   options: {
     includeAssignedBranchAdmin?: boolean;
-    isActiveFallback?: boolean;
   } = {},
 ) {
-  const isActive =
-    formData.has("isActive") || options.isActiveFallback === undefined
-      ? formData.get("isActive") === "on"
-      : options.isActiveFallback;
+
   const latitude = readOptionalNumber(formData, "latitude");
   const longitude = readOptionalNumber(formData, "longitude");
 
@@ -61,14 +57,14 @@ export function buildBranchPayload(
     throw new Error("Longitude must be between -180 and 180.");
   }
 
-  if (isActive && (latitude === null || longitude === null)) {
-    throw new Error("Active branches need latitude and longitude from the map location.");
+  if (latitude === null || longitude === null) {
+    throw new Error("Branches need latitude and longitude from the map location.");
   }
 
   const payload = {
     code: readText(formData, "code"),
     name: readText(formData, "name"),
-    isActive,
+
     city: readOptionalText(formData, "city"),
     addressLine1: readOptionalText(formData, "addressLine1"),
     addressLine2: readOptionalText(formData, "addressLine2"),

@@ -245,7 +245,7 @@ export type BranchAdminResponse = {
   longitude?: number | null;
   serviceRadiusKm?: number;
   assignedBranchAdminAuthUserId?: string | null;
-  isActive: boolean;
+
   bankAccountNumber?: string | null;
   bankIfscCode?: string | null;
   bankBeneficiaryName?: string | null;
@@ -267,7 +267,7 @@ export type BranchOption = {
   code: string;
   name: string;
   city: string;
-  isActive: boolean;
+
 };
 
 export type ScheduleOverrideResponse = {

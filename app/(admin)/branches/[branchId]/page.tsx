@@ -179,7 +179,7 @@ export default function BranchDetailPage() {
                 {branch.name}
               </h2>
             </div>
-            <Badge value={branch.isActive ? "ACTIVE" : "INACTIVE"} />
+
           </div>
 
           <form
@@ -198,7 +198,6 @@ export default function BranchDetailPage() {
                     method: "PATCH",
                     body: buildBranchPayload(formData, {
                       includeAssignedBranchAdmin: isDirector,
-                      isActiveFallback: branch.isActive,
                     }),
                   });
                   setMessage("Branch updated.");
@@ -271,7 +270,7 @@ export default function BranchDetailPage() {
                 min={-90}
                 max={90}
                 defaultValue={branch.latitude ?? ""}
-                hint="Required when the branch is active."
+                hint="Required."
               />
               <Field
                 label="Longitude"
@@ -281,7 +280,7 @@ export default function BranchDetailPage() {
                 min={-180}
                 max={180}
                 defaultValue={branch.longitude ?? ""}
-                hint="Required when the branch is active."
+                hint="Required."
               />
             </div>
             {isDirector ? (
@@ -307,17 +306,7 @@ export default function BranchDetailPage() {
                 ))}
               </Select>
             ) : null}
-            {isDirector ? (
-              <label className="text-sm text-text-secondary">
-                <input
-                  className="mr-2"
-                  type="checkbox"
-                  name="isActive"
-                  defaultChecked={branch.isActive}
-                />
-                This branch is active
-              </label>
-            ) : null}
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <MutationStatus error={error} success={message} />
