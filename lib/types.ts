@@ -500,9 +500,32 @@ export type OrderResponse = {
   statusEvents?: StatusEventResponse[];
   paymentStatusHistory?: PaymentStatusHistoryResponse[];
   auditEvents?: OrderAuditEventResponse[];
+  proofArtifacts?: ProofArtifactResponse[];
   laundryStageTasks?: LaundryStageTask[];
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type ProofArtifactResponse = {
+  id: string;
+  orderId: string;
+  assignmentId?: string | null;
+  type: "BEFORE" | "AFTER" | string;
+  storageKey: string;
+  bucket: string;
+  mimeType: string;
+  sizeBytes: number;
+  etag?: string | null;
+  version: number;
+  reviewStatus: "PENDING" | "VERIFIED" | "REJECTED" | string;
+  uploadedBy: string;
+  uploadedAt: string;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  assetUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ProfileResponse = {

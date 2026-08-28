@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const categorySchema = z.object({
-  code: z.string().min(1, "Code is required"),
-  slug: z.string().min(1, "Slug is required"),
+  code: z.string().optional(),
+  slug: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   description: z.string().optional().nullable(),
   iconUrl: z.string().optional().nullable(),
@@ -10,7 +10,7 @@ export const categorySchema = z.object({
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
   isEnabled: z.boolean().default(true),
-  changeSummary: z.string().min(1, "Change summary is required"),
+  changeSummary: z.string().optional(),
 });
 
 export const serviceSchema = z.object({

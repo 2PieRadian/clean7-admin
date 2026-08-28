@@ -38,6 +38,7 @@ import {
   CreditCard,
   Activity,
   X,
+  Camera,
 } from "lucide-react";
 
 function getOperatorDisplay(
@@ -173,12 +174,13 @@ export function OrderDetailManager({
   const openModal = (key: keyof typeof modals) =>
     setModals((m) => ({ ...m, [key]: true }));
 
-  // Safe confirmation modal state
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     description: string;
     onConfirm: () => void;
   } | null>(null);
+
+  const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
@@ -698,42 +700,42 @@ export function OrderDetailManager({
               {[
                 ...(serviceMode === "AT_HOME"
                   ? [
-                      {
-                        label: "Operator",
-                        value: getOperatorDisplay(
-                          order.assignedOperatorAuthUserId,
-                          operators,
-                        ),
-                        warn:
-                          !order.assignedOperatorAuthUserId &&
-                          serviceMode === "AT_HOME",
-                      },
-                    ]
+                    {
+                      label: "Operator",
+                      value: getOperatorDisplay(
+                        order.assignedOperatorAuthUserId,
+                        operators,
+                      ),
+                      warn:
+                        !order.assignedOperatorAuthUserId &&
+                        serviceMode === "AT_HOME",
+                    },
+                  ]
                   : []),
                 ...(serviceMode === "PICKUP_DELIVERY"
                   ? [
-                      {
-                        label: "Pickup Rider",
-                        value: getOperatorDisplay(
-                          order.pickupRiderAuthUserId,
-                          operators,
-                        ),
-                        warn:
-                          !order.pickupRiderAuthUserId &&
-                          (order.status === "CONFIRMED" ||
-                            order.status === "IN_PROGRESS"),
-                      },
-                      {
-                        label: "Delivery Rider",
-                        value: getOperatorDisplay(
-                          deliveryRiderAuthUserId,
-                          operators,
-                        ),
-                        warn:
-                          !deliveryRiderAuthUserId &&
-                          order.status === "READY_FOR_DELIVERY",
-                      },
-                    ]
+                    {
+                      label: "Pickup Rider",
+                      value: getOperatorDisplay(
+                        order.pickupRiderAuthUserId,
+                        operators,
+                      ),
+                      warn:
+                        !order.pickupRiderAuthUserId &&
+                        (order.status === "CONFIRMED" ||
+                          order.status === "IN_PROGRESS"),
+                    },
+                    {
+                      label: "Delivery Rider",
+                      value: getOperatorDisplay(
+                        deliveryRiderAuthUserId,
+                        operators,
+                      ),
+                      warn:
+                        !deliveryRiderAuthUserId &&
+                        order.status === "READY_FOR_DELIVERY",
+                    },
+                  ]
                   : []),
               ].map(({ label, value, warn }) => (
                 <div
@@ -772,8 +774,8 @@ export function OrderDetailManager({
               Activity
             </h3>
             {order.statusEvents?.length ||
-            order.paymentStatusHistory?.length ||
-            order.auditEvents?.length ? (
+              order.paymentStatusHistory?.length ||
+              order.auditEvents?.length ? (
               <div className="relative border-l-2 border-[var(--border-soft)] ml-2 pl-5 py-2 space-y-6">
                 {[
                   ...(order.statusEvents ?? []),
@@ -874,8 +876,85 @@ export function OrderDetailManager({
               )}
             </div>
           </Card>
+
+          {/* ── Photo Proofs / Pickup Photos Card ── */}
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Camera size={18} className="text-text-secondary" /> Photo Proofs
+              </h3>
+              {order.proofArtifacts && order.proofArtifacts.length > 0 ? (
+                <Badge tone="muted" className="text-xs">
+                  {order.proofArtifacts.length} photo{order.proofArtifacts.length > 1 ? "s" : ""}
+                </Badge>
+              ) : null}
+            </div>
+
+            {order.proofArtifacts && order.proofArtifacts.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {order.proofArtifacts.map((proof) => {
+                  const imgUrl = proof.assetUrl || `/api/assets/${proof.storageKey}`;
+                  return (
+                    <div
+                      key={proof.id}
+                      className="group relative rounded-xl border border-[var(--border-soft)] bg-surface-muted overflow-hidden cursor-pointer aspect-square hover:border-primary/50 transition-all shadow-sm"
+                      onClick={() => setSelectedProofUrl(imgUrl)}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={proof.type}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-2.5">
+                        <span className="text-[11px] font-bold text-white tracking-wider uppercase">
+                          {proof.type === "BEFORE"
+                            ? "Pickup Proof"
+                            : proof.type === "AFTER"
+                              ? "Completion Proof"
+                              : proof.type}
+                        </span>
+                        <span className="text-[10px] text-white/80">
+                          {formatDateTime(proof.createdAt || proof.uploadedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary p-4 bg-surface-muted rounded-xl border border-[var(--border-soft)] text-center">
+                No photo proofs uploaded for this order yet.
+              </p>
+            )}
+          </Card>
         </div>
       </div>
+
+      {/* ── Photo Proof Fullscreen Zoom Lightbox ── */}
+      {selectedProofUrl && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setSelectedProofUrl(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-surface rounded-2xl overflow-hidden shadow-2xl p-2 border border-[var(--border-soft)] animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedProofUrl(null)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors shadow-md"
+              title="Close image preview"
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={selectedProofUrl}
+              alt="Photo proof enlarged"
+              className="max-h-[82vh] w-auto object-contain rounded-xl"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Safe Confirmation Modal ── */}
       {confirmAction && (
