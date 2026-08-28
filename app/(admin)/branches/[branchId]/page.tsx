@@ -381,6 +381,83 @@ export default function BranchDetailPage() {
           </form>
         </Card>
       ) : null}
+
+      {!loading && branch ? (
+        <Card className="max-w-3xl space-y-5">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">
+              Bank Details & Payouts
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Add your bank account details. This will automatically route payments directly to your account.
+            </p>
+            {branch.razorpayLinkedAccountId ? (
+              <Badge className="mt-2" value="LINKED TO RAZORPAY" />
+            ) : null}
+          </div>
+
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+
+              startTransition(async () => {
+                setMessage(null);
+                setError(null);
+
+                try {
+                  await apiRequest({
+                    path: `/admin/branches/${branch.id}/bank-details`,
+                    method: "PATCH",
+                    body: {
+                      bankBeneficiaryName: formData.get("bankBeneficiaryName"),
+                      bankAccountNumber: formData.get("bankAccountNumber"),
+                      bankIfscCode: formData.get("bankIfscCode"),
+                    },
+                  });
+                  setMessage("Bank details updated.");
+                  await load();
+                } catch (nextError) {
+                  setError(
+                    nextError instanceof Error
+                      ? nextError.message
+                      : "Could not update bank details.",
+                  );
+                }
+              });
+            }}
+          >
+            <Field
+              label="Beneficiary Name"
+              name="bankBeneficiaryName"
+              defaultValue={branch.bankBeneficiaryName ?? ""}
+              required
+              placeholder="e.g. John Doe"
+            />
+            <Field
+              label="Account Number"
+              name="bankAccountNumber"
+              defaultValue={branch.bankAccountNumber ?? ""}
+              required
+              placeholder="e.g. 1234567890"
+            />
+            <Field
+              label="IFSC Code"
+              name="bankIfscCode"
+              defaultValue={branch.bankIfscCode ?? ""}
+              required
+              placeholder="e.g. HDFC0001234"
+            />
+
+            <div className="flex items-center justify-end gap-3">
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Save bank details"}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      ) : null}
     </div>
   );
 }

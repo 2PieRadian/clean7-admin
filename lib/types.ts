@@ -246,6 +246,10 @@ export type BranchAdminResponse = {
   serviceRadiusKm?: number;
   assignedBranchAdminAuthUserId?: string | null;
   isActive: boolean;
+  bankAccountNumber?: string | null;
+  bankIfscCode?: string | null;
+  bankBeneficiaryName?: string | null;
+  razorpayLinkedAccountId?: string | null;
   metrics?: {
     activeOrderCount?: number;
     pipelineBacklog?: number;
