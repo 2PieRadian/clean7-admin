@@ -23,6 +23,7 @@ import {
   BookOpen,
   Briefcase,
   Mail,
+  Tag,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -61,6 +62,12 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         href: "/geo-overrides",
         label: "Area Pricing",
         icon: Globe2,
+        directorOnly: true,
+      },
+      {
+        href: "/coupons",
+        label: "Coupons",
+        icon: Tag,
         directorOnly: true,
       },
       {
