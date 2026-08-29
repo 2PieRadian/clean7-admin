@@ -10,7 +10,6 @@ export const categorySchema = z.object({
   webImageUrl: z.string().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  isEnabled: z.boolean().default(true),
   changeSummary: z.string().optional(),
 });
 

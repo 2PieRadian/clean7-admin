@@ -148,7 +148,6 @@ export type CategorySummary = {
   webImageUrl?: string | null;
   sortOrder: number;
   publishState: PublishState;
-  isEnabled: boolean;
   versionNumber?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -169,7 +168,6 @@ export type CatalogServiceSummary = {
   attributes?: JsonValue;
   sortOrder: number;
   publishState: PublishState;
-  isEnabled: boolean;
   versionNumber?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -192,7 +190,6 @@ export type CatalogItemResponse = {
   attributes?: JsonValue;
   sortOrder: number;
   publishState: PublishState;
-  isEnabled: boolean;
   versionNumber?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -212,7 +209,6 @@ export type CatalogAddOnResponse = {
   attributes?: JsonValue;
   sortOrder: number;
   publishState: PublishState;
-  isEnabled: boolean;
   versionNumber?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -228,7 +224,6 @@ export type GeoOverrideResponse = {
   branchId: string;
   overriddenPrice: number | string;
   overriddenPublishState?: PublishState | null;
-  overriddenIsEnabled?: boolean | null;
   createdAt?: string;
   updatedAt?: string;
 };

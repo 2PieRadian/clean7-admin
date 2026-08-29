@@ -78,7 +78,6 @@ export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) 
       webImageUrl: initialCategory?.webImageUrl || "",
       sortOrder: initialCategory?.sortOrder ?? 0,
       publishState: (initialCategory?.publishState as any) || "ACTIVE",
-      isEnabled: initialCategory?.isEnabled ?? true,
       changeSummary: isEditing ? `Updated category ${initialCategory?.name}` : "Initial category creation",
     },
   });
@@ -388,11 +387,6 @@ export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) 
             ))}
           </Select>
         </div>
-
-        <label className="flex items-center text-sm text-text-secondary">
-          <input className="mr-2" type="checkbox" {...register("isEnabled")} />
-          Enabled
-        </label>
 
         <Button
           type="submit"
