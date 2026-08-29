@@ -60,9 +60,8 @@ export function AdminShell({
   return (
     <div className="flex h-[100svh] overflow-hidden bg-[var(--app-canvas)]">
       <aside
-        className={`hidden shrink-0 flex-col z-20 border-r border-[var(--border-soft)] bg-surface transition-[width] duration-300 ease-out lg:flex ${
-          collapsed ? "w-[84px]" : "w-[312px]"
-        }`}
+        className={`hidden shrink-0 flex-col z-20 border-r border-[var(--border-soft)] bg-surface transition-[width] duration-300 ease-out lg:flex ${collapsed ? "w-[84px]" : "w-[312px]"
+          }`}
       >
         <DesktopSidebar
           collapsed={collapsed}
@@ -76,18 +75,16 @@ export function AdminShell({
       </aside>
 
       <div
-        className={`fixed inset-0 z-40 bg-[rgba(15,23,42,0.34)] transition-opacity duration-300 lg:hidden ${
-          mobileOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 bg-[rgba(15,23,42,0.34)] transition-opacity duration-300 lg:hidden ${mobileOpen
+          ? "pointer-events-auto opacity-100"
+          : "pointer-events-none opacity-0"
+          }`}
         onClick={() => setMobileOpen(false)}
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(316px,92vw)] flex-col overflow-hidden border-r border-[var(--border-soft)] bg-surface shadow-[18px_0_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:hidden ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(316px,92vw)] flex-col overflow-hidden border-r border-[var(--border-soft)] bg-surface shadow-[18px_0_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <MobileSidebar
           displayName={displayName}
@@ -150,6 +147,7 @@ function DesktopSidebar({
                     width={32}
                     height={32}
                     className="object-contain"
+                    style={{ width: "auto" }}
                   />
                 </span>
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -171,6 +169,7 @@ function DesktopSidebar({
                     width={32}
                     height={32}
                     className="object-contain"
+                    style={{ width: "auto" }}
                   />
                 </div>
                 <div className="min-w-0 leading-tight">
@@ -260,6 +259,7 @@ function MobileSidebar({
                   width={32}
                   height={32}
                   className="object-contain"
+                  style={{ width: "auto" }}
                 />
               </div>
               <div className="min-w-0 leading-tight">
