@@ -147,7 +147,7 @@ function DesktopSidebar({
                     width={32}
                     height={32}
                     className="object-contain"
-                    style={{ width: "auto" }}
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </span>
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -169,7 +169,7 @@ function DesktopSidebar({
                     width={32}
                     height={32}
                     className="object-contain"
-                    style={{ width: "auto" }}
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </div>
                 <div className="min-w-0 leading-tight">
@@ -259,7 +259,7 @@ function MobileSidebar({
                   width={32}
                   height={32}
                   className="object-contain"
-                  style={{ width: "auto" }}
+                  style={{ width: "auto", height: "auto" }}
                 />
               </div>
               <div className="min-w-0 leading-tight">

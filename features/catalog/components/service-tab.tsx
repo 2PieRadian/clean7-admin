@@ -14,14 +14,14 @@ import type { CatalogServiceSummary } from "@/lib/types";
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
 
-export function ServiceForm({ 
-  defaultCategoryId, 
-  initialService, 
-  onSuccess 
-}: { 
-  defaultCategoryId?: string; 
-  initialService?: CatalogServiceSummary | null; 
-  onSuccess?: () => void 
+export function ServiceForm({
+  defaultCategoryId,
+  initialService,
+  onSuccess
+}: {
+  defaultCategoryId?: string;
+  initialService?: CatalogServiceSummary | null;
+  onSuccess?: () => void
 }) {
   const { data: categories = [] } = useCategories();
   const createService = useCreateService();
