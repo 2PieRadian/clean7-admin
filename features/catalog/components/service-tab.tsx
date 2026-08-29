@@ -3,41 +3,68 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { serviceSchema } from "../schemas";
-import { useCategories, useCreateService } from "../api/catalog-api";
+import { useCategories, useCreateService, useUpdateService } from "../api/catalog-api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Select, TextArea } from "@/components/ui/field";
 import { publishStates, serviceModes } from "@/lib/constants";
 import { humanizeToken } from "@/lib/format";
 import { z } from "zod";
+import type { CatalogServiceSummary } from "@/lib/types";
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
 
-export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryId?: string; onSuccess?: () => void }) {
+export function ServiceForm({ 
+  defaultCategoryId, 
+  initialService, 
+  onSuccess 
+}: { 
+  defaultCategoryId?: string; 
+  initialService?: CatalogServiceSummary | null; 
+  onSuccess?: () => void 
+}) {
   const { data: categories = [] } = useCategories();
   const createService = useCreateService();
+  const updateService = useUpdateService();
+
+  const isEditing = Boolean(initialService?.id);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema) as any,
     defaultValues: {
-      categoryId: defaultCategoryId ?? "",
-      sortOrder: 0,
-      publishState: "ACTIVE",
-      serviceMode: "PICKUP_DELIVERY",
+      categoryId: initialService?.categoryId || defaultCategoryId || "",
+      name: initialService?.name || "",
+      shortDescription: initialService?.shortDescription || "",
+      serviceMode: initialService?.serviceMode || "PICKUP_DELIVERY",
+      durationEstimateMinutes: initialService?.durationEstimateMinutes ?? undefined,
+      sortOrder: initialService?.sortOrder ?? 0,
+      publishState: initialService?.publishState || "ACTIVE",
+      changeSummary: isEditing ? `Updated service ${initialService?.name}` : "",
     }
   });
 
   const onSubmit = async (data: ServiceFormData) => {
-    await createService.mutateAsync(data);
+    if (isEditing && initialService) {
+      await updateService.mutateAsync({ id: initialService.id, ...data });
+    } else {
+      await createService.mutateAsync(data);
+    }
     reset();
     onSuccess?.();
   };
 
+  const isPending = createService.isPending || updateService.isPending;
+  const isError = createService.isError || updateService.isError;
+  const isSuccess = createService.isSuccess || updateService.isSuccess;
+  const errorMessage = createService.error?.message || updateService.error?.message;
+
   return (
     <Card className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Create service</h3>
+      <h3 className="text-lg font-semibold text-foreground">
+        {isEditing ? "Edit service" : "Create service"}
+      </h3>
       <form className="grid gap-3" onSubmit={handleSubmit(onSubmit as any)}>
-        {!defaultCategoryId ? (
+        {!defaultCategoryId && !isEditing ? (
           <Select label="Category" required {...register("categoryId")} hint={errors.categoryId?.message}>
             <option value="">Select a category</option>
             {categories.map((c) => (
@@ -66,15 +93,15 @@ export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryI
           ))}
         </Select>
 
-        <Button type="submit" disabled={isSubmitting || createService.isPending}>
-          {isSubmitting || createService.isPending ? "Creating..." : "Create service"}
+        <Button type="submit" disabled={isSubmitting || isPending}>
+          {isSubmitting || isPending ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update service" : "Create service")}
         </Button>
 
-        {createService.isError && (
-          <p className="text-sm text-red-500">{createService.error?.message || "Failed to create service"}</p>
+        {isError && (
+          <p className="text-sm text-red-500">{errorMessage || `Failed to ${isEditing ? "update" : "create"} service`}</p>
         )}
-        {createService.isSuccess && (
-          <p className="text-sm text-green-500">Service created successfully!</p>
+        {isSuccess && (
+          <p className="text-sm text-green-500">Service {isEditing ? "updated" : "created"} successfully!</p>
         )}
       </form>
     </Card>

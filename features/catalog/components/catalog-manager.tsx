@@ -117,7 +117,7 @@ function InlinePriceEditor({ id, initialPrice, type }: { id: string, initialPric
 type ActiveForm =
   | { type: "none" }
   | { type: "category"; category?: any }
-  | { type: "service"; defaultCategoryId?: string }
+  | { type: "service"; service?: any; defaultCategoryId?: string }
   | { type: "item"; defaultServiceId?: string }
   | { type: "addon"; defaultServiceId?: string };
 
@@ -141,7 +141,7 @@ export function CatalogManager() {
       case "category":
         return <CategoryForm initialCategory={activeForm.category} onSuccess={closeModal} />;
       case "service":
-        return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} onSuccess={closeModal} />;
+        return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} initialService={activeForm.service} onSuccess={closeModal} />;
       case "item":
         return <ItemForm defaultServiceId={activeForm.defaultServiceId} onSuccess={closeModal} />;
       case "addon":
@@ -154,7 +154,7 @@ export function CatalogManager() {
   const getModalTitle = () => {
     switch (activeForm.type) {
       case "category": return activeForm.category ? `Edit Category: ${activeForm.category.name}` : "Create Category";
-      case "service": return "Add Service";
+      case "service": return activeForm.service ? `Edit Service: ${activeForm.service.name}` : "Add Service";
       case "item": return "Add Item";
       case "addon": return "Add Add-on";
       default: return "";
@@ -245,6 +245,13 @@ export function CatalogManager() {
                                 </button>
                                 <div className="flex items-center gap-3">
                                   <Badge variant="fulfillment" value={svc.serviceMode} />
+                                  <button
+                                    onClick={() => setActiveForm({ type: "service", service: svc })}
+                                    className="text-xs font-medium text-text-secondary hover:text-foreground hover:bg-surface-muted px-2 py-1 rounded-full transition-colors border border-[var(--border-soft)] flex items-center gap-1"
+                                    title="Edit Service"
+                                  >
+                                    <Edit2 className="h-3 w-3" /> Edit
+                                  </button>
                                   <DeleteServiceAction serviceId={svc.id} serviceName={svc.name} />
                                 </div>
                               </div>

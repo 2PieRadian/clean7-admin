@@ -99,6 +99,7 @@ export function useUpdateService() {
   });
 }
 
+
 export function useDeleteService() {
   const queryClient = useQueryClient();
   return useMutation({
