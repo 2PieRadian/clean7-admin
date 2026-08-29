@@ -97,7 +97,13 @@ export default function NewslettersPage() {
             {
               key: "subscribedAt",
               header: "Subscribed At",
-              render: (row) => new Date(row.createdAt).toLocaleDateString(),
+              render: (row) => new Date(row.createdAt).toLocaleString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
             },
             {
               key: "actions",
@@ -135,7 +141,13 @@ export default function NewslettersPage() {
             {
               key: "sentAt",
               header: "Sent At",
-              render: (row) => new Date(row.sentAt).toLocaleString(),
+              render: (row) => new Date(row.sentAt).toLocaleString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
             },
             {
               key: "actions",
