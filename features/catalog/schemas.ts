@@ -25,7 +25,7 @@ export const serviceSchema = z.object({
   durationEstimateMinutes: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  changeSummary: z.string().min(1, "Change summary is required"),
+  changeSummary: z.string().optional(),
 });
 
 export const itemSchema = z.object({
@@ -41,7 +41,7 @@ export const itemSchema = z.object({
   maxQty: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  changeSummary: z.string().min(1, "Change summary is required"),
+  changeSummary: z.string().optional(),
 });
 
 export const addOnSchema = z.object({
@@ -56,5 +56,5 @@ export const addOnSchema = z.object({
   maxQty: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  changeSummary: z.string().min(1, "Change summary is required"),
+  changeSummary: z.string().optional(),
 });

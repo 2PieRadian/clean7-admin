@@ -66,8 +66,6 @@ export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryI
           ))}
         </Select>
 
-        <Field label="Change summary" required {...register("changeSummary")} hint={errors.changeSummary?.message} />
-
         <Button type="submit" disabled={isSubmitting || createService.isPending}>
           {isSubmitting || createService.isPending ? "Creating..." : "Create service"}
         </Button>

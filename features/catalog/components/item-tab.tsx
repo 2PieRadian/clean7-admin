@@ -71,8 +71,6 @@ export function ItemForm({ defaultServiceId, onSuccess }: { defaultServiceId?: s
           ))}
         </Select>
 
-        <Field label="Change summary" required {...register("changeSummary")} hint={errors.changeSummary?.message} />
-
         <Button type="submit" disabled={isSubmitting || createItem.isPending}>
           {isSubmitting || createItem.isPending ? "Creating..." : "Create item"}
         </Button>

@@ -71,8 +71,6 @@ export function AddOnForm({ defaultServiceId, onSuccess }: { defaultServiceId?: 
           ))}
         </Select>
 
-        <Field label="Change summary" required {...register("changeSummary")} hint={errors.changeSummary?.message} />
-
         <Button type="submit" disabled={isSubmitting || createAddOn.isPending}>
           {isSubmitting || createAddOn.isPending ? "Creating..." : "Create add-on"}
         </Button>
