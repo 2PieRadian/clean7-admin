@@ -32,11 +32,10 @@ export function ThemeToggle() {
         aria-pressed={!dark}
         aria-label="Light theme"
         onClick={() => setDark(false)}
-        className={`inline-flex h-8 w-8 items-center justify-center transition ${
-          !dark
+        className={`inline-flex h-8 w-8 items-center justify-center transition ${!dark
             ? "bg-surface text-foreground"
             : "text-text-muted hover:text-text-secondary"
-        }`}
+          }`}
       >
         <Sun className="h-4 w-4" strokeWidth={1.75} aria-hidden />
       </button>
@@ -45,11 +44,10 @@ export function ThemeToggle() {
         aria-pressed={dark}
         aria-label="Dark theme"
         onClick={() => setDark(true)}
-        className={`inline-flex h-8 w-8 items-center justify-center transition ${
-          dark
+        className={`inline-flex h-8 w-8 items-center justify-center transition ${dark
             ? "bg-surface text-foreground"
             : "text-text-muted hover:text-text-secondary"
-        }`}
+          }`}
       >
         <Moon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
       </button>
