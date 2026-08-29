@@ -144,7 +144,8 @@ export type CategorySummary = {
   name: string;
   description?: string | null;
   iconUrl?: string | null;
-  imageUrl?: string | null;
+  appImageUrl?: string | null;
+  webImageUrl?: string | null;
   sortOrder: number;
   publishState: PublishState;
   isEnabled: boolean;

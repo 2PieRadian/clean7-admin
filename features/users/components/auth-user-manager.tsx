@@ -494,7 +494,10 @@ export function AuthUserManager({
         {
           isCreateModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6">
+              <div
+                role="dialog"
+                className="relative w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6"
+              >
                 <Button
                   variant="ghost"
                   className="absolute top-4 right-4 z-10"
@@ -550,7 +553,10 @@ export function AuthUserManager({
         {
           isResetPasswordModalOpen && selectedUser && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6">
+              <div
+                role="dialog"
+                className="relative w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6"
+              >
                 <Button
                   variant="ghost"
                   className="absolute top-4 right-4 z-10"

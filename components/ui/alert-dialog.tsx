@@ -16,7 +16,7 @@ export function AlertDialog({ children }: { children: React.ReactNode }) {
 const AlertDialogContext = React.createContext<{
   open: boolean;
   setOpen: (open: boolean) => void;
-}>({ open: false, setOpen: () => {} });
+}>({ open: false, setOpen: () => { } });
 
 export function AlertDialogTrigger({
   asChild,
@@ -45,8 +45,8 @@ export function AlertDialogContent({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-md bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+      <div
+        className="w-full max-w-md bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl overflow-hidden scrollbar-hide animate-in zoom-in-95 duration-200"
         role="alertdialog"
       >
         {children}

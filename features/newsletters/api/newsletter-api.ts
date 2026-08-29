@@ -28,3 +28,31 @@ export function useSendNewsletter() {
       }),
   });
 }
+
+export type SentNewsletter = {
+  id: string;
+  subject: string;
+  htmlContent: string;
+  recipientCount: number;
+  sentAt: string;
+};
+
+export function useSentNewsletters() {
+  return useQuery({
+    queryKey: ["sent-newsletters"],
+    queryFn: () =>
+      apiRequest<SentNewsletter[]>({
+        path: "/admin/newsletters/sent",
+      }),
+  });
+}
+
+export function useDeleteSubscriber() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest({
+        path: `/admin/newsletters/subscribers/${id}`,
+        method: "DELETE",
+      }),
+  });
+}

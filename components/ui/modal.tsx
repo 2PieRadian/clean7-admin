@@ -18,8 +18,8 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         role="dialog"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-[var(--border-soft)] bg-surface/80 backdrop-blur-md">

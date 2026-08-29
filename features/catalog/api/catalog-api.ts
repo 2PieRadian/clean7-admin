@@ -67,11 +67,35 @@ export function useCreateCategory() {
   });
 }
 
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string;[key: string]: any }) =>
+      apiRequest({ path: `/admin/categories/${id}`, method: "PATCH", body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    },
+  });
+}
+
 export function useCreateService() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: any) => apiRequest({ path: "/admin/services", method: "POST", body }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["services"] }),
+  });
+}
+
+export function useUpdateService() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string;[key: string]: any }) =>
+      apiRequest({ path: `/admin/services/${id}`, method: "PATCH", body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
   });
 }
 

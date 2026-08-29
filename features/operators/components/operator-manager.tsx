@@ -250,7 +250,10 @@ export function OperatorManager({
 
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div
+            role="dialog"
+            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide"
+          >
             <div className="absolute top-4 right-4 z-10 flex gap-2">
               <Button variant="ghost" onClick={() => setCreateModalOpen(false)}>
                 Close
@@ -270,7 +273,10 @@ export function OperatorManager({
 
       {selectedOperator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-surface rounded-2xl shadow-2xl">
+          <div
+            role="dialog"
+            className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide bg-surface rounded-2xl shadow-2xl"
+          >
             <div className="absolute top-4 right-4 z-10 flex gap-2">
               <Button variant="ghost" onClick={() => setSelectedOperator(null)}>
                 Close

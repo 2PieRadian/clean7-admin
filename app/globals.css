@@ -151,11 +151,9 @@ button {
 .page-shell {
   min-height: 100svh;
   background:
-    radial-gradient(
-      circle at top left,
+    radial-gradient(circle at top left,
       rgba(184, 137, 62, 0.05),
-      transparent 24%
-    ),
+      transparent 24%),
     var(--app-canvas);
 }
 
@@ -182,6 +180,36 @@ button {
 .admin-content-scroll::-webkit-scrollbar-track,
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Hide scrollbar while preserving scroll functionality (all modals and dialogs) */
+.scrollbar-hide,
+.scrollbar-none,
+.no-scrollbar,
+[role="dialog"],
+[role="dialog"] *,
+[role="alertdialog"],
+[role="alertdialog"] *,
+dialog,
+dialog * {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar,
+.scrollbar-hide *::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+[role="dialog"]::-webkit-scrollbar,
+[role="dialog"] *::-webkit-scrollbar,
+[role="alertdialog"]::-webkit-scrollbar,
+[role="alertdialog"] *::-webkit-scrollbar,
+dialog::-webkit-scrollbar,
+dialog *::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 /**
@@ -247,7 +275,7 @@ button {
   font-size: var(--admin-type-10) !important;
 }
 
-@media (width >= 48rem) {
+@media (width >=48rem) {
   .admin-workspace-type :is(.md\:text-xs, .md\:text-sm, .md\:text-base) {
     font-size: var(--admin-type-0) !important;
   }
@@ -317,23 +345,19 @@ button {
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    90deg,
-    rgba(226, 232, 240, 0.7) 0%,
-    rgba(241, 245, 249, 0.95) 50%,
-    rgba(226, 232, 240, 0.7) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(226, 232, 240, 0.7) 0%,
+      rgba(241, 245, 249, 0.95) 50%,
+      rgba(226, 232, 240, 0.7) 100%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.35s ease-in-out infinite;
 }
 
 .dark .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(60, 60, 62, 0.75) 0%,
-    rgba(88, 90, 94, 0.9) 50%,
-    rgba(60, 60, 62, 0.75) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(60, 60, 62, 0.75) 0%,
+      rgba(88, 90, 94, 0.9) 50%,
+      rgba(60, 60, 62, 0.75) 100%);
 }
 
 @keyframes skeleton-shimmer {
@@ -357,6 +381,7 @@ button {
   --line: rgba(33, 28, 19, 0.12);
   --ground: #F7F1E4;
 }
+
 .dark .blog-preview-container {
   --ink: #F3EDE0;
   --ink-soft: #C9C2B2;
@@ -375,11 +400,13 @@ button {
     font-size: 18px;
   }
 }
+
 .blog-content p {
   color: var(--ink-soft);
   line-height: 1.8;
   margin-bottom: 1.75rem;
 }
+
 .blog-content h1 {
   font-size: 36px;
   font-weight: 700;
@@ -389,6 +416,7 @@ button {
   margin-bottom: 1.5rem;
   line-height: 1.2;
 }
+
 .blog-content h2 {
   font-size: 30px;
   font-weight: 700;
@@ -398,6 +426,7 @@ button {
   margin-bottom: 1.5rem;
   line-height: 1.3;
 }
+
 .blog-content h3 {
   font-size: 24px;
   font-weight: 700;
@@ -407,22 +436,26 @@ button {
   margin-bottom: 1rem;
   line-height: 1.4;
 }
+
 .blog-content ul {
   list-style-type: disc;
   margin-left: 1.5rem;
   margin-bottom: 1.75rem;
   color: var(--ink-soft);
 }
+
 .blog-content ol {
   list-style-type: decimal;
   margin-left: 1.5rem;
   margin-bottom: 1.75rem;
   color: var(--ink-soft);
 }
+
 .blog-content li {
   margin-bottom: 0.5rem;
   line-height: 1.8;
 }
+
 .blog-content img {
   border-radius: 16px;
   margin-top: 2rem;
@@ -431,6 +464,7 @@ button {
   max-width: 100%;
   height: auto;
 }
+
 .blog-content blockquote {
   border-left-width: 4px;
   border-color: var(--gold);
@@ -442,14 +476,17 @@ button {
   font-style: italic;
   color: var(--ink-soft);
 }
+
 .blog-content a {
   color: var(--gold);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
 .blog-content a:hover {
   color: var(--gold-bright);
 }
+
 .blog-content strong {
   font-weight: 700;
   color: var(--ink);

@@ -116,7 +116,7 @@ function InlinePriceEditor({ id, initialPrice, type }: { id: string, initialPric
 
 type ActiveForm =
   | { type: "none" }
-  | { type: "category" }
+  | { type: "category"; category?: any }
   | { type: "service"; defaultCategoryId?: string }
   | { type: "item"; defaultServiceId?: string }
   | { type: "addon"; defaultServiceId?: string };
@@ -139,7 +139,7 @@ export function CatalogManager() {
   const renderModalContent = () => {
     switch (activeForm.type) {
       case "category":
-        return <CategoryForm onSuccess={closeModal} />;
+        return <CategoryForm initialCategory={activeForm.category} onSuccess={closeModal} />;
       case "service":
         return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} onSuccess={closeModal} />;
       case "item":
@@ -153,7 +153,7 @@ export function CatalogManager() {
 
   const getModalTitle = () => {
     switch (activeForm.type) {
-      case "category": return "Create Category";
+      case "category": return activeForm.category ? `Edit Category: ${activeForm.category.name}` : "Create Category";
       case "service": return "Add Service";
       case "item": return "Add Item";
       case "addon": return "Add Add-on";
@@ -194,10 +194,29 @@ export function CatalogManager() {
                 <div key={cat.id} className="border border-[var(--border-soft)] rounded-3xl overflow-hidden bg-surface transition-shadow hover:shadow-sm">
                   <div className="flex items-center justify-between bg-surface-muted/50 px-4 py-3 border-b border-[var(--border-soft)]">
                     <button onClick={() => toggleCat(cat.id)} className="flex items-center gap-3 flex-1 text-left font-semibold text-[15px]">
-                      {isExpanded ? <ChevronDown className="h-5 w-5 text-text-muted" /> : <ChevronRight className="h-5 w-5 text-text-muted" />}
-                      {cat.name}
+                      {isExpanded ? <ChevronDown className="h-5 w-5 text-text-muted shrink-0" /> : <ChevronRight className="h-5 w-5 text-text-muted shrink-0" />}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{cat.name}</span>
+                        {cat.appImageUrl && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200" title="App photo uploaded">
+                            App Photo
+                          </span>
+                        )}
+                        {cat.webImageUrl && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="Website photo uploaded">
+                            Web Photo
+                          </span>
+                        )}
+                      </div>
                     </button>
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setActiveForm({ type: "category", category: cat })}
+                        className="text-xs font-medium text-text-secondary hover:text-foreground hover:bg-surface-muted px-2.5 py-1 rounded-full transition-colors border border-[var(--border-soft)] flex items-center gap-1"
+                        title="Edit Category & Photos"
+                      >
+                        <Edit2 className="h-3 w-3" /> Edit
+                      </button>
                       <button
                         onClick={() => setActiveForm({ type: "service", defaultCategoryId: cat.id })}
                         className="text-xs font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1 bg-primary/5 px-3 py-1 rounded-full transition-colors"

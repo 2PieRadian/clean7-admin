@@ -131,7 +131,10 @@ function Modal({
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface border border-[var(--border-soft)] rounded-[24px] shadow-2xl animate-in zoom-in-95 duration-200">
+      <div
+        role="dialog"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-[24px] shadow-2xl animate-in zoom-in-95 duration-200"
+      >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border-soft)] bg-surface/95 backdrop-blur px-6 py-5">
           <h2 className="text-lg font-bold text-foreground">{title}</h2>
           <button
@@ -937,7 +940,8 @@ export function OrderDetailManager({
           onClick={() => setSelectedProofUrl(null)}
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] bg-surface rounded-2xl overflow-hidden shadow-2xl p-2 border border-[var(--border-soft)] animate-in zoom-in-95"
+            role="dialog"
+            className="relative max-w-4xl max-h-[90vh] bg-surface rounded-2xl overflow-hidden scrollbar-hide shadow-2xl p-2 border border-[var(--border-soft)] animate-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -959,7 +963,10 @@ export function OrderDetailManager({
       {/* ── Safe Confirmation Modal ── */}
       {confirmAction && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm bg-surface border border-[var(--border-soft)] rounded-[24px] shadow-2xl p-6 space-y-4 animate-in zoom-in-95">
+          <div
+            role="alertdialog"
+            className="w-full max-w-sm bg-surface border border-[var(--border-soft)] rounded-[24px] shadow-2xl p-6 space-y-4 animate-in zoom-in-95 scrollbar-hide"
+          >
             <h2 className="text-lg font-bold text-foreground">
               {confirmAction.title}?
             </h2>

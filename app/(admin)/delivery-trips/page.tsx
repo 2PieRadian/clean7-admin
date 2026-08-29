@@ -402,7 +402,7 @@ export default function DeliveryTripsPage() {
             <p className="text-sm font-medium text-foreground">
               Orders ready for delivery
             </p>
-            <div className="max-h-56 space-y-2 overflow-y-auto rounded-[16px] border border-[var(--border-soft)] bg-surface-muted p-4">
+            <div className="max-h-56 space-y-2 overflow-y-auto scrollbar-hide rounded-[16px] border border-[var(--border-soft)] bg-surface-muted p-4">
               {(readyOrdersByBranch[createBranchId] ?? []).length === 0 ? (
                 <p className="text-sm text-text-secondary">
                   No READY_FOR_DELIVERY orders.
