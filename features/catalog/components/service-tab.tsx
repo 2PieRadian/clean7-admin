@@ -16,7 +16,7 @@ type ServiceFormData = z.infer<typeof serviceSchema>;
 export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryId?: string; onSuccess?: () => void }) {
   const { data: categories = [] } = useCategories();
   const createService = useCreateService();
-  
+
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema) as any,
     defaultValues: {
@@ -24,7 +24,6 @@ export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryI
       sortOrder: 0,
       publishState: "ACTIVE",
       serviceMode: "PICKUP_DELIVERY",
-      isEnabled: true,
     }
   });
 
@@ -48,38 +47,31 @@ export function ServiceForm({ defaultCategoryId, onSuccess }: { defaultCategoryI
         ) : (
           <input type="hidden" {...register("categoryId")} />
         )}
-        
-        <Field label="Code" required {...register("code")} hint={errors.code?.message} />
-        <Field label="Slug" required {...register("slug")} hint={errors.slug?.message} />
+
         <Field label="Name" required {...register("name")} hint={errors.name?.message} />
         <TextArea label="Short description" {...register("shortDescription")} hint={errors.shortDescription?.message} />
-        
+
         <Select label="Service mode" {...register("serviceMode")} hint={errors.serviceMode?.message}>
           {serviceModes.map((m) => (
             <option key={m} value={m}>{humanizeToken(m)}</option>
           ))}
         </Select>
-        
+
         <Field label="Duration (minutes)" type="number" {...register("durationEstimateMinutes")} hint={errors.durationEstimateMinutes?.message} />
         <Field label="Sort order" type="number" {...register("sortOrder")} hint={errors.sortOrder?.message} />
-        
+
         <Select label="Publish state" {...register("publishState")} hint={errors.publishState?.message}>
           {publishStates.map((p) => (
             <option key={p} value={p}>{humanizeToken(p)}</option>
           ))}
         </Select>
-        
-        <label className="flex items-center text-sm text-text-secondary">
-          <input className="mr-2" type="checkbox" {...register("isEnabled")} />
-          Enabled
-        </label>
-        
+
         <Field label="Change summary" required {...register("changeSummary")} hint={errors.changeSummary?.message} />
-        
+
         <Button type="submit" disabled={isSubmitting || createService.isPending}>
           {isSubmitting || createService.isPending ? "Creating..." : "Create service"}
         </Button>
-        
+
         {createService.isError && (
           <p className="text-sm text-red-500">{createService.error?.message || "Failed to create service"}</p>
         )}

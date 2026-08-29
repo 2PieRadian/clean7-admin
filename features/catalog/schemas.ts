@@ -16,8 +16,8 @@ export const categorySchema = z.object({
 
 export const serviceSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
-  code: z.string().min(1, "Code is required"),
-  slug: z.string().min(1, "Slug is required"),
+  code: z.string().optional(),
+  slug: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   shortDescription: z.string().optional().nullable(),
   longDescription: z.string().optional().nullable(),
@@ -25,14 +25,13 @@ export const serviceSchema = z.object({
   durationEstimateMinutes: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  isEnabled: z.boolean().default(true),
   changeSummary: z.string().min(1, "Change summary is required"),
 });
 
 export const itemSchema = z.object({
   serviceId: z.string().min(1, "Service is required"),
-  code: z.string().min(1, "Code is required"),
-  slug: z.string().min(1, "Slug is required"),
+  code: z.string().optional(),
+  slug: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   pricingType: z.string().min(1, "Pricing type is required"),
   basePrice: z.coerce.number().min(0, "Price must be positive"),
@@ -42,13 +41,12 @@ export const itemSchema = z.object({
   maxQty: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  isEnabled: z.boolean().default(true),
   changeSummary: z.string().min(1, "Change summary is required"),
 });
 
 export const addOnSchema = z.object({
   serviceId: z.string().min(1, "Service is required"),
-  code: z.string().min(1, "Code is required"),
+  code: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   description: z.string().optional().nullable(),
   pricingType: z.literal("ADD_ON"),
@@ -58,6 +56,5 @@ export const addOnSchema = z.object({
   maxQty: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
-  isEnabled: z.boolean().default(true),
   changeSummary: z.string().min(1, "Change summary is required"),
 });
