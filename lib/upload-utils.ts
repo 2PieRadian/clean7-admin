@@ -60,6 +60,65 @@ export async function uploadCategoryImage(
   return fileURL;
 }
 
+export async function uploadServiceImage(
+  file: File,
+  imageVariant: "app" | "web" | "general" = "general",
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  if (!file) {
+    throw new Error("No file provided");
+  }
+
+  const preSignedResponse = await fetch(
+    `${getGatewayUrl()}/admin/upload/service-image`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(getStoredSession()?.token ? { Authorization: `Bearer ${getStoredSession()?.token}` } : {})
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type || "image/png",
+        imageVariant,
+      }),
+    }
+  );
+
+  if (!preSignedResponse.ok) {
+    // Fallback to article-image upload if service-image endpoint is unavailable
+    const fallbackResponse = await fetch(
+      `${getGatewayUrl()}/admin/upload/article-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(getStoredSession()?.token ? { Authorization: `Bearer ${getStoredSession()?.token}` } : {})
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type || "image/png",
+        }),
+      }
+    );
+
+    if (!fallbackResponse.ok) {
+      throw new Error("Failed to get pre-signed URL for image upload");
+    }
+
+    const fallbackData = await fallbackResponse.json();
+    const { uploadURL, fileURL } = fallbackData.data;
+    await putToSignedUrl(uploadURL, file, onProgress);
+    return fileURL;
+  }
+
+  const responseData = await preSignedResponse.json();
+  const { uploadURL, fileURL } = responseData.data;
+
+  await putToSignedUrl(uploadURL, file, onProgress);
+  return fileURL;
+}
+
 function putToSignedUrl(
   uploadURL: string,
   file: File,

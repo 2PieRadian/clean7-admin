@@ -162,6 +162,8 @@ export type CatalogServiceSummary = {
   name: string;
   shortDescription?: string | null;
   longDescription?: string | null;
+  appImageUrl?: string | null;
+  webImageUrl?: string | null;
   serviceMode: ServiceMode;
   durationEstimateMinutes?: number | null;
   tags?: JsonValue;
