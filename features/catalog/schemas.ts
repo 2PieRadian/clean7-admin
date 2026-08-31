@@ -14,7 +14,7 @@ export const categorySchema = z.object({
 });
 
 export const serviceSchema = z.object({
-  categoryId: z.string().min(1, "Category is required"),
+  categoryId: z.string().optional().default(""),
   code: z.string().optional(),
   slug: z.string().optional(),
   name: z.string().min(1, "Name is required"),

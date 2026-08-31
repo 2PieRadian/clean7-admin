@@ -36,20 +36,21 @@ function deriveCode(name: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-export function ServiceForm({
-  defaultCategoryId,
-  initialService,
-  onSuccess
-}: {
+interface ServiceFormProps {
   defaultCategoryId?: string;
   initialService?: CatalogServiceSummary | null;
-  onSuccess?: () => void
-}) {
+  onSuccess?: () => void;
+}
+
+export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: ServiceFormProps) {
   const { data: categories = [] } = useCategories();
   const createService = useCreateService();
   const updateService = useUpdateService();
 
   const isEditing = Boolean(initialService?.id);
+
+  // Resolve categoryId: prefer initialService, then defaultCategoryId
+  const resolvedCategoryId = initialService?.categoryId || defaultCategoryId || "";
 
   const [appImageUploading, setAppImageUploading] = useState(false);
   const [appImageProgress, setAppImageProgress] = useState(0);
@@ -62,10 +63,17 @@ export function ServiceForm({
   const appFileInputRef = useRef<HTMLInputElement>(null);
   const webFileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<ServiceFormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema) as any,
     defaultValues: {
-      categoryId: initialService?.categoryId || defaultCategoryId || "",
+      categoryId: resolvedCategoryId,
       code: initialService?.code || "",
       slug: initialService?.slug || "",
       name: initialService?.name || "",
@@ -75,9 +83,9 @@ export function ServiceForm({
       appImageUrl: initialService?.appImageUrl || "",
       webImageUrl: initialService?.webImageUrl || "",
       sortOrder: initialService?.sortOrder ?? 0,
-      publishState: initialService?.publishState || "ACTIVE",
+      publishState: (initialService?.publishState as any) || "ACTIVE",
       changeSummary: isEditing ? `Updated service ${initialService?.name}` : "Initial service creation",
-    }
+    },
   });
 
   const appImageUrlValue = watch("appImageUrl") || "";
@@ -119,37 +127,44 @@ export function ServiceForm({
     const slug = data.slug?.trim() || deriveSlug(data.name);
     const changeSummary = data.changeSummary?.trim() || (isEditing ? `Updated service ${data.name}` : `Created service ${data.name}`);
 
+    // Always ensure categoryId is set
+    const categoryId = data.categoryId || resolvedCategoryId;
+
     if (isEditing && initialService) {
-      await updateService.mutateAsync({ id: initialService.id, ...data, code, slug, changeSummary });
+      await updateService.mutateAsync({ id: initialService.id, ...data, categoryId, code, slug, changeSummary });
     } else {
-      await createService.mutateAsync({ ...data, code, slug, changeSummary });
+      await createService.mutateAsync({ ...data, categoryId, code, slug, changeSummary });
+      reset();
     }
-    reset();
+
     onSuccess?.();
   };
 
-  const isPending = createService.isPending || updateService.isPending;
-  const isError = createService.isError || updateService.isError;
-  const isSuccess = createService.isSuccess || updateService.isSuccess;
-  const errorMessage = createService.error?.message || updateService.error?.message;
+  const isPending = isSubmitting || createService.isPending || updateService.isPending;
 
   return (
     <Card className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">
-        {isEditing ? "Edit service" : "Create service"}
-      </h3>
-      <form className="grid gap-3" onSubmit={handleSubmit(onSubmit as any)}>
-        <div className={!defaultCategoryId && !isEditing ? "block" : "hidden"}>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground">
+          {isEditing ? `Edit Service: ${initialService?.name}` : "Create Service"}
+        </h3>
+      </div>
+
+      <form className="grid gap-4" onSubmit={handleSubmit(onSubmit as any, (formErrors) => {
+        console.error("Service form validation errors:", formErrors);
+      })}>
+        {/* Category Select — always rendered, visible only when creating without a preset */}
+        {!resolvedCategoryId ? (
           <Select label="Category" required {...register("categoryId")} hint={errors.categoryId?.message}>
             <option value="">Select a category</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </Select>
-        </div>
+        ) : null}
 
         <Field label="Name" required {...register("name")} hint={errors.name?.message} />
-        <TextArea label="Short description" {...register("shortDescription")} hint={errors.shortDescription?.message} />
+        <TextArea label="Short description" {...register("shortDescription")} hint={errors.shortDescription?.message} placeholder="Service description" />
 
         <Select label="Service mode" {...register("serviceMode")} hint={errors.serviceMode?.message}>
           {serviceModes.map((m) => (
@@ -299,8 +314,11 @@ export function ServiceForm({
           </div>
         </div>
 
-        <Field label="Duration (minutes)" type="number" {...register("durationEstimateMinutes")} hint={errors.durationEstimateMinutes?.message} />
-        <Field label="Sort order" type="number" {...register("sortOrder")} hint={errors.sortOrder?.message} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Duration (minutes)" type="number" {...register("durationEstimateMinutes")} hint={errors.durationEstimateMinutes?.message} />
+
+          <Field label="Sort order" type="number" {...register("sortOrder")} hint={errors.sortOrder?.message} />
+        </div>
 
         <Select label="Publish state" {...register("publishState")} hint={errors.publishState?.message}>
           {publishStates.map((p) => (
@@ -308,21 +326,28 @@ export function ServiceForm({
           ))}
         </Select>
 
-        <Button type="submit" disabled={isSubmitting || isPending}>
-          {isSubmitting || isPending ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update service" : "Create service")}
+        <Button
+          type="submit"
+          disabled={isPending}
+        >
+          {isPending
+            ? isEditing
+              ? "Saving..."
+              : "Creating..."
+            : isEditing
+              ? "Save Changes"
+              : "Create Service"}
         </Button>
 
-        {isError && (
-          <p className="text-sm text-red-500">{errorMessage || `Failed to ${isEditing ? "update" : "create"} service`}</p>
+        {(createService.isError || updateService.isError) && (
+          <p className="text-sm text-red-500">
+            {createService.error?.message || updateService.error?.message || "Operation failed"}
+          </p>
         )}
-        {isSuccess && (
-          <p className="text-sm text-green-500">Service {isEditing ? "updated" : "created"} successfully!</p>
-        )}
-        {Object.keys(errors).length > 0 && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-            <p className="font-semibold mb-1">Validation Errors:</p>
-            <pre className="whitespace-pre-wrap font-mono text-xs">{JSON.stringify(errors, null, 2)}</pre>
-          </div>
+        {(createService.isSuccess || updateService.isSuccess) && (
+          <p className="text-sm text-green-500">
+            {isEditing ? "Service updated successfully!" : "Service created successfully!"}
+          </p>
         )}
       </form>
     </Card>

@@ -246,7 +246,7 @@ export function CatalogManager() {
                                 <div className="flex items-center gap-3">
                                   <Badge variant="fulfillment" value={svc.serviceMode} />
                                   <button
-                                    onClick={() => setActiveForm({ type: "service", service: svc })}
+                                    onClick={() => setActiveForm({ type: "service", service: svc, defaultCategoryId: cat.id })}
                                     className="text-xs font-medium text-text-secondary hover:text-foreground hover:bg-surface-muted px-2 py-1 rounded-full transition-colors border border-[var(--border-soft)] flex items-center gap-1"
                                     title="Edit Service"
                                   >
