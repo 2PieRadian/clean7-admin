@@ -147,7 +147,7 @@ export function ServiceForm({
             ))}
           </Select>
         ) : (
-          <input type="hidden" {...register("categoryId")} />
+          <input type="hidden" {...register("categoryId")} value={watch("categoryId")} />
         )}
 
         <Field label="Name" required {...register("name")} hint={errors.name?.message} />
