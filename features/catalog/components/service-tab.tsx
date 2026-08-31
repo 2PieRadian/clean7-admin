@@ -139,16 +139,14 @@ export function ServiceForm({
         {isEditing ? "Edit service" : "Create service"}
       </h3>
       <form className="grid gap-3" onSubmit={handleSubmit(onSubmit as any)}>
-        {!defaultCategoryId && !isEditing ? (
+        <div className={!defaultCategoryId && !isEditing ? "block" : "hidden"}>
           <Select label="Category" required {...register("categoryId")} hint={errors.categoryId?.message}>
             <option value="">Select a category</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </Select>
-        ) : (
-          <input type="hidden" {...register("categoryId")} value={watch("categoryId")} />
-        )}
+        </div>
 
         <Field label="Name" required {...register("name")} hint={errors.name?.message} />
         <TextArea label="Short description" {...register("shortDescription")} hint={errors.shortDescription?.message} />
@@ -319,6 +317,12 @@ export function ServiceForm({
         )}
         {isSuccess && (
           <p className="text-sm text-green-500">Service {isEditing ? "updated" : "created"} successfully!</p>
+        )}
+        {Object.keys(errors).length > 0 && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+            <p className="font-semibold mb-1">Validation Errors:</p>
+            <pre className="whitespace-pre-wrap font-mono text-xs">{JSON.stringify(errors, null, 2)}</pre>
+          </div>
         )}
       </form>
     </Card>
