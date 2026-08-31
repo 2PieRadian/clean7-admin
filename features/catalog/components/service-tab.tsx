@@ -18,6 +18,24 @@ import type { CatalogServiceSummary } from "@/lib/types";
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
 
+function deriveSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function deriveCode(name: string): string {
+  return name
+    .toUpperCase()
+    .trim()
+    .replace(/&/g, "AND")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 export function ServiceForm({
   defaultCategoryId,
   initialService,
@@ -48,6 +66,8 @@ export function ServiceForm({
     resolver: zodResolver(serviceSchema) as any,
     defaultValues: {
       categoryId: initialService?.categoryId || defaultCategoryId || "",
+      code: initialService?.code || "",
+      slug: initialService?.slug || "",
       name: initialService?.name || "",
       shortDescription: initialService?.shortDescription || "",
       serviceMode: initialService?.serviceMode || "PICKUP_DELIVERY",
@@ -56,7 +76,7 @@ export function ServiceForm({
       webImageUrl: initialService?.webImageUrl || "",
       sortOrder: initialService?.sortOrder ?? 0,
       publishState: initialService?.publishState || "ACTIVE",
-      changeSummary: isEditing ? `Updated service ${initialService?.name}` : "",
+      changeSummary: isEditing ? `Updated service ${initialService?.name}` : "Initial service creation",
     }
   });
 
@@ -95,10 +115,14 @@ export function ServiceForm({
   };
 
   const onSubmit = async (data: ServiceFormData) => {
+    const code = data.code?.trim() || deriveCode(data.name);
+    const slug = data.slug?.trim() || deriveSlug(data.name);
+    const changeSummary = data.changeSummary?.trim() || (isEditing ? `Updated service ${data.name}` : `Created service ${data.name}`);
+
     if (isEditing && initialService) {
-      await updateService.mutateAsync({ id: initialService.id, ...data });
+      await updateService.mutateAsync({ id: initialService.id, ...data, code, slug, changeSummary });
     } else {
-      await createService.mutateAsync(data);
+      await createService.mutateAsync({ ...data, code, slug, changeSummary });
     }
     reset();
     onSuccess?.();
