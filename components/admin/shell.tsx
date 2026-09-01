@@ -146,8 +146,7 @@ function DesktopSidebar({
                     alt="Clean7 Logo"
                     width={32}
                     height={32}
-                    className="object-contain"
-                    style={{ width: "auto", height: "auto" }}
+                    className="h-8 w-8 object-contain"
                   />
                 </span>
                 <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -168,8 +167,7 @@ function DesktopSidebar({
                     alt="Clean7 Logo"
                     width={32}
                     height={32}
-                    className="object-contain"
-                    style={{ width: "auto", height: "auto" }}
+                    className="h-8 w-8 object-contain"
                   />
                 </div>
                 <div className="min-w-0 leading-tight">
@@ -258,8 +256,7 @@ function MobileSidebar({
                   alt="Clean7 Logo"
                   width={32}
                   height={32}
-                  className="object-contain"
-                  style={{ width: "auto", height: "auto" }}
+                  className="h-8 w-8 object-contain"
                 />
               </div>
               <div className="min-w-0 leading-tight">

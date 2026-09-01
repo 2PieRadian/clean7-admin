@@ -23,8 +23,7 @@ export default function LoginPage() {
               alt="Clean7 Logo"
               width={48}
               height={48}
-              className="h-10 w-auto md:h-12"
-              style={{ width: "auto", height: "auto" }}
+              className="h-10 w-10 md:h-12 md:w-12 object-contain"
             />
             <div>
               <h2 className="text-2xl font-bold leading-none tracking-tight text-white md:text-3xl">
@@ -68,8 +67,7 @@ export default function LoginPage() {
               alt="Clean7 Logo"
               width={48}
               height={48}
-              className="h-10 w-auto"
-              style={{ width: "auto", height: "auto" }}
+              className="h-10 w-10 object-contain"
             />
             <div>
               <h2 className="text-2xl font-bold leading-none tracking-tight text-white">

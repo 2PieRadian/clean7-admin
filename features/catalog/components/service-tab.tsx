@@ -315,36 +315,52 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
           </div>
         </div>
 
-        <div className="space-y-2 p-4 bg-surface rounded-xl border border-[var(--border-soft)]">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-semibold text-foreground">App Icon Size Override</label>
-            {watch("iconSize") != null && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setValue("iconSize", null, { shouldValidate: true, shouldDirty: true })}
-                className="h-6 px-2 text-xs"
-              >
-                Clear
-              </Button>
-            )}
+        <div className="space-y-3 p-4 bg-surface rounded-xl border border-[var(--border-soft)]">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={watch("iconSize") != null}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setValue("iconSize", 40, { shouldValidate: true, shouldDirty: true });
+                  } else {
+                    setValue("iconSize", null, { shouldValidate: true, shouldDirty: true });
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-semibold text-foreground">
+                Override Global Icon Size
+              </span>
+            </label>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface-muted border border-[var(--border-soft)] text-text-muted font-medium">
+              {watch("iconSize") != null ? `Custom: ${watch("iconSize")}px` : "Same as Global"}
+            </span>
           </div>
-          <p className="text-[11px] text-text-muted mb-2">
-            Leave clear to use the global default. Setting a value here overrides it for this service.
+
+          <p className="text-[11px] text-text-muted">
+            {watch("iconSize") != null
+              ? "Override active: Custom icon size is enabled for this service."
+              : 'Unchecked: "Same as Global" — this service uses the global icon size setting (default 40px).'}
           </p>
-          <div className="flex items-center gap-4">
-            <input
-              type="range"
-              min={40}
-              max={200}
-              step={1}
-              className="flex-1"
-              value={watch("iconSize") ?? 80}
-              onChange={(e) => setValue("iconSize", parseInt(e.target.value), { shouldValidate: true, shouldDirty: true })}
-            />
-            <span className="w-8 text-sm text-right font-medium">{watch("iconSize") ?? "Auto"}</span>
-          </div>
+
+          {watch("iconSize") != null && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min={0}
+                  max={200}
+                  step={1}
+                  className="flex-1"
+                  value={watch("iconSize") ?? 40}
+                  onChange={(e) => setValue("iconSize", parseInt(e.target.value), { shouldValidate: true, shouldDirty: true })}
+                />
+                <span className="w-12 text-sm text-right font-medium">{watch("iconSize")}px</span>
+              </div>
+            </div>
+          )}
           {errors.iconSize?.message && <p className="text-xs text-red-500">{errors.iconSize.message as string}</p>}
         </div>
 

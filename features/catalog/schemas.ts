@@ -22,7 +22,7 @@ export const serviceSchema = z.object({
   longDescription: z.string().optional().nullable(),
   appImageUrl: z.string().optional().nullable(),
   webImageUrl: z.string().optional().nullable(),
-  iconSize: z.coerce.number().min(40).max(200).optional().nullable(),
+  iconSize: z.coerce.number().min(0).max(200).optional().nullable(),
   serviceMode: z.enum(["PICKUP_DELIVERY", "AT_HOME"]),
   durationEstimateMinutes: z.coerce.number().optional().nullable(),
   sortOrder: z.coerce.number().default(0),

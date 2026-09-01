@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Tags, Package, LayoutList, Edit2, Check, X as XIcon, Trash } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/browser-api";
+import { ChevronDown, ChevronRight, Plus, Tags, Package, LayoutList, Edit2, Check, X as XIcon, Trash, RotateCcw } from "lucide-react";
 import { useCategories, useUpdateItem, useUpdateAddOn, useDeleteCategory, useDeleteItem, useDeleteAddOn, useSetting, useUpdateSetting } from "../api/catalog-api";
 import { CategoryForm } from "./category-tab";
 import { ServiceForm } from "./service-tab";
@@ -124,12 +126,19 @@ type ActiveForm =
 function GlobalSettingsCard() {
   const { data: iconSizeSetting, isLoading } = useSetting("HOME_SERVICE_ICON_SIZE");
   const updateSetting = useUpdateSetting();
+  const queryClient = useQueryClient();
 
   const [localSize, setLocalSize] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   if (isLoading) return null;
 
-  const currentSize = localSize ?? (iconSizeSetting?.value ? Number(iconSizeSetting.value) : 80);
+  const currentSize =
+    localSize ??
+    (iconSizeSetting?.value !== undefined && iconSizeSetting?.value !== null && iconSizeSetting.value !== ""
+      ? Number(iconSizeSetting.value)
+      : 40);
 
   const handleSave = async (val: number) => {
     try {
@@ -139,23 +148,62 @@ function GlobalSettingsCard() {
     }
   };
 
+  const handleResetAll = async () => {
+    setIsResetting(true);
+    setResetMessage(null);
+    try {
+      // 1. Set global icon size to 40
+      await updateSetting.mutateAsync({ key: "HOME_SERVICE_ICON_SIZE", value: 40 });
+      setLocalSize(40);
+
+      // 2. Fetch all services and reset their iconSize to null (so they all follow global 40)
+      const services = await apiRequest<any[]>({ path: "/admin/services" });
+      if (Array.isArray(services) && services.length > 0) {
+        await Promise.all(
+          services.map((svc) =>
+            apiRequest({
+              path: `/admin/services/${svc.id}`,
+              method: "PATCH",
+              body: { iconSize: null },
+            })
+          )
+        );
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
+      await queryClient.invalidateQueries({ queryKey: ["categories"] });
+      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+
+      setResetMessage("All services reset to size 40 (Same as Global)!");
+      setTimeout(() => setResetMessage(null), 4000);
+    } catch (e) {
+      console.error("Reset failed:", e);
+      setResetMessage("Failed to reset services. Check console.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="rounded-3xl border border-[var(--border-soft)] bg-surface p-6 shadow-sm">
       <h3 className="text-lg font-semibold mb-4">Global Preferences</h3>
-      <div className="space-y-2 p-4 bg-surface-muted/30 rounded-xl border border-[var(--border-soft)] max-w-md">
-        <div className="flex justify-between items-center mb-2">
+      <div className="space-y-4 p-4 bg-surface-muted/30 rounded-xl border border-[var(--border-soft)] max-w-md">
+        <div className="flex justify-between items-center mb-1">
           <label className="text-sm font-semibold text-foreground">Default App Icon Size</label>
+          <span className="text-xs px-2 py-0.5 rounded bg-surface border border-[var(--border-soft)] font-mono font-medium">
+            {currentSize}px
+          </span>
         </div>
         <p className="text-[11px] text-text-muted mb-2">
-          This size is used for all services on the app home screen unless overridden individually.
+          Default size is 40px. Used for all services on the app home screen unless overridden individually.
         </p>
         <div className="flex items-center gap-4">
           <input
             type="range"
-            min={40}
+            min={0}
             max={200}
             step={1}
-            className="flex-1"
+            className="flex-1 accent-primary"
             value={currentSize}
             onChange={(e) => setLocalSize(parseInt(e.target.value))}
             onMouseUp={() => handleSave(currentSize)}
@@ -163,6 +211,29 @@ function GlobalSettingsCard() {
           />
           <span className="w-8 text-sm text-right font-medium">{currentSize}</span>
         </div>
+
+        <div className="pt-3 border-t border-[var(--border-soft)] flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium text-foreground">Reset All Services</p>
+            <p className="text-[11px] text-text-muted">
+              Reset all services to default size 40 (Same as Global)
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleResetAll}
+            disabled={isResetting}
+            className="h-8 text-xs shrink-0 flex items-center gap-1.5"
+          >
+            <RotateCcw className={`h-3.5 w-3.5 ${isResetting ? "animate-spin" : ""}`} />
+            {isResetting ? "Resetting..." : "Reset All to 40"}
+          </Button>
+        </div>
+        {resetMessage && (
+          <p className="text-xs text-primary font-medium">{resetMessage}</p>
+        )}
       </div>
     </div>
   );
