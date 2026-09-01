@@ -82,6 +82,7 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
       durationEstimateMinutes: initialService?.durationEstimateMinutes ?? undefined,
       appImageUrl: initialService?.appImageUrl || "",
       webImageUrl: initialService?.webImageUrl || "",
+      iconSize: initialService?.iconSize ?? null,
       sortOrder: initialService?.sortOrder ?? 0,
       publishState: (initialService?.publishState as any) || "ACTIVE",
       changeSummary: isEditing ? `Updated service ${initialService?.name}` : "Initial service creation",
@@ -312,6 +313,39 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="space-y-2 p-4 bg-surface rounded-xl border border-[var(--border-soft)]">
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-sm font-semibold text-foreground">App Icon Size Override</label>
+            {watch("iconSize") != null && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setValue("iconSize", null, { shouldValidate: true, shouldDirty: true })}
+                className="h-6 px-2 text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          <p className="text-[11px] text-text-muted mb-2">
+            Leave clear to use the global default. Setting a value here overrides it for this service.
+          </p>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min={40}
+              max={200}
+              step={1}
+              className="flex-1"
+              value={watch("iconSize") ?? 80}
+              onChange={(e) => setValue("iconSize", parseInt(e.target.value), { shouldValidate: true, shouldDirty: true })}
+            />
+            <span className="w-8 text-sm text-right font-medium">{watch("iconSize") ?? "Auto"}</span>
+          </div>
+          {errors.iconSize?.message && <p className="text-xs text-red-500">{errors.iconSize.message as string}</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

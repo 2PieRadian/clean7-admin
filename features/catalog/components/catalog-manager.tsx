@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Plus, Tags, Package, LayoutList, Edit2, Check, X as XIcon, Trash } from "lucide-react";
-import { useCategories, useUpdateItem, useUpdateAddOn, useDeleteCategory, useDeleteItem, useDeleteAddOn } from "../api/catalog-api";
+import { useCategories, useUpdateItem, useUpdateAddOn, useDeleteCategory, useDeleteItem, useDeleteAddOn, useSetting, useUpdateSetting } from "../api/catalog-api";
 import { CategoryForm } from "./category-tab";
 import { ServiceForm } from "./service-tab";
 import { ItemForm } from "./item-tab";
@@ -121,6 +121,53 @@ type ActiveForm =
   | { type: "item"; defaultServiceId?: string }
   | { type: "addon"; defaultServiceId?: string };
 
+function GlobalSettingsCard() {
+  const { data: iconSizeSetting, isLoading } = useSetting("HOME_SERVICE_ICON_SIZE");
+  const updateSetting = useUpdateSetting();
+
+  const [localSize, setLocalSize] = useState<number | null>(null);
+
+  if (isLoading) return null;
+
+  const currentSize = localSize ?? (iconSizeSetting?.value ? Number(iconSizeSetting.value) : 80);
+
+  const handleSave = async (val: number) => {
+    try {
+      await updateSetting.mutateAsync({ key: "HOME_SERVICE_ICON_SIZE", value: val });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-[var(--border-soft)] bg-surface p-6 shadow-sm">
+      <h3 className="text-lg font-semibold mb-4">Global Preferences</h3>
+      <div className="space-y-2 p-4 bg-surface-muted/30 rounded-xl border border-[var(--border-soft)] max-w-md">
+        <div className="flex justify-between items-center mb-2">
+          <label className="text-sm font-semibold text-foreground">Default App Icon Size</label>
+        </div>
+        <p className="text-[11px] text-text-muted mb-2">
+          This size is used for all services on the app home screen unless overridden individually.
+        </p>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min={40}
+            max={200}
+            step={1}
+            className="flex-1"
+            value={currentSize}
+            onChange={(e) => setLocalSize(parseInt(e.target.value))}
+            onMouseUp={() => handleSave(currentSize)}
+            onTouchEnd={() => handleSave(currentSize)}
+          />
+          <span className="w-8 text-sm text-right font-medium">{currentSize}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CatalogManager() {
   const { data: categories = [], isLoading: catLoading } = useCategories();
   const deleteCategory = useDeleteCategory();
@@ -179,6 +226,8 @@ export function CatalogManager() {
           </Button>
         </div>
       </div>
+
+      <GlobalSettingsCard />
 
       <div className="space-y-4 rounded-3xl border border-[var(--border-soft)] bg-surface p-6 shadow-sm">
         {catLoading ? (

@@ -58,6 +58,25 @@ export function useAddOns(serviceId?: string, branchId?: string) {
   });
 }
 
+// Settings
+export function useSetting(key: string) {
+  return useQuery({
+    queryKey: ["settings", key],
+    queryFn: () => apiRequest<any>({ path: `/admin/settings/${key}` }),
+  });
+}
+
+export function useUpdateSetting() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      apiRequest({ path: `/admin/settings/${key}`, method: "PUT", body: { value } }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["settings", variables.key] });
+    },
+  });
+}
+
 // Mutations
 export function useCreateCategory() {
   const queryClient = useQueryClient();
