@@ -9,54 +9,14 @@ import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import { getStuckOrderReasoning, orderStatusLabel } from "@/lib/format";
 import type {
-  BranchAdminResponse,
-  DeliveryTripResponse,
+  DashboardMetricsResponse,
   OrderResponse,
-  OrderStatus,
-  OperatorProfileResponse,
 } from "@/lib/types";
 
-type DashboardState = {
-  orders: OrderResponse[];
-  operators: OperatorProfileResponse[];
-  branches: BranchAdminResponse[];
-  trips: DeliveryTripResponse[];
-};
-
-const emptyState: DashboardState = {
-  orders: [],
-  operators: [],
-  branches: [],
-  trips: [],
-};
-
-const TERMINAL_ORDER_STATUSES: OrderStatus[] = [
-  "DELIVERED",
-  "COMPLETED",
-  "CANCELLED",
-];
-
-function isTerminalOrderStatus(status: OrderStatus) {
-  return TERMINAL_ORDER_STATUSES.includes(status);
-}
-
-function scheduledLocalDate(order: OrderResponse): string | null {
-  if (!order.scheduledDate) return null;
-  return String(order.scheduledDate).slice(0, 10);
-}
-
-function startOfTodayIsoDate() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
-
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardState>(emptyState);
+  const [metrics, setMetrics] = useState<DashboardMetricsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const today = useMemo(() => startOfTodayIsoDate(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,15 +26,10 @@ export default function DashboardPage() {
       setError(null);
 
       try {
-        const [orders, operators, branches, trips] = await Promise.all([
-          apiRequest<OrderResponse[]>({ path: "/admin/orders" }),
-          apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" }),
-          apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" }),
-          apiRequest<DeliveryTripResponse[]>({ path: "/admin/delivery-trips" }),
-        ]);
+        const data = await apiRequest<DashboardMetricsResponse>({ path: "/admin/dashboard-metrics" });
 
         if (cancelled) return;
-        setData({ orders, operators, branches, trips });
+        setMetrics(data);
       } catch (nextError) {
         if (cancelled) return;
         setError(
@@ -93,62 +48,6 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  const metrics = useMemo(() => {
-    const orders = data.orders;
-    const trips = data.trips;
-
-    const ordersOnTrip = new Set(trips.flatMap(t => {
-      const active = !t.completedAt && !t.cancelledAt && t.status !== "COMPLETED" && t.status !== "CANCELLED";
-      return active ? t.stops.map(s => s.orderId) : [];
-    }));
-
-    const needsPickupAssignment = orders.filter((o) => (o.status === "CONFIRMED" || o.status === "IN_PROGRESS") && !o.pickupRiderAuthUserId).length;
-    const waitingForPickup = orders.filter((o) => (o.status === "CONFIRMED" || o.status === "IN_PROGRESS") && o.pickupRiderAuthUserId).length;
-    const awaitingIntake = orders.filter((o) => o.status === "RECEIVED_AT_BRANCH" && o.actualItemCount == null).length;
-    const needsDeliveryAssignment = orders.filter((o) => o.status === "READY_FOR_DELIVERY" && !ordersOnTrip.has(o.id)).length;
-    const readyForDelivery = orders.filter((o) => o.status === "READY_FOR_DELIVERY").length;
-
-    const delayedOrders = orders.filter((o) => {
-      const d = scheduledLocalDate(o);
-      if (!d || d >= today) return false;
-      return !isTerminalOrderStatus(o.status);
-    });
-
-    const now = Date.now();
-    const stuckOrders = orders.filter((o) => {
-      if (isTerminalOrderStatus(o.status)) return false;
-      if (!o.updatedAt) return false;
-      const hours = (now - new Date(o.updatedAt).getTime()) / (1000 * 60 * 60);
-      return hours >= 24;
-    });
-
-    const assignedOperatorIds = new Set(orders.filter(o => !isTerminalOrderStatus(o.status)).flatMap(o => [o.assignedOperatorAuthUserId, o.pickupRiderAuthUserId]).filter(Boolean));
-    const idleOperatorsCount = data.operators.filter(w => w.status === "ACTIVE" && !assignedOperatorIds.has(w.authUserId)).length;
-
-    const todayOrders = orders.filter((o) => scheduledLocalDate(o) === today).length;
-    const ordersProcessing = orders.filter((o) => o.status === "PROCESSING").length;
-    const deliveriesRemaining = orders.filter((o) => o.status === "OUT_FOR_DELIVERY" || o.status === "READY_FOR_DELIVERY").length;
-    const operatorsActive = data.operators.filter(w => w.status === "ACTIVE" && w.role === "OPERATOR").length;
-    const ridersActive = data.operators.filter(w => w.status === "ACTIVE" && w.role === "RIDER").length;
-
-    return {
-      needsPickupAssignment,
-      waitingForPickup,
-      awaitingIntake,
-      needsDeliveryAssignment,
-      readyForDelivery,
-      delayedOrders,
-      stuckOrders,
-      idleOperatorsCount,
-      todayOrders,
-      pendingPickups: needsPickupAssignment + waitingForPickup,
-      ordersProcessing,
-      deliveriesRemaining,
-      operatorsActive,
-      ridersActive
-    };
-  }, [data.orders, data.trips, data.operators, today]);
 
   return (
     <div className="space-y-8">
@@ -180,7 +79,7 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      {!loading ? (
+      {!loading && metrics ? (
         <>
           {/* Workload Summary */}
           <div>
@@ -234,25 +133,25 @@ export default function DashboardPage() {
             <div>
               <h2 className="mb-4 text-lg font-semibold text-foreground">Operational Bottlenecks</h2>
               <div className="grid gap-3">
-                  {Array.from(new Set([...metrics.stuckOrders, ...metrics.delayedOrders])).slice(0, 5).map((order) => {
-                    const reason = getStuckOrderReasoning(order) || "Delayed behind schedule.";
-                    return (
-                      <Link key={order.id} href={`/orders/${order.id}`} className="block group">
-                        <Card className="flex items-center justify-between border border-rose-200 bg-rose-500/5 p-4 transition-colors group-hover:bg-rose-500/10">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground underline decoration-[rgba(39,193,165,0.35)] underline-offset-4">{order.orderNumber || order.orderCode || "Order"}</span>
-                              <Badge variant="fulfillment" value={order.status}>{orderStatusLabel(order.status)}</Badge>
-                            </div>
-                            <p className="mt-1 text-sm font-medium text-rose-700">
-                              ⚠ {reason}
-                            </p>
+                {Array.from(new Set([...metrics.stuckOrders, ...metrics.delayedOrders])).slice(0, 5).map((order) => {
+                  const reason = getStuckOrderReasoning(order) || "Delayed behind schedule.";
+                  return (
+                    <Link key={order.id} href={`/orders/${order.id}`} className="block group">
+                      <Card className="flex items-center justify-between border border-rose-200 bg-rose-500/5 p-4 transition-colors group-hover:bg-rose-500/10">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground underline decoration-[rgba(39,193,165,0.35)] underline-offset-4">{order.orderNumber || order.orderCode || "Order"}</span>
+                            <Badge variant="fulfillment" value={order.status}>{orderStatusLabel(order.status)}</Badge>
                           </div>
-                          <span className="text-sm font-semibold text-rose-600 transition-transform group-hover:translate-x-1">Review &rarr;</span>
-                        </Card>
-                      </Link>
-                    )
-                  })}
+                          <p className="mt-1 text-sm font-medium text-rose-700">
+                            ⚠ {reason}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-rose-600 transition-transform group-hover:translate-x-1">Review &rarr;</span>
+                      </Card>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           )}

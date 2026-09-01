@@ -19,6 +19,23 @@ export type ApiEnvelope<T> =
     };
   };
 
+export interface DashboardMetricsResponse {
+  needsPickupAssignment: number;
+  waitingForPickup: number;
+  awaitingIntake: number;
+  needsDeliveryAssignment: number;
+  readyForDelivery: number;
+  ordersProcessing: number;
+  deliveriesRemaining: number;
+  todayOrders: number;
+  pendingPickups: number;
+  delayedOrders: OrderResponse[];
+  stuckOrders: OrderResponse[];
+  operatorsActive: number;
+  ridersActive: number;
+  idleOperatorsCount: number;
+}
+
 /** Roles returned by auth; admin web allows only DIRECTOR and BRANCH_ADMIN. */
 export type UserRole = "USER" | "DIRECTOR" | "BRANCH_ADMIN" | "OPERATOR" | "RIDER";
 
