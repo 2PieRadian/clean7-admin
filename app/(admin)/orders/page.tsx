@@ -177,9 +177,9 @@ export default function OrdersPage() {
             className="input-surface px-3 py-2 text-sm font-medium"
             value={bookingTypeFilter}
             onChange={(e) => setBookingTypeFilter(e.target.value)}
-            aria-label="Filter by booking mode"
+            aria-label="Filter by booking type"
           >
-            <option value="">All Delivery Modes</option>
+            <option value="">Booking Type</option>
             <option value="ASAP">⚡ 2-Hour Express</option>
             <option value="SCHEDULED">📅 Scheduled Slot</option>
           </select>

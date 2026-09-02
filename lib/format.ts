@@ -156,30 +156,49 @@ export function orderNextActionPhrase(order: OrderResponse): string {
   }
 
   const s = order.status as OrderStatus;
+  const isAtHome = order.serviceMode === "AT_HOME";
+
   switch (s) {
     case "PENDING":
-      return "Review and confirm the order.";
+      return "Review order details and confirm to begin fulfillment.";
     case "CONFIRMED":
-      return "Assign a pickup rider to begin collection.";
+      if (isAtHome) {
+        return order.assignedOperatorAuthUserId
+          ? "Operator assigned. Waiting for scheduled service time."
+          : "Assign an operator to perform the at-home service.";
+      }
+      return order.pickupRiderAuthUserId
+        ? "Pickup rider assigned. Waiting for rider to start pickup."
+        : "Assign a pickup rider to collect garments from customer.";
     case "IN_PROGRESS":
-      return "Waiting for rider to complete pickup.";
+      if (isAtHome) {
+        return "Operator is currently performing the service at customer location.";
+      }
+      return order.pickupRiderAuthUserId
+        ? "Rider is picking up garments. Mark received when items arrive at branch."
+        : "Waiting for pickup to complete.";
     case "PICKUP_FAILED":
-      return "Review failure and retry or reschedule pickup.";
+      return "Pickup failed. Review failure reason and reassign rider or reschedule.";
     case "RECEIVED_AT_BRANCH":
-      return "Record intake and start processing.";
+      return order.actualItemCount == null
+        ? "Garments arrived at branch. Record laundry intake to verify item count."
+        : `Intake recorded (${order.actualItemCount} items). Click 'Start Processing' to begin cleaning.`;
     case "PROCESSING":
-      return "Laundry is currently being processed. Mark it ready once completed.";
+      return "Garments are being cleaned. Mark 'Ready for Delivery' once finished.";
     case "READY_FOR_DELIVERY":
-      return "Assign a delivery rider to complete delivery.";
+      return "Cleaning complete. Assign a delivery rider via Delivery Trips to return clothes.";
     case "OUT_FOR_DELIVERY":
-      return "Waiting for rider to complete delivery.";
+      return "Rider is out for delivery. Awaiting drop-off confirmation.";
     case "DELIVERY_FAILED":
-      return "Review failure and retry delivery.";
+      return "Delivery failed. Review reason and schedule a re-delivery trip.";
     case "DELIVERED":
+      return order.paymentStatus === "PAID" || order.paymentStatus === "COD_COLLECTED"
+        ? "Order delivered and payment completed."
+        : "Order delivered. Collect pending payment from customer.";
     case "COMPLETED":
-      return "Order is complete. Finalize payment if needed.";
+      return "Order is fully completed. No further action needed.";
     case "CANCELLED":
-      return "No further action required.";
+      return "Order was cancelled. No further action required.";
     default:
       return "Review order status.";
   }
@@ -187,20 +206,42 @@ export function orderNextActionPhrase(order: OrderResponse): string {
 
 export function getCurrentResponsibility(order: OrderResponse): string {
   const s = order.status as OrderStatus;
+  const isAtHome = order.serviceMode === "AT_HOME";
+
   switch (s) {
     case "PENDING":
+      return "Branch Admin (Review & Confirm)";
     case "CONFIRMED":
-    case "READY_FOR_DELIVERY":
-      return "Branch Admin (Assignment)";
+      if (isAtHome) {
+        return order.assignedOperatorAuthUserId
+          ? "Operator (Scheduled)"
+          : "Branch Admin (Assign Operator)";
+      }
+      return order.pickupRiderAuthUserId
+        ? "Pickup Rider (En Route to Customer)"
+        : "Branch Admin (Assign Pickup Rider)";
     case "IN_PROGRESS":
-      return "Pickup Rider";
+      return isAtHome ? "Operator (At Customer Location)" : "Pickup Rider (Collecting Garments)";
+    case "PICKUP_FAILED":
+      return "Branch Admin (Reassign or Reschedule)";
     case "RECEIVED_AT_BRANCH":
+      return order.actualItemCount == null
+        ? "Branch Admin (Count & Record Intake)"
+        : "Processing Team (Ready to Start)";
     case "PROCESSING":
-      return "Branch Processing Team";
+      return "Branch Processing Team (Cleaning & Care)";
+    case "READY_FOR_DELIVERY":
+      return "Branch Admin (Assign Delivery Trip)";
     case "OUT_FOR_DELIVERY":
-      return "Delivery Rider";
+      return "Delivery Rider (Out for Delivery)";
+    case "DELIVERY_FAILED":
+      return "Branch Admin (Re-route Delivery)";
+    case "DELIVERED":
+    case "COMPLETED":
+    case "CANCELLED":
+      return "None (Completed)";
     default:
-      return "None";
+      return "Branch Admin";
   }
 }
 

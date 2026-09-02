@@ -48,6 +48,10 @@ import {
   PhoneCall,
   Bike,
   UserCheck,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Info,
 } from "lucide-react";
 import { downloadOrderInvoice } from "../api/order-api";
 
@@ -181,6 +185,8 @@ export function OrderDetailManager({
     payment: false,
     reschedule: false,
   });
+
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
 
   const closeModal = (key: keyof typeof modals) =>
     setModals((m) => ({ ...m, [key]: false }));
@@ -555,253 +561,362 @@ export function OrderDetailManager({
             ) : null}
           </div>
 
-          {/* Primary Action Flow */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            {order.status === "PENDING" && (
-              <Button
-                onClick={() =>
-                  handleActionClick(
-                    "Confirm Order",
-                    "This will notify the customer that their order is confirmed.",
-                    () =>
-                      startTransition(() =>
-                        mutate(
-                          `/admin/orders/${order.id}/status`,
-                          "PATCH",
-                          { status: "CONFIRMED" },
-                          "Order confirmed successfully.",
-                        ),
-                      ),
-                  )
-                }
-                disabled={isPending}
-                className="w-full sm:w-auto"
-              >
-                Confirm Order
-              </Button>
-            )}
+          {/* ── TIER 1: What To Do Next ── */}
+          {(() => {
+            const s = order.status;
+            const isPickupDelivery = serviceMode === "PICKUP_DELIVERY";
+            const isAtHome = serviceMode === "AT_HOME";
+            const hasPickupRider = !!order.pickupRiderAuthUserId;
+            const hasIntake = order.actualItemCount != null;
+            const hasDeliveryRider = !!deliveryRiderAuthUserId;
+            const hasOperator = !!order.assignedOperatorAuthUserId;
 
-            {order.status === "IN_PROGRESS" && order.pickupRiderAuthUserId && (
-              <Button
-                onClick={() =>
-                  handleActionClick(
-                    "Mark Received at Branch",
-                    "The pickup leg is complete and items are at the branch.",
-                    () =>
-                      startTransition(() =>
-                        mutate(
-                          `/admin/orders/${order.id}/status`,
-                          "PATCH",
-                          { status: "RECEIVED_AT_BRANCH" },
-                          "Marked received at branch.",
-                        ),
-                      ),
-                  )
-                }
-                disabled={isPending}
-                className="w-full sm:w-auto"
-              >
-                Mark Received at Branch
-              </Button>
-            )}
+            // Terminal states — no action needed
+            if (s === "COMPLETED" || s === "DELIVERED") {
+              return (
+                <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-5 flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={22} className="text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Order Complete</p>
+                    <p className="text-sm text-emerald-600/80 dark:text-emerald-400/70 mt-1">
+                      This order has been {s === "DELIVERED" ? "delivered to the customer" : "completed"}. No further action needed.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
 
-            {order.status === "RECEIVED_AT_BRANCH" &&
-              order.actualItemCount != null && (
+            if (s === "CANCELLED") {
+              return (
+                <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
+                    <X size={22} className="text-rose-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Order Cancelled</p>
+                    <p className="text-sm text-rose-600/80 dark:text-rose-400/70 mt-1">
+                      This order was cancelled. No further action required.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
+            // Active states — show the next step
+            let nextStepTitle = "";
+            let nextStepDescription = "";
+            let nextStepAction: React.ReactNode = null;
+            let nextStepIcon: React.ReactNode = null;
+            let nextStepBg = "bg-primary/10 border-primary/30";
+            let nextStepTitleColor = "text-primary";
+
+            if (s === "PENDING") {
+              nextStepTitle = "Review & Confirm Order";
+              nextStepDescription = "A new order is waiting. Review items and confirm to begin fulfillment.";
+              nextStepIcon = <CheckCircle2 size={22} className="text-primary" />;
+              nextStepAction = (
+                <Button
+                  onClick={() =>
+                    handleActionClick(
+                      "Confirm Order",
+                      "This will notify the customer that their order is confirmed.",
+                      () => startTransition(() => mutate(`/admin/orders/${order.id}/status`, "PATCH", { status: "CONFIRMED" }, "Order confirmed successfully.")),
+                    )
+                  }
+                  disabled={isPending}
+                  className="gap-2"
+                >
+                  <CheckCircle2 size={16} /> Confirm Order
+                </Button>
+              );
+            } else if (s === "CONFIRMED" && isPickupDelivery && !hasPickupRider) {
+              nextStepTitle = "Assign Pickup Rider";
+              nextStepDescription = "Order is confirmed. Assign a rider to pick up garments from the customer.";
+              nextStepIcon = <Truck size={22} className="text-amber-500" />;
+              nextStepBg = "bg-amber-500/10 border-amber-500/30";
+              nextStepTitleColor = "text-amber-700 dark:text-amber-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("pickupRider")} disabled={isPending} className="gap-2">
+                  <Truck size={16} /> Assign Pickup Rider
+                </Button>
+              );
+            } else if (s === "CONFIRMED" && isAtHome && !hasOperator) {
+              nextStepTitle = "Assign Operator";
+              nextStepDescription = "Order is confirmed. Assign an operator to perform the at-home service.";
+              nextStepIcon = <Users size={22} className="text-amber-500" />;
+              nextStepBg = "bg-amber-500/10 border-amber-500/30";
+              nextStepTitleColor = "text-amber-700 dark:text-amber-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("operator")} disabled={isPending} className="gap-2">
+                  <Users size={16} /> Assign Operator
+                </Button>
+              );
+            } else if (s === "CONFIRMED") {
+              nextStepTitle = "Waiting for Dispatch";
+              nextStepDescription = isPickupDelivery
+                ? `Pickup rider ${pickupRider?.displayName || ""} has been assigned. Waiting for rider to start pickup.`
+                : `Operator ${assignedOperator?.displayName || ""} has been assigned. Waiting for service to begin.`;
+              nextStepIcon = <Clock size={22} className="text-blue-500" />;
+              nextStepBg = "bg-blue-500/10 border-blue-500/30";
+              nextStepTitleColor = "text-blue-700 dark:text-blue-400";
+            } else if (s === "IN_PROGRESS" && isPickupDelivery) {
+              nextStepTitle = "Pickup In Progress";
+              nextStepDescription = `Rider ${pickupRider?.displayName || ""} is picking up items from the customer. Once received, mark as arrived at branch.`;
+              nextStepIcon = <Truck size={22} className="text-blue-500" />;
+              nextStepBg = "bg-blue-500/10 border-blue-500/30";
+              nextStepTitleColor = "text-blue-700 dark:text-blue-400";
+              nextStepAction = hasPickupRider ? (
+                <Button
+                  onClick={() =>
+                    handleActionClick(
+                      "Mark Received at Branch",
+                      "The pickup leg is complete and items are at the branch.",
+                      () => startTransition(() => mutate(`/admin/orders/${order.id}/status`, "PATCH", { status: "RECEIVED_AT_BRANCH" }, "Marked received at branch.")),
+                    )
+                  }
+                  disabled={isPending}
+                  className="gap-2"
+                >
+                  <Package size={16} /> Mark Received at Branch
+                </Button>
+              ) : null;
+            } else if (s === "IN_PROGRESS" && isAtHome) {
+              nextStepTitle = "Service In Progress";
+              nextStepDescription = "Operator is performing the at-home service at the customer location.";
+              nextStepIcon = <Users size={22} className="text-blue-500" />;
+              nextStepBg = "bg-blue-500/10 border-blue-500/30";
+              nextStepTitleColor = "text-blue-700 dark:text-blue-400";
+            } else if (s === "RECEIVED_AT_BRANCH" && !hasIntake) {
+              nextStepTitle = "Record Laundry Intake";
+              nextStepDescription = "Items have arrived at the branch. Count and verify the received garments before processing.";
+              nextStepIcon = <Package size={22} className="text-amber-500" />;
+              nextStepBg = "bg-amber-500/10 border-amber-500/30";
+              nextStepTitleColor = "text-amber-700 dark:text-amber-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("intake")} disabled={isPending} className="gap-2">
+                  <Package size={16} /> Record Laundry Intake
+                </Button>
+              );
+            } else if (s === "RECEIVED_AT_BRANCH" && hasIntake) {
+              nextStepTitle = "Start Processing";
+              nextStepDescription = `Intake recorded (${order.actualItemCount} items). Move the order to processing to begin cleaning.`;
+              nextStepIcon = <ArrowRight size={22} className="text-primary" />;
+              nextStepAction = (
                 <Button
                   onClick={() =>
                     handleActionClick(
                       "Start Processing",
                       "Move this order into active processing.",
-                      () =>
-                        startTransition(() =>
-                          mutate(
-                            `/admin/orders/${order.id}/status`,
-                            "PATCH",
-                            { status: "PROCESSING" },
-                            "Order processing started.",
-                          ),
-                        ),
+                      () => startTransition(() => mutate(`/admin/orders/${order.id}/status`, "PATCH", { status: "PROCESSING" }, "Order processing started.")),
                     )
                   }
                   disabled={isPending}
-                  className="w-full sm:w-auto"
+                  className="gap-2"
                 >
-                  Start Processing
+                  <ArrowRight size={16} /> Start Processing
                 </Button>
-              )}
-
-            {order.status === "PROCESSING" && (
-              <Button
-                onClick={() =>
-                  handleActionClick(
-                    "Mark Ready for Delivery",
-                    "This will make the order available for delivery assignment. Ensure all processing is complete.",
-                    () =>
-                      startTransition(() =>
-                        mutate(
-                          `/admin/orders/${order.id}/status`,
-                          "PATCH",
-                          { status: "READY_FOR_DELIVERY" },
-                          "Marked ready for delivery.",
-                        ),
-                      ),
-                  )
-                }
-                disabled={isPending}
-                className="w-full sm:w-auto"
-              >
-                Mark Ready for Delivery
-              </Button>
-            )}
-
-            {order.status === "OUT_FOR_DELIVERY" && (
-              <Button
-                onClick={() =>
-                  handleActionClick(
-                    "Complete Delivery",
-                    "Confirm that the order has been successfully delivered.",
-                    () =>
-                      startTransition(() =>
-                        mutate(
-                          `/admin/orders/${order.id}/status`,
-                          "PATCH",
-                          { status: "DELIVERED" },
-                          "Delivery completed.",
-                        ),
-                      ),
-                  )
-                }
-                disabled={isPending}
-                className="w-full sm:w-auto"
-              >
-                Complete Delivery
-              </Button>
-            )}
-          </div>
-
-          {/* Quick Management Buttons replacing 'More Options' */}
-          <div className="pt-4 border-t border-[var(--border-soft)]">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
-              Order Management Actions
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Assign Operator */}
-              {serviceMode === "AT_HOME" && (
+              );
+            } else if (s === "PROCESSING") {
+              nextStepTitle = "Processing — Mark Ready When Done";
+              nextStepDescription = "Garments are being cleaned. Once everything is processed, mark the order as ready for delivery.";
+              nextStepIcon = <Activity size={22} className="text-blue-500" />;
+              nextStepBg = "bg-blue-500/10 border-blue-500/30";
+              nextStepTitleColor = "text-blue-700 dark:text-blue-400";
+              nextStepAction = (
                 <Button
-                  variant="secondary"
-                  className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
-                  onClick={() => openModal("operator")}
+                  onClick={() =>
+                    handleActionClick(
+                      "Mark Ready for Delivery",
+                      "This will make the order available for delivery assignment. Ensure all processing is complete.",
+                      () => startTransition(() => mutate(`/admin/orders/${order.id}/status`, "PATCH", { status: "READY_FOR_DELIVERY" }, "Marked ready for delivery.")),
+                    )
+                  }
+                  disabled={isPending}
+                  className="gap-2"
                 >
-                  <Users
-                    size={16}
-                    className={
-                      order.assignedOperatorAuthUserId
-                        ? "text-primary"
-                        : "text-amber-500"
-                    }
-                  />
-                  <span className="truncate">
-                    {order.assignedOperatorAuthUserId
-                      ? "Reassign Operator"
-                      : "Assign Operator"}
-                  </span>
+                  <CheckCircle2 size={16} /> Mark Ready for Delivery
                 </Button>
-              )}
-
-              {/* Assign Pickup Rider */}
-              {serviceMode === "PICKUP_DELIVERY" && !isTerminal && (
+              );
+            } else if (s === "READY_FOR_DELIVERY") {
+              nextStepTitle = hasDeliveryRider ? "Waiting for Delivery to Start" : "Assign Delivery Rider";
+              nextStepDescription = hasDeliveryRider
+                ? `Delivery rider ${deliveryRider?.displayName || ""} has been assigned. Waiting for rider to pick up from branch.`
+                : "Order is ready. Assign a delivery rider to return the clean garments to the customer.";
+              nextStepIcon = <Truck size={22} className={hasDeliveryRider ? "text-blue-500" : "text-amber-500"} />;
+              nextStepBg = hasDeliveryRider ? "bg-blue-500/10 border-blue-500/30" : "bg-amber-500/10 border-amber-500/30";
+              nextStepTitleColor = hasDeliveryRider ? "text-blue-700 dark:text-blue-400" : "text-amber-700 dark:text-amber-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("delivery")} disabled={isPending} className="gap-2">
+                  <Truck size={16} /> {hasDeliveryRider ? "Manage Delivery Trip" : "Assign Delivery"}
+                </Button>
+              );
+            } else if (s === "OUT_FOR_DELIVERY") {
+              nextStepTitle = "Out for Delivery";
+              nextStepDescription = `Delivery rider ${deliveryRider?.displayName || ""} is delivering to the customer. Mark complete once delivered.`;
+              nextStepIcon = <Truck size={22} className="text-blue-500" />;
+              nextStepBg = "bg-blue-500/10 border-blue-500/30";
+              nextStepTitleColor = "text-blue-700 dark:text-blue-400";
+              nextStepAction = (
                 <Button
-                  variant="secondary"
-                  className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
-                  onClick={() => openModal("pickupRider")}
+                  onClick={() =>
+                    handleActionClick(
+                      "Complete Delivery",
+                      "Confirm that the order has been successfully delivered.",
+                      () => startTransition(() => mutate(`/admin/orders/${order.id}/status`, "PATCH", { status: "DELIVERED" }, "Delivery completed.")),
+                    )
+                  }
+                  disabled={isPending}
+                  className="gap-2"
                 >
-                  <Truck
-                    size={16}
-                    className={
-                      order.pickupRiderAuthUserId
-                        ? "text-primary"
-                        : "text-amber-500"
-                    }
-                  />
-                  <span className="truncate">
-                    {order.pickupRiderAuthUserId
-                      ? "Reassign Pickup Rider"
-                      : "Assign Pickup Rider"}
-                  </span>
+                  <CheckCircle2 size={16} /> Complete Delivery
                 </Button>
-              )}
+              );
+            } else if (s === "PICKUP_FAILED") {
+              nextStepTitle = "Pickup Failed — Action Required";
+              nextStepDescription = "The pickup attempt failed. Reassign a new rider or reschedule the pickup.";
+              nextStepIcon = <AlertTriangle size={22} className="text-rose-500" />;
+              nextStepBg = "bg-rose-500/10 border-rose-500/30";
+              nextStepTitleColor = "text-rose-700 dark:text-rose-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("pickupRider")} disabled={isPending} className="gap-2">
+                  <Truck size={16} /> Reassign Pickup Rider
+                </Button>
+              );
+            } else if (s === "DELIVERY_FAILED") {
+              nextStepTitle = "Delivery Failed — Action Required";
+              nextStepDescription = "The delivery attempt failed. Schedule a re-delivery via the Delivery Trips dashboard.";
+              nextStepIcon = <AlertTriangle size={22} className="text-rose-500" />;
+              nextStepBg = "bg-rose-500/10 border-rose-500/30";
+              nextStepTitleColor = "text-rose-700 dark:text-rose-400";
+              nextStepAction = (
+                <Button onClick={() => openModal("delivery")} disabled={isPending} className="gap-2">
+                  <Truck size={16} /> Schedule Re-Delivery
+                </Button>
+              );
+            } else {
+              nextStepTitle = "Review Order";
+              nextStepDescription = "Review the current order status and take appropriate action.";
+              nextStepIcon = <Info size={22} className="text-primary" />;
+            }
 
-              {/* Assign Delivery Rider */}
-              {order.status === "READY_FOR_DELIVERY" &&
-                serviceMode === "PICKUP_DELIVERY" && (
+            return (
+              <div className={`rounded-2xl border p-5 ${nextStepBg}`}>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-white/60 dark:bg-white/10 flex items-center justify-center shrink-0">
+                    {nextStepIcon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">What To Do Next</p>
+                    <p className={`text-base font-bold ${nextStepTitleColor}`}>{nextStepTitle}</p>
+                    <p className="text-sm text-text-secondary mt-1 leading-relaxed">{nextStepDescription}</p>
+                    {nextStepAction && <div className="mt-4">{nextStepAction}</div>}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── TIER 2: More Actions (Collapsible) ── */}
+          {!isTerminal && (
+            <div className="border-t border-[var(--border-soft)] pt-3">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-foreground transition-colors w-full py-1"
+                onClick={() => setMoreActionsOpen((v) => !v)}
+              >
+                {moreActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {moreActionsOpen ? "Hide" : "Show"} More Actions
+              </button>
+              {moreActionsOpen && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {/* Assign Operator — AT_HOME only, not terminal */}
+                  {serviceMode === "AT_HOME" && (
+                    <Button
+                      variant="secondary"
+                      className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
+                      onClick={() => openModal("operator")}
+                    >
+                      <Users size={16} className={order.assignedOperatorAuthUserId ? "text-primary" : "text-amber-500"} />
+                      <span className="truncate">{order.assignedOperatorAuthUserId ? "Reassign Operator" : "Assign Operator"}</span>
+                    </Button>
+                  )}
+
+                  {/* Assign/Reassign Pickup Rider — only before RECEIVED_AT_BRANCH */}
+                  {serviceMode === "PICKUP_DELIVERY" &&
+                    ["PENDING", "CONFIRMED", "IN_PROGRESS", "PICKUP_FAILED"].includes(order.status) && (
+                      <Button
+                        variant="secondary"
+                        className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
+                        onClick={() => openModal("pickupRider")}
+                      >
+                        <Truck size={16} className={order.pickupRiderAuthUserId ? "text-primary" : "text-amber-500"} />
+                        <span className="truncate">{order.pickupRiderAuthUserId ? "Reassign Pickup Rider" : "Assign Pickup Rider"}</span>
+                      </Button>
+                    )}
+
+                  {/* Laundry Intake — only at RECEIVED_AT_BRANCH (or IN_PROGRESS for early intake) */}
+                  {serviceMode === "PICKUP_DELIVERY" &&
+                    ["IN_PROGRESS", "RECEIVED_AT_BRANCH"].includes(order.status) && (
+                      <Button
+                        variant="secondary"
+                        className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
+                        onClick={() => openModal("intake")}
+                      >
+                        <Package size={16} className={order.actualItemCount != null ? "text-primary" : "text-text-secondary"} />
+                        <span className="truncate">{order.actualItemCount != null ? "Update Intake" : "Laundry Intake"}</span>
+                      </Button>
+                    )}
+
+                  {/* Delivery — from READY_FOR_DELIVERY onward */}
+                  {serviceMode === "PICKUP_DELIVERY" &&
+                    ["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERY_FAILED"].includes(order.status) && (
+                      <Button
+                        variant="secondary"
+                        className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
+                        onClick={() => openModal("delivery")}
+                      >
+                        <Truck size={16} className={deliveryRiderAuthUserId ? "text-primary" : "text-amber-500"} />
+                        <span className="truncate">{deliveryRiderAuthUserId ? "Manage Delivery" : "Assign Delivery"}</span>
+                      </Button>
+                    )}
+
+                  {/* Manual status override */}
                   <Button
                     variant="secondary"
-                    className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
-                    onClick={() => openModal("delivery")}
+                    className="flex items-center justify-center gap-2 w-full shadow-sm"
+                    onClick={() => openModal("status")}
                   >
-                    <Truck
-                      size={16}
-                      className={
-                        deliveryRiderAuthUserId
-                          ? "text-primary"
-                          : "text-amber-500"
-                      }
-                    />
-                    <span className="truncate">
-                      {deliveryRiderAuthUserId
-                        ? "Delivery Assigned"
-                        : "Assign Delivery"}
-                    </span>
+                    <Activity size={16} className="text-text-secondary" />
+                    <span className="truncate">Override Status</span>
                   </Button>
-                )}
 
-              {/* Laundry Intake */}
-              {serviceMode === "PICKUP_DELIVERY" && !isTerminal && (
-                <Button
-                  variant="secondary"
-                  className="flex items-center justify-center gap-2 w-full shadow-sm hover:border-primary/50"
-                  onClick={() => openModal("intake")}
-                >
-                  <Package
-                    size={16}
-                    className={
-                      order.actualItemCount != null
-                        ? "text-primary"
-                        : "text-text-secondary"
-                    }
-                  />
-                  <span className="truncate">Laundry Intake</span>
-                </Button>
+                  {/* Payment update */}
+                  <Button
+                    variant="secondary"
+                    className="flex items-center justify-center gap-2 w-full shadow-sm"
+                    onClick={() => openModal("payment")}
+                  >
+                    <CreditCard size={16} className="text-text-secondary" />
+                    <span className="truncate">Update Payment</span>
+                  </Button>
+
+                  {/* Reschedule — only for statuses before delivery */}
+                  {["PENDING", "CONFIRMED", "IN_PROGRESS", "RECEIVED_AT_BRANCH", "PROCESSING", "READY_FOR_DELIVERY", "PICKUP_FAILED"].includes(order.status) && (
+                    <Button
+                      variant="secondary"
+                      className="flex items-center justify-center gap-2 w-full shadow-sm"
+                      onClick={() => openModal("reschedule")}
+                    >
+                      <Clock size={16} className="text-text-secondary" />
+                      <span className="truncate">Reschedule</span>
+                    </Button>
+                  )}
+                </div>
               )}
-
-              <Button
-                variant="secondary"
-                className="flex items-center justify-center gap-2 w-full shadow-sm"
-                onClick={() => openModal("status")}
-              >
-                <Activity size={16} className="text-text-secondary" />{" "}
-                <span className="truncate">Update Order Status</span>
-              </Button>
-
-              <Button
-                variant="secondary"
-                className="flex items-center justify-center gap-2 w-full shadow-sm"
-                onClick={() => openModal("payment")}
-              >
-                <CreditCard size={16} className="text-text-secondary" />{" "}
-                <span className="truncate">Update Payment</span>
-              </Button>
-
-              <Button
-                variant="secondary"
-                className="flex items-center justify-center gap-2 w-full shadow-sm"
-                onClick={() => openModal("reschedule")}
-              >
-                <Clock size={16} className="text-text-secondary" />{" "}
-                <span className="truncate">Reschedule</span>
-              </Button>
             </div>
-          </div>
+          )}
         </div>
       </Card>
 
@@ -1623,7 +1738,7 @@ export function OrderDetailManager({
               Cancel
             </Button>
             <Button
-              onClick={() => (window.location.href = "/admin/delivery-trips")}
+              onClick={() => (window.location.href = "/delivery-trips")}
             >
               Go to Delivery Trips
             </Button>
@@ -1646,7 +1761,7 @@ export function OrderDetailManager({
                 `/admin/orders/${order.id}/laundry-intake`,
                 "POST",
                 {
-                  orderCode: orderLabel(order),
+                  orderCode: order.orderCode || "",
                   actualItemCount: Number(formData.get("actualItemCount")),
                   continueWithMismatch:
                     formData.get("continueWithMismatch") === "on",
