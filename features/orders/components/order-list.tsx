@@ -60,9 +60,17 @@ const columns = [
             {order.serviceCategoryName ?? order.serviceCategoryCode ?? "Order"}
             {order.serviceName ? ` · ${order.serviceName}` : ""}
           </Link>
-          <p className="text-xs font-medium text-text-secondary mt-0.5">
-            {order.orderNumber || order.orderCode || "Order"}
-          </p>
+          </Link>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs font-medium text-text-secondary">
+              {order.orderNumber || order.orderCode || "Order"}
+            </p>
+            {order.bookingType === "ASAP" && (
+              <span className="inline-flex items-center rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                ⚡ ASAP
+              </span>
+            )}
+          </div>
         </div>
       );
     },
@@ -102,6 +110,35 @@ const columns = [
               ⚠ {alert}
             </span>
           ) : null}
+        </div>
+      );
+    },
+  }),
+  columnHelper.display({
+    id: "sla",
+    header: "SLA",
+    cell: (info) => {
+      const order = info.row.original;
+      if (order.bookingType !== "ASAP") return <span className="text-xs text-text-muted">—</span>;
+      
+      const statusMap: Record<string, { label: string; bg: string; text: string }> = {
+        PENDING: { label: "Pending", bg: "bg-blue-100", text: "text-blue-700" },
+        MET: { label: "Met", bg: "bg-green-100", text: "text-green-700" },
+        BREACHED: { label: "Breached", bg: "bg-red-100", text: "text-red-700" },
+        EXEMPT: { label: "Exempt", bg: "bg-gray-100", text: "text-gray-700" },
+      };
+      
+      const state = order.slaStatus ? statusMap[order.slaStatus] : statusMap["PENDING"];
+      return (
+        <div className="flex flex-col gap-1">
+          <span className={`inline-flex w-fit items-center rounded-sm px-1.5 py-0.5 text-[10px] font-semibold ${state.bg} ${state.text}`}>
+            {state.label}
+          </span>
+          {order.promisedArrivalTo && (
+            <span className="text-[10px] text-text-secondary">
+              By {new Date(order.promisedArrivalTo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
         </div>
       );
     },

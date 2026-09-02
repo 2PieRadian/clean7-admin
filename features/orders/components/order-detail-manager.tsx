@@ -695,6 +695,37 @@ export function OrderDetailManager({
       {/* ── Assignments & Items ── */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          {order.bookingType === "ASAP" && (
+            <Card className="space-y-4 bg-amber-500/5 border-amber-400/30">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                  <Clock size={18} /> Express SLA Tracking
+                </h3>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  order.slaStatus === "MET" ? "bg-green-100 text-green-700" :
+                  order.slaStatus === "BREACHED" ? "bg-red-100 text-red-700" :
+                  "bg-amber-100 text-amber-700"
+                }`}>
+                  {order.slaStatus || "PENDING"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700/70">Started At</p>
+                  <p className="text-sm font-medium text-amber-900 mt-0.5">
+                    {order.slaStartedAt ? new Date(order.slaStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700/70">Promised Arrival</p>
+                  <p className="text-sm font-medium text-amber-900 mt-0.5">
+                    {order.promisedArrivalTo ? new Date(order.promisedArrivalTo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Card className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Users size={18} className="text-text-secondary" /> Assignments

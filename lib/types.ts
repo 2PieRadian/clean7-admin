@@ -487,6 +487,13 @@ export type OrderResponse = {
   subtotalAmount?: string;
   addOnTotalAmount?: string;
   grandTotalAmount?: string;
+
+  bookingType?: "SCHEDULED" | "ASAP";
+  slaStatus?: "PENDING" | "MET" | "BREACHED" | "EXEMPT";
+  slaStartedAt?: string | null;
+  promisedArrivalFrom?: string | null;
+  promisedArrivalTo?: string | null;
+  actualArrivalTime?: string | null;
   items: OrderLineItemResponse[];
   fulfillment?: OrderFulfillmentSummary;
   /** May appear on detailed responses */
