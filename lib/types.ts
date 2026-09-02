@@ -544,7 +544,24 @@ export type ProofArtifactResponse = {
   updatedAt: string;
 };
 
+export type ProfileAddress = {
+  id: string;
+  label: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type ProfileResponse = {
+  id?: string;
   authUserId: string;
   email: string;
   role: UserRole;
@@ -559,6 +576,9 @@ export type ProfileResponse = {
     smsOptIn?: boolean;
     whatsappOptIn?: boolean;
   };
+  addresses?: ProfileAddress[];
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ApplicationStatus = "PENDING" | "REVIEWED" | "SHORTLISTED" | "ACCEPTED" | "REJECTED";

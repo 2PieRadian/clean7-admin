@@ -3,8 +3,27 @@
 import * as React from "react";
 import { Button } from "./button";
 
-export function AlertDialog({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(false);
+export function AlertDialog({
+  open: controlledOpen,
+  onOpenChange,
+  children,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = React.useCallback(
+    (nextOpen: boolean) => {
+      if (!isControlled) {
+        setUncontrolledOpen(nextOpen);
+      }
+      onOpenChange?.(nextOpen);
+    },
+    [isControlled, onOpenChange]
+  );
 
   return (
     <AlertDialogContext.Provider value={{ open, setOpen }}>
@@ -75,10 +94,22 @@ export function AlertDialogFooter({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AlertDialogCancel({ children }: { children: React.ReactNode }) {
+export function AlertDialogCancel({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   const { setOpen } = React.useContext(AlertDialogContext);
   return (
-    <Button variant="secondary" onClick={() => setOpen(false)}>
+    <Button
+      variant="secondary"
+      onClick={() => {
+        if (onClick) onClick();
+        setOpen(false);
+      }}
+    >
       {children}
     </Button>
   );

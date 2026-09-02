@@ -88,7 +88,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         icon: UserCog,
         directorOnly: true,
       },
-      { href: "/customers", label: "Customers", icon: ContactRound },
+      { href: "/users", label: "Users", icon: ContactRound },
       { href: "/newsletters", label: "Newsletters", icon: Mail, directorOnly: true },
     ],
   },
@@ -242,8 +242,13 @@ function isActivePath(pathname: string, href: string) {
     return pathname === "/blogs" || pathname.startsWith("/blogs/");
   }
 
-  if (href === "/customers") {
-    return pathname === "/customers" || pathname.startsWith("/customers/");
+  if (href === "/users" || href === "/customers") {
+    return (
+      pathname === "/users" ||
+      pathname.startsWith("/users/") ||
+      pathname === "/customers" ||
+      pathname.startsWith("/customers/")
+    );
   }
 
   if (href === "/payments") {
