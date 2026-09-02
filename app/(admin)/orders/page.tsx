@@ -83,8 +83,8 @@ export default function OrdersPage() {
 
   const quickFilterLabels: Record<QuickFilter, string> = {
     "": "",
-    pickup_unassigned: "Pickup not Assigned",
-    delivery_unassigned: "Delivery not Assigned",
+    pickup_unassigned: "Needs Pickup Rider",
+    delivery_unassigned: "Needs Delivery Rider",
   };
 
   return (

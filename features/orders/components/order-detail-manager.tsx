@@ -10,6 +10,8 @@ import { Field, Select, TextArea } from "@/components/ui/field";
 import {
   formatDateTime,
   formatMoney,
+  formatTime,
+  deliveryPromiseInfo,
   humanizeBlocker,
   humanizeToken,
   orderStatusLabel,
@@ -40,6 +42,9 @@ import {
   X,
   Camera,
   Download,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { downloadOrderInvoice } from "../api/order-api";
 
@@ -728,30 +733,40 @@ export function OrderDetailManager({
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           {order.bookingType === "ASAP" && (
-            <Card className="space-y-4 bg-amber-500/5 border-amber-400/30">
+            <Card className="space-y-3 bg-amber-500/5 border-amber-400/30">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
-                  <Clock size={18} /> Express SLA Tracking
+                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+                  <Zap size={18} className="text-amber-600" /> Express Delivery Target
                 </h3>
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  order.slaStatus === "MET" ? "bg-green-100 text-green-700" :
-                  order.slaStatus === "BREACHED" ? "bg-red-100 text-red-700" :
-                  "bg-amber-100 text-amber-700"
-                }`}>
-                  {order.slaStatus || "PENDING"}
-                </span>
+                {(() => {
+                  const promise = deliveryPromiseInfo(order);
+                  return (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${promise.badgeClass}`}>
+                      {promise.isOverdue && <AlertTriangle className="h-3 w-3" />}
+                      {!promise.isOverdue && <CheckCircle2 className="h-3 w-3" />}
+                      {promise.statusLabel}
+                    </span>
+                  );
+                })()}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-xs text-text-secondary">
+                Customer ordered with ASAP express delivery. Target fulfillment window is shown below.
+              </p>
+              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-amber-300/30">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700/70">Started At</p>
-                  <p className="text-sm font-medium text-amber-900 mt-0.5">
-                    {order.slaStartedAt ? new Date(order.slaStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800/70 dark:text-amber-300/70">
+                    Dispatched / Started
+                  </p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">
+                    {order.slaStartedAt ? formatTime(order.slaStartedAt) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700/70">Promised Arrival</p>
-                  <p className="text-sm font-medium text-amber-900 mt-0.5">
-                    {order.promisedArrivalTo ? new Date(order.promisedArrivalTo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800/70 dark:text-amber-300/70">
+                    Target Arrival Window
+                  </p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">
+                    {order.promisedArrivalTo ? formatTime(order.promisedArrivalTo) : "—"}
                   </p>
                 </div>
               </div>

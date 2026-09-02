@@ -55,6 +55,20 @@ export function formatDateTime(value?: string | null) {
   }).format(date);
 }
 
+export function formatTime(value?: string | null) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+
 export function humanizeToken(value?: string | null) {
   if (!value) return "—";
   return value
@@ -272,3 +286,147 @@ export function getStatusTone(
 export function getServiceModeTone(mode?: ServiceMode | null) {
   return mode === "PICKUP_DELIVERY" ? "service-blue" : "service-orange";
 }
+
+export type DeliveryPromiseInfo = {
+  isAsap: boolean;
+  typeLabel: string;
+  statusLabel: string;
+  badgeClass: string;
+  timeDetail: string;
+  isOverdue: boolean;
+};
+
+export function deliveryPromiseInfo(order: OrderResponse): DeliveryPromiseInfo {
+  if (order.bookingType === "ASAP") {
+    let statusLabel = "In Progress";
+    let badgeClass = "bg-sky-500/10 text-sky-700 ring-1 ring-sky-500/20";
+    let isOverdue = false;
+
+    if (order.slaStatus === "MET" || order.status === "COMPLETED" || order.status === "DELIVERED") {
+      statusLabel = "Delivered on Time";
+      badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
+    } else if (order.slaStatus === "BREACHED") {
+      statusLabel = "Delayed past target";
+      badgeClass = "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20";
+      isOverdue = true;
+    } else if (order.slaStatus === "ON_TRACK") {
+      statusLabel = "On Track";
+      badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
+    } else if (order.slaStatus === "AT_RISK") {
+      statusLabel = "Running Late";
+      badgeClass = "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20";
+    } else if (order.slaStatus === "NOT_STARTED") {
+      statusLabel = "Starting Soon";
+      badgeClass = "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300";
+    }
+
+    const timeDetail = order.promisedArrivalTo
+      ? `Target: ${formatTime(order.promisedArrivalTo)}`
+      : order.slaStartedAt
+        ? `Started: ${formatTime(order.slaStartedAt)}`
+        : "Urgent delivery window";
+
+    return {
+      isAsap: true,
+      typeLabel: "⚡ ASAP Express",
+      statusLabel,
+      badgeClass,
+      timeDetail,
+      isOverdue,
+    };
+  }
+
+  // Scheduled order
+  const slotName = scheduledSlotLabel(order.scheduledSlotCode);
+  if (!order.scheduledDate) {
+    return {
+      isAsap: false,
+      typeLabel: "📅 Scheduled",
+      statusLabel: slotName,
+      badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300",
+      timeDetail: slotName,
+      isOverdue: false,
+    };
+  }
+
+  const dateStr = String(order.scheduledDate).slice(0, 10);
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+  let datePrefix = formatDate(order.scheduledDate);
+  if (dateStr === todayStr) {
+    datePrefix = "Today";
+  } else if (dateStr === tomorrowStr) {
+    datePrefix = "Tomorrow";
+  }
+
+  const isCompleted = order.status === "COMPLETED" || order.status === "DELIVERED" || order.status === "CANCELLED";
+  const isPast = dateStr < todayStr && !isCompleted;
+
+  let statusLabel = `${datePrefix} · ${slotName}`;
+  let badgeClass = "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300";
+
+  if (isPast) {
+    statusLabel = `Delayed (Was ${formatDate(order.scheduledDate)})`;
+    badgeClass = "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20";
+  } else if (isCompleted) {
+    statusLabel = "Delivered";
+    badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
+  } else if (dateStr === todayStr) {
+    statusLabel = `Due Today · ${slotName}`;
+    badgeClass = "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20";
+  }
+
+  return {
+    isAsap: false,
+    typeLabel: "📅 Scheduled",
+    statusLabel,
+    badgeClass,
+    timeDetail: `${datePrefix} · ${slotName}`,
+    isOverdue: isPast,
+  };
+}
+
+export function paymentBadgeInfo(status?: string | null) {
+  switch (status) {
+    case "PAID":
+      return {
+        label: "Paid",
+        badgeClass: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
+      };
+    case "COD_PENDING_COLLECTION":
+      return {
+        label: "COD to Collect",
+        badgeClass: "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/20",
+      };
+    case "COD_COLLECTED":
+      return {
+        label: "COD Collected",
+        badgeClass: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
+      };
+    case "PENDING":
+      return {
+        label: "Payment Pending",
+        badgeClass: "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20",
+      };
+    case "FAILED":
+      return {
+        label: "Payment Failed",
+        badgeClass: "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20",
+      };
+    case "REFUNDED":
+      return {
+        label: "Refunded",
+        badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300",
+      };
+    default:
+      return {
+        label: humanizeToken(status),
+        badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300",
+      };
+  }
+}
+

@@ -492,7 +492,17 @@ export type OrderResponse = {
   grandTotalAmount?: string;
 
   bookingType?: "SCHEDULED" | "ASAP";
-  slaStatus?: "PENDING" | "MET" | "BREACHED" | "EXEMPT";
+  slaStatus?:
+  | "PENDING"
+  | "MET"
+  | "BREACHED"
+  | "EXEMPT"
+  | "ON_TRACK"
+  | "AT_RISK"
+  | "NOT_STARTED"
+  | "COMPLETED_ON_TIME"
+  | "NOT_APPLICABLE"
+  | string;
   slaStartedAt?: string | null;
   promisedArrivalFrom?: string | null;
   promisedArrivalTo?: string | null;
