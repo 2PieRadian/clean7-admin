@@ -512,6 +512,7 @@ export type OrderResponse = {
   /** May appear on detailed responses */
   assignedOperatorAuthUserId?: string | null;
   pickupRiderAuthUserId?: string | null;
+  pickupCompletedAt?: string | null;
   /** Legacy alias */
   orderCode?: string;
   /** Optional extended detail fields */

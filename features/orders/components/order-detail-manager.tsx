@@ -45,6 +45,9 @@ import {
   Zap,
   AlertTriangle,
   CheckCircle2,
+  PhoneCall,
+  Bike,
+  UserCheck,
 } from "lucide-react";
 import { downloadOrderInvoice } from "../api/order-api";
 
@@ -204,6 +207,19 @@ export function OrderDetailManager({
     trip.stops.some((stop) => stop.orderId === order.id),
   );
   const deliveryRiderAuthUserId = deliveryTrip?.riderAuthUserId;
+
+  const pickupRider = useMemo(
+    () => operators.find((o) => o.authUserId === order.pickupRiderAuthUserId),
+    [operators, order.pickupRiderAuthUserId],
+  );
+  const deliveryRider = useMemo(
+    () => operators.find((o) => o.authUserId === deliveryRiderAuthUserId),
+    [operators, deliveryRiderAuthUserId],
+  );
+  const assignedOperator = useMemo(
+    () => operators.find((o) => o.authUserId === order.assignedOperatorAuthUserId),
+    [operators, order.assignedOperatorAuthUserId],
+  );
 
   const itemsByService = useMemo(
     () => groupItemsByService(order.items),
@@ -833,80 +849,297 @@ export function OrderDetailManager({
             </Card>
           )}
 
+          {/* ── Assigned Rider & Staff Details ── */}
           <Card className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Users size={18} className="text-text-secondary" /> Assignments
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                ...(serviceMode === "AT_HOME"
-                  ? [
-                    {
-                      label: "Operator",
-                      value: getOperatorDisplay(
-                        order.assignedOperatorAuthUserId,
-                        operators,
-                      ),
-                      warn:
-                        !order.assignedOperatorAuthUserId &&
-                        serviceMode === "AT_HOME",
-                    },
-                  ]
-                  : []),
-                ...(serviceMode === "PICKUP_DELIVERY"
-                  ? [
-                    {
-                      label: "Pickup Rider",
-                      value: getOperatorDisplay(
-                        order.pickupRiderAuthUserId,
-                        operators,
-                      ),
-                      warn:
-                        !order.pickupRiderAuthUserId &&
-                        (order.status === "CONFIRMED" ||
-                          order.status === "IN_PROGRESS"),
-                    },
-                    {
-                      label: "Delivery Rider",
-                      value: getOperatorDisplay(
-                        deliveryRiderAuthUserId,
-                        operators,
-                      ),
-                      warn:
-                        !deliveryRiderAuthUserId &&
-                        order.status === "READY_FOR_DELIVERY",
-                    },
-                  ]
-                  : []),
-              ].map(({ label, value, warn }) => (
-                <div
-                  key={label}
-                  className={`rounded-xl p-3 border ${warn ? "bg-amber-500/10 border-amber-400/30" : "bg-surface-muted border-[var(--border-soft)]"}`}
-                >
-                  <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                    {label}
-                  </p>
-                  <p
-                    className={`mt-1.5 text-sm font-medium ${warn ? "text-amber-700" : "text-foreground"}`}
-                  >
-                    {value}
-                    {warn ? " ⚠" : ""}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center justify-between border-b border-[var(--border-soft)] pb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Users size={18} className="text-text-secondary" /> Assigned Staff & Riders
+              </h3>
+              <span className="text-xs text-text-muted">
+                {serviceMode === "PICKUP_DELIVERY" ? "Pickup & Delivery Personnel" : "At-Home Service Personnel"}
+              </span>
             </div>
-            {blockers.length > 0 ? (
-              <div className="flex flex-wrap gap-2 pt-2">
+
+            {serviceMode === "PICKUP_DELIVERY" ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Pickup Rider Card */}
+                <div className={`rounded-2xl p-4 border transition-all ${pickupRider
+                  ? "bg-amber-500/5 border-amber-500/30"
+                  : (order.status === "CONFIRMED" || order.status === "IN_PROGRESS")
+                    ? "bg-rose-500/5 border-rose-500/30"
+                    : "bg-surface-muted border-[var(--border-soft)]"
+                  }`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      <Bike className="h-3.5 w-3.5" /> Pickup Rider
+                    </span>
+                    {pickupRider ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" /> Assigned
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/40 px-2.5 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertTriangle className="h-3 w-3" /> Not Assigned
+                      </span>
+                    )}
+                  </div>
+
+                  {pickupRider ? (
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <p className="text-base font-bold text-foreground">
+                          {pickupRider.displayName}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {order.pickupCompletedAt
+                            ? `✓ Laundry pickup completed (${formatDateTime(order.pickupCompletedAt)})`
+                            : "Assigned to collect laundry from customer's address"}
+                        </p>
+                      </div>
+
+                      {pickupRider.phoneNumber ? (
+                        <div className="flex items-center gap-2 pt-1">
+                          <a
+                            href={`tel:${pickupRider.phoneNumber}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                            Call: {pickupRider.phoneNumber}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-text-muted italic">No phone number recorded</p>
+                      )}
+
+                      {(pickupRider.vehicleType || pickupRider.vehicleNumber) && (
+                        <div className="pt-2 border-t border-amber-500/20 text-xs text-text-secondary flex items-center gap-2">
+                          <Truck className="h-3.5 w-3.5 text-amber-600" />
+                          <span>
+                            Vehicle: <strong className="text-foreground font-semibold">{pickupRider.vehicleType || "Two Wheeler"}</strong>
+                            {pickupRider.vehicleNumber && ` (${pickupRider.vehicleNumber})`}
+                          </span>
+                        </div>
+                      )}
+
+                      {!isTerminal && (
+                        <div className="pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-text-secondary hover:text-foreground h-7 px-2"
+                            onClick={() => openModal("pickupRider")}
+                          >
+                            Change / Reassign Rider →
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-text-secondary">
+                        No rider has been assigned yet to collect laundry from this customer.
+                      </p>
+                      {!isTerminal && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold gap-1.5 mt-2"
+                          onClick={() => openModal("pickupRider")}
+                        >
+                          <Bike className="h-4 w-4" /> Assign Pickup Rider
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Rider Card */}
+                <div className={`rounded-2xl p-4 border transition-all ${deliveryRider
+                  ? "bg-blue-500/5 border-blue-500/30"
+                  : order.status === "READY_FOR_DELIVERY"
+                    ? "bg-rose-500/5 border-rose-500/30"
+                    : "bg-surface-muted border-[var(--border-soft)]"
+                  }`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+                      <Truck className="h-3.5 w-3.5" /> Delivery Rider
+                    </span>
+                    {deliveryRider ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" /> Assigned
+                      </span>
+                    ) : order.status === "READY_FOR_DELIVERY" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/40 px-2.5 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                        <AlertTriangle className="h-3 w-3" /> Ready for Dispatch
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-[11px] font-medium text-text-muted">
+                        Pending Processing
+                      </span>
+                    )}
+                  </div>
+
+                  {deliveryRider ? (
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <p className="text-base font-bold text-foreground">
+                          {deliveryRider.displayName}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {order.status === "OUT_FOR_DELIVERY"
+                            ? "Rider is actively out for delivery to customer"
+                            : order.status === "DELIVERED" || order.status === "COMPLETED"
+                              ? "✓ Laundry delivered to customer"
+                              : "Assigned to return cleaned laundry to customer"}
+                        </p>
+                      </div>
+
+                      {deliveryRider.phoneNumber ? (
+                        <div className="flex items-center gap-2 pt-1">
+                          <a
+                            href={`tel:${deliveryRider.phoneNumber}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                            Call: {deliveryRider.phoneNumber}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-text-muted italic">No phone number recorded</p>
+                      )}
+
+                      {(deliveryRider.vehicleType || deliveryRider.vehicleNumber) && (
+                        <div className="pt-2 border-t border-blue-500/20 text-xs text-text-secondary flex items-center gap-2">
+                          <Truck className="h-3.5 w-3.5 text-blue-600" />
+                          <span>
+                            Vehicle: <strong className="text-foreground font-semibold">{deliveryRider.vehicleType || "Vehicle"}</strong>
+                            {deliveryRider.vehicleNumber && ` (${deliveryRider.vehicleNumber})`}
+                          </span>
+                        </div>
+                      )}
+
+                      {order.status === "READY_FOR_DELIVERY" && (
+                        <div className="pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-text-secondary hover:text-foreground h-7 px-2"
+                            onClick={() => openModal("delivery")}
+                          >
+                            Manage Delivery Assignment →
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-text-secondary">
+                        {order.status === "READY_FOR_DELIVERY"
+                          ? "Laundry is processed and ready. Assign to a delivery trip to dispatch to customer."
+                          : "Delivery rider will be assigned once laundry processing completes at the facility."}
+                      </p>
+                      {order.status === "READY_FOR_DELIVERY" && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 mt-2"
+                          onClick={() => openModal("delivery")}
+                        >
+                          <Truck className="h-4 w-4" /> Assign Delivery Rider
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* At-Home Service Professional Card */
+              <div className={`rounded-2xl p-4 border transition-all ${assignedOperator
+                ? "bg-emerald-500/5 border-emerald-500/30"
+                : "bg-amber-500/5 border-amber-500/30"
+                }`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    <UserCheck className="h-3.5 w-3.5" /> Service Professional
+                  </span>
+                  {assignedOperator ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3 w-3" /> Assigned
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-3 w-3" /> Unassigned
+                    </span>
+                  )}
+                </div>
+
+                {assignedOperator ? (
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      <p className="text-base font-bold text-foreground">
+                        {assignedOperator.displayName}
+                      </p>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        Assigned to perform on-site service at customer address
+                      </p>
+                    </div>
+
+                    {assignedOperator.phoneNumber ? (
+                      <div className="flex items-center gap-2 pt-1">
+                        <a
+                          href={`tel:${assignedOperator.phoneNumber}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                        >
+                          <PhoneCall className="h-3.5 w-3.5" />
+                          Call: {assignedOperator.phoneNumber}
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-text-muted italic">No phone number recorded</p>
+                    )}
+
+                    {!isTerminal && (
+                      <div className="pt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-text-secondary hover:text-foreground h-7 px-2"
+                          onClick={() => openModal("operator")}
+                        >
+                          Reassign Professional →
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-text-secondary">
+                      No service professional is assigned yet to execute this at-home booking.
+                    </p>
+                    {!isTerminal && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 mt-2"
+                        onClick={() => openModal("operator")}
+                      >
+                        <UserCheck className="h-4 w-4" /> Assign Service Professional
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {blockers.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--border-soft)]">
                 {blockers.map((b) => (
                   <span
                     key={b}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-600 border border-rose-400/30 shadow-sm"
+                    className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400"
                   >
                     ⚠ {humanizeBlocker(b)}
                   </span>
                 ))}
               </div>
-            ) : null}
+            )}
           </Card>
 
           <Card className="space-y-4">

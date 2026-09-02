@@ -23,11 +23,12 @@ function orderLabel(order: OrderResponse) {
   return order.orderNumber || order.orderCode || "Order";
 }
 
-type QuickFilter = "" | "pickup_unassigned" | "delivery_unassigned";
+type QuickFilter = "" | "pickup_unassigned" | "delivery_unassigned" | "booking_asap" | "booking_scheduled";
 
 export default function OrdersPage() {
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
+  const [bookingTypeFilter, setBookingTypeFilter] = useState("");
   const [slotFilter, setSlotFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -55,6 +56,7 @@ export default function OrdersPage() {
     const q = search.trim().toLowerCase();
     return orders.filter((order) => {
       if (branchFilter && order.branchId !== branchFilter) return false;
+      if (bookingTypeFilter && order.bookingType !== bookingTypeFilter) return false;
       if (slotFilter && order.scheduledSlotCode !== slotFilter) return false;
       if (dateFilter && order.scheduledDate && !order.scheduledDate.startsWith(dateFilter)) return false;
       if (statusFilter && order.status !== statusFilter) return false;
@@ -67,8 +69,12 @@ export default function OrdersPage() {
       }
       if (quickFilter === "delivery_unassigned") {
         if (order.status !== DELIVERY_UNASSIGNED_STATUS) return false;
-        // Delivery unassigned means no delivery trip covering this order — we flag it in the list
-        // For filtering purposes we keep all READY_FOR_DELIVERY; trip info isn't available here
+      }
+      if (quickFilter === "booking_asap") {
+        if (order.bookingType !== "ASAP") return false;
+      }
+      if (quickFilter === "booking_scheduled") {
+        if (order.bookingType !== "SCHEDULED") return false;
       }
 
       if (!q) return true;
@@ -79,12 +85,14 @@ export default function OrdersPage() {
         (order.serviceCategoryName ?? order.serviceCategoryCode ?? "").toLowerCase().includes(q)
       );
     });
-  }, [orders, branchFilter, slotFilter, dateFilter, statusFilter, paymentStatusFilter, quickFilter, search]);
+  }, [orders, branchFilter, bookingTypeFilter, slotFilter, dateFilter, statusFilter, paymentStatusFilter, quickFilter, search]);
 
   const quickFilterLabels: Record<QuickFilter, string> = {
     "": "",
     pickup_unassigned: "Needs Pickup Rider",
     delivery_unassigned: "Needs Delivery Rider",
+    booking_asap: "⚡ 2-Hour Express Orders",
+    booking_scheduled: "📅 Scheduled Slot Orders",
   };
 
   return (
@@ -99,7 +107,7 @@ export default function OrdersPage() {
         {/* Row 2 — Quick-filter pills */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Quick</span>
-          {(["pickup_unassigned", "delivery_unassigned"] as QuickFilter[]).map((f) => (
+          {(["pickup_unassigned", "delivery_unassigned", "booking_asap", "booking_scheduled"] as QuickFilter[]).map((f) => (
             <button
               key={f}
               type="button"
@@ -107,12 +115,24 @@ export default function OrdersPage() {
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${quickFilter === f
                 ? f === "pickup_unassigned"
                   ? "bg-amber-500 text-white shadow-md"
-                  : "bg-rose-500 text-white shadow-md"
+                  : f === "delivery_unassigned"
+                    ? "bg-rose-500 text-white shadow-md"
+                    : f === "booking_asap"
+                      ? "bg-amber-600 text-white shadow-md ring-2 ring-amber-400"
+                      : "bg-blue-600 text-white shadow-md ring-2 ring-blue-400"
                 : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground"
                 }`}
             >
               <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${quickFilter === f ? "bg-white" : f === "pickup_unassigned" ? "bg-amber-400" : "bg-rose-400"
+                className={`inline-block h-1.5 w-1.5 rounded-full ${quickFilter === f
+                  ? "bg-white"
+                  : f === "pickup_unassigned"
+                    ? "bg-amber-400"
+                    : f === "delivery_unassigned"
+                      ? "bg-rose-400"
+                      : f === "booking_asap"
+                        ? "bg-amber-500"
+                        : "bg-blue-500"
                   }`}
               />
               {quickFilterLabels[f]}
@@ -130,14 +150,14 @@ export default function OrdersPage() {
         </div>
 
         {/* Row 3 — Local filters */}
-        <div className="grid gap-3 border-t border-[var(--border-soft)] pt-4 md:grid-cols-3">
+        <div className="grid gap-3 border-t border-[var(--border-soft)] pt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <select
             className="input-surface px-3 py-2 text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             aria-label="Filter by order status"
           >
-            <option value="">Order Status</option>
+            <option value="">All Statuses</option>
             {orderStatuses.map((s) => (
               <option key={s} value={s}>{humanizeToken(s)}</option>
             ))}
@@ -154,12 +174,22 @@ export default function OrdersPage() {
             ))}
           </select>
           <select
+            className="input-surface px-3 py-2 text-sm font-medium"
+            value={bookingTypeFilter}
+            onChange={(e) => setBookingTypeFilter(e.target.value)}
+            aria-label="Filter by booking mode"
+          >
+            <option value="">All Delivery Modes</option>
+            <option value="ASAP">⚡ 2-Hour Express</option>
+            <option value="SCHEDULED">📅 Scheduled Slot</option>
+          </select>
+          <select
             className="input-surface px-3 py-2 text-sm"
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
             aria-label="Filter by branch"
           >
-            <option value="">Select Branch</option>
+            <option value="">All Branches</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
