@@ -357,17 +357,27 @@ export function OrderDetailManager({
                   {order.paymentStatus === "COD_COLLECTED" ? "COD COLLECTED ✓" : "PAID IN FULL ✓"}
                 </span>
               ) : order.paymentStatus === "PENDING" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 px-3 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Clock className="h-3.5 w-3.5 text-amber-500" />
-                  PAYMENT PENDING
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border-2 border-amber-500/50 px-3.5 py-1 text-xs font-black tracking-wider text-amber-600 dark:text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.35)] animate-pulse">
+                  <Clock className="h-4 w-4 text-amber-500" />
+                  PAYMENT PENDING ⏳
                 </span>
               ) : order.paymentStatus === "COD_PENDING_COLLECTION" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/40 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400">
-                  <CreditCard className="h-3.5 w-3.5 text-blue-500" />
-                  COD PENDING
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border-2 border-blue-500/50 px-3.5 py-1 text-xs font-black tracking-wider text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.35)] animate-pulse">
+                  <CreditCard className="h-4 w-4 text-blue-500" />
+                  COD TO COLLECT 💵
+                </span>
+              ) : order.paymentStatus === "FAILED" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 border-2 border-rose-500/50 px-3.5 py-1 text-xs font-black tracking-wider text-rose-600 dark:text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.35)] animate-pulse">
+                  <AlertTriangle className="h-4 w-4 text-rose-500" />
+                  PAYMENT FAILED ✗
+                </span>
+              ) : order.paymentStatus === "REFUNDED" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 border-2 border-purple-500/50 px-3.5 py-1 text-xs font-black tracking-wider text-purple-600 dark:text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.35)]">
+                  <Activity className="h-4 w-4 text-purple-500" />
+                  REFUNDED ↺
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 border border-rose-500/40 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-500/15 border-2 border-slate-500/40 px-3.5 py-1 text-xs font-black tracking-wider text-slate-600 dark:text-slate-400">
                   {paymentStatusLabel(order.paymentStatus)}
                 </span>
               )}
@@ -481,16 +491,27 @@ export function OrderDetailManager({
                     {order.paymentStatus === "COD_COLLECTED" ? "COD Collected" : "Paid"}
                   </span>
                 ) : order.paymentStatus === "PENDING" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/40 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400 shadow-sm">
                     <Clock className="h-3 w-3" />
                     Pending
                   </span>
                 ) : order.paymentStatus === "COD_PENDING_COLLECTION" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/40 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-400 shadow-sm">
+                    <CreditCard className="h-3 w-3" />
                     COD to Collect
                   </span>
+                ) : order.paymentStatus === "FAILED" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/40 px-2.5 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-sm">
+                    <AlertTriangle className="h-3 w-3" />
+                    Failed
+                  </span>
+                ) : order.paymentStatus === "REFUNDED" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2.5 py-0.5 text-xs font-bold text-purple-600 dark:text-purple-400 shadow-sm">
+                    <Activity className="h-3 w-3" />
+                    Refunded
+                  </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-600">
+                  <span className="inline-flex items-center rounded-full bg-slate-500/15 border border-slate-500/30 px-2.5 py-0.5 text-xs font-bold text-slate-600">
                     {paymentStatusLabel(order.paymentStatus)}
                   </span>
                 )}
@@ -1025,14 +1046,14 @@ export function OrderDetailManager({
 
               {/* Prominent Payment Status Banner */}
               {order.paymentStatus === "PAID" || order.paymentStatus === "COD_COLLECTED" ? (
-                <div className="mt-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 p-3.5 flex items-center justify-between shadow-sm">
+                <div className="mt-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/40 p-3.5 flex items-center justify-between shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/30">
                       <CheckCircle2 className="h-4 w-4" />
                     </span>
                     <div>
                       <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
-                        Payment Verified & Received
+                        {order.paymentStatus === "COD_COLLECTED" ? "Cash Collected & Verified" : "Payment Verified & Received"}
                       </p>
                       <p className="text-[11px] text-emerald-700/90 dark:text-emerald-400 font-medium">
                         {formatMoney(grandTotal, order.currency)} paid via {humanizeToken(order.paymentMethod)}
@@ -1040,11 +1061,11 @@ export function OrderDetailManager({
                     </div>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-black tracking-wider text-white shadow-sm">
-                    PAID ✓
+                    {order.paymentStatus === "COD_COLLECTED" ? "COLLECTED ✓" : "PAID ✓"}
                   </span>
                 </div>
               ) : order.paymentStatus === "PENDING" ? (
-                <div className="mt-3 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 p-3.5 flex items-center justify-between shadow-sm">
+                <div className="mt-3 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-3.5 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.15)]">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30">
                       <Clock className="h-4 w-4" />
@@ -1059,11 +1080,11 @@ export function OrderDetailManager({
                     </div>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-amber-600 px-3 py-1 text-xs font-black tracking-wider text-white shadow-sm">
-                    UNPAID
+                    UNPAID ⏳
                   </span>
                 </div>
               ) : order.paymentStatus === "COD_PENDING_COLLECTION" ? (
-                <div className="mt-3 rounded-2xl bg-blue-500/10 border-2 border-blue-500/30 p-3.5 flex items-center justify-between shadow-sm">
+                <div className="mt-3 rounded-2xl bg-blue-500/10 border-2 border-blue-500/40 p-3.5 flex items-center justify-between shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-md shadow-blue-500/30">
                       <CreditCard className="h-4 w-4" />
@@ -1073,12 +1094,50 @@ export function OrderDetailManager({
                         Cash on Delivery Required
                       </p>
                       <p className="text-[11px] text-blue-700/90 dark:text-blue-400 font-medium">
-                        Rider must collect {formatMoney(grandTotal, order.currency)} in cash/UPI upon delivery
+                        Rider must collect {formatMoney(grandTotal, order.currency)} upon delivery
                       </p>
                     </div>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-blue-600 px-3 py-1 text-xs font-black tracking-wider text-white shadow-sm">
-                    COD TO COLLECT
+                    COD TO COLLECT 💵
+                  </span>
+                </div>
+              ) : order.paymentStatus === "FAILED" ? (
+                <div className="mt-3 rounded-2xl bg-rose-500/10 border-2 border-rose-500/40 p-3.5 flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.15)]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 text-white shadow-md shadow-rose-500/30">
+                      <AlertTriangle className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wide">
+                        Payment Failed
+                      </p>
+                      <p className="text-[11px] text-rose-700/90 dark:text-rose-400 font-medium">
+                        Transaction of {formatMoney(grandTotal, order.currency)} failed via {humanizeToken(order.paymentMethod)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-rose-600 px-3 py-1 text-xs font-black tracking-wider text-white shadow-sm">
+                    FAILED ✗
+                  </span>
+                </div>
+              ) : order.paymentStatus === "REFUNDED" ? (
+                <div className="mt-3 rounded-2xl bg-purple-500/10 border-2 border-purple-500/40 p-3.5 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-white shadow-md shadow-purple-500/30">
+                      <Activity className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wide">
+                        Payment Refunded
+                      </p>
+                      <p className="text-[11px] text-purple-700/90 dark:text-purple-400 font-medium">
+                        Amount of {formatMoney(grandTotal, order.currency)} was refunded to customer
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-purple-600 px-3 py-1 text-xs font-black tracking-wider text-white shadow-sm">
+                    REFUNDED ↺
                   </span>
                 </div>
               ) : null}

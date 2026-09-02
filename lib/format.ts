@@ -394,33 +394,33 @@ export function paymentBadgeInfo(status?: string | null) {
   switch (status) {
     case "PAID":
       return {
-        label: "Paid",
-        badgeClass: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
+        label: "Paid ✓",
+        badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/40 font-bold",
       };
     case "COD_PENDING_COLLECTION":
       return {
-        label: "COD to Collect",
-        badgeClass: "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/20",
+        label: "COD to Collect 💵",
+        badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/40 font-bold",
       };
     case "COD_COLLECTED":
       return {
-        label: "COD Collected",
-        badgeClass: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
+        label: "COD Collected ✓",
+        badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/40 font-bold",
       };
     case "PENDING":
       return {
-        label: "Payment Pending",
-        badgeClass: "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20",
+        label: "Payment Pending ⏳",
+        badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/40 font-bold",
       };
     case "FAILED":
       return {
-        label: "Payment Failed",
-        badgeClass: "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20",
+        label: "Payment Failed ✗",
+        badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-1 ring-rose-500/40 font-bold",
       };
     case "REFUNDED":
       return {
-        label: "Refunded",
-        badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300",
+        label: "Refunded ↺",
+        badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 ring-1 ring-purple-500/40 font-bold",
       };
     default:
       return {
