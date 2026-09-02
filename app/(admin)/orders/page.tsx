@@ -74,7 +74,8 @@ export default function OrdersPage() {
       if (!q) return true;
       return (
         orderLabel(order).toLowerCase().includes(q) ||
-        order.customerAuthUserId.toLowerCase().includes(q) ||
+        (order.customerAuthUserId ? order.customerAuthUserId.toLowerCase().includes(q) : false) ||
+        (order.contactSnapshot?.fullName ? order.contactSnapshot.fullName.toLowerCase().includes(q) : false) ||
         (order.serviceCategoryName ?? order.serviceCategoryCode ?? "").toLowerCase().includes(q)
       );
     });

@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import {
   formatDate,
   formatMoney,
+  humanizeToken,
   orderFulfillmentSurface,
   orderStatusLabel,
   paymentStatusLabel,
@@ -21,7 +22,8 @@ import {
 } from "@/lib/format";
 import type { OrderResponse, BranchAdminResponse } from "@/lib/types";
 
-function shortCustomerRef(id: string) {
+function shortCustomerRef(id?: string | null) {
+  if (!id) return "—";
   if (id.length <= 14) return id;
   return `${id.slice(0, 12)}…`;
 }
@@ -80,9 +82,10 @@ const columns = [
     cell: (info) => {
       const order = info.row.original;
       const name = order.contactSnapshot?.fullName;
+      const customerId = info.getValue() || order.customerAuthUserId || "";
       return (
-        <span className="text-xs text-foreground font-medium" title={info.getValue()}>
-          {name ? name : shortCustomerRef(info.getValue())}
+        <span className="text-xs text-foreground font-medium" title={customerId}>
+          {name ? name : shortCustomerRef(customerId)}
         </span>
       );
     },
@@ -121,13 +124,24 @@ const columns = [
       if (order.bookingType !== "ASAP") return <span className="text-xs text-text-muted">—</span>;
 
       const statusMap: Record<string, { label: string; bg: string; text: string }> = {
-        PENDING: { label: "Pending", bg: "bg-blue-100", text: "text-blue-700" },
-        MET: { label: "Met", bg: "bg-green-100", text: "text-green-700" },
+        NOT_STARTED: { label: "Not Started", bg: "bg-amber-100", text: "text-amber-700" },
+        ON_TRACK: { label: "On Track", bg: "bg-blue-100", text: "text-blue-700" },
+        AT_RISK: { label: "At Risk", bg: "bg-amber-100", text: "text-amber-700" },
         BREACHED: { label: "Breached", bg: "bg-red-100", text: "text-red-700" },
+        COMPLETED_ON_TIME: { label: "Met", bg: "bg-green-100", text: "text-green-700" },
+        MET: { label: "Met", bg: "bg-green-100", text: "text-green-700" },
         EXEMPT: { label: "Exempt", bg: "bg-gray-100", text: "text-gray-700" },
+        PENDING: { label: "Pending", bg: "bg-blue-100", text: "text-blue-700" },
+        NOT_APPLICABLE: { label: "N/A", bg: "bg-gray-100", text: "text-gray-700" },
       };
 
-      const state = order.slaStatus ? statusMap[order.slaStatus] : statusMap["PENDING"];
+      const fallbackState = {
+        label: order.slaStatus ? humanizeToken(order.slaStatus) : "Pending",
+        bg: "bg-blue-100",
+        text: "text-blue-700",
+      };
+
+      const state = (order.slaStatus && statusMap[order.slaStatus]) ? statusMap[order.slaStatus] : fallbackState;
       return (
         <div className="flex flex-col gap-1">
           <span className={`inline-flex w-fit items-center rounded-sm px-1.5 py-0.5 text-[10px] font-semibold ${state.bg} ${state.text}`}>

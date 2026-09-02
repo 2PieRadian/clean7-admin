@@ -55,7 +55,8 @@ export function formatDateTime(value?: string | null) {
   }).format(date);
 }
 
-export function humanizeToken(value: string) {
+export function humanizeToken(value?: string | null) {
+  if (!value) return "—";
   return value
     .toLowerCase()
     .replaceAll("_", " ")
