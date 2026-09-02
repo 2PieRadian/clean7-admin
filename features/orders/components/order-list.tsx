@@ -60,7 +60,6 @@ const columns = [
             {order.serviceCategoryName ?? order.serviceCategoryCode ?? "Order"}
             {order.serviceName ? ` · ${order.serviceName}` : ""}
           </Link>
-          </Link>
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-xs font-medium text-text-secondary">
               {order.orderNumber || order.orderCode || "Order"}
@@ -120,14 +119,14 @@ const columns = [
     cell: (info) => {
       const order = info.row.original;
       if (order.bookingType !== "ASAP") return <span className="text-xs text-text-muted">—</span>;
-      
+
       const statusMap: Record<string, { label: string; bg: string; text: string }> = {
         PENDING: { label: "Pending", bg: "bg-blue-100", text: "text-blue-700" },
         MET: { label: "Met", bg: "bg-green-100", text: "text-green-700" },
         BREACHED: { label: "Breached", bg: "bg-red-100", text: "text-red-700" },
         EXEMPT: { label: "Exempt", bg: "bg-gray-100", text: "text-gray-700" },
       };
-      
+
       const state = order.slaStatus ? statusMap[order.slaStatus] : statusMap["PENDING"];
       return (
         <div className="flex flex-col gap-1">
