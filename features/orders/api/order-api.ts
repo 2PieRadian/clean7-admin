@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/browser-api";
+import { getStoredSession } from "@/lib/browser-session";
+import { getGatewayUrl } from "@/lib/env";
 import type { OrderResponse } from "@/lib/types";
 
 export function useOrders(query?: Record<string, string>) {
@@ -134,4 +136,29 @@ export function useRescheduleOrder() {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
+}
+
+export async function downloadOrderInvoice(orderId: string, orderNumber: string): Promise<void> {
+  const session = getStoredSession();
+  const token = session?.token;
+  const baseUrl = getGatewayUrl();
+  const url = `${baseUrl}/admin/orders/${orderId}/invoice`;
+
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download invoice: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = `Invoice-${orderNumber}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(blobUrl);
 }

@@ -39,7 +39,9 @@ import {
   Activity,
   X,
   Camera,
+  Download,
 } from "lucide-react";
+import { downloadOrderInvoice } from "../api/order-api";
 
 function getOperatorDisplay(
   authUserId: string | null | undefined,
@@ -205,8 +207,28 @@ export function OrderDetailManager({
   const grandTotal = order.grandTotalAmount;
   const subtotal = order.subtotalAmount;
   const addOnTotal = order.addOnTotalAmount;
+  const discountAmount = order.discountAmount;
+  const numSub = parseFloat(subtotal || "0");
+  const numAdd = parseFloat(addOnTotal || "0");
+  const numDisc = parseFloat(discountAmount || "0");
+  const numGrand = parseFloat(grandTotal || "0");
+  const baseTaxable = Math.max(0, numSub + numAdd - numDisc);
+  const taxAmount = order.taxAmount ?? (numGrand > baseTaxable ? (numGrand - baseTaxable).toFixed(2) : "0");
   const blockers = order.fulfillment?.blockers ?? [];
   const serviceMode = order.serviceMode ?? "PICKUP_DELIVERY";
+
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+
+  async function handleDownloadInvoice() {
+    setIsDownloadingInvoice(true);
+    try {
+      await downloadOrderInvoice(order.id, order.orderNumber || order.orderCode || "Order");
+    } catch (err: any) {
+      setError(err?.message || "Failed to download invoice.");
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  }
 
   async function mutate(
     path: string,
@@ -326,6 +348,16 @@ export function OrderDetailManager({
               <Badge>{orderStatusLabel(order.status)}</Badge>
               <Badge>{paymentStatusLabel(order.paymentStatus)}</Badge>
               <Badge variant="fulfillment" value={serviceMode} />
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5"
+                onClick={handleDownloadInvoice}
+                disabled={isDownloadingInvoice}
+              >
+                <Download className="h-3.5 w-3.5 text-primary" />
+                {isDownloadingInvoice ? "Downloading..." : "PDF Invoice"}
+              </Button>
             </div>
           </div>
 
@@ -908,6 +940,34 @@ export function OrderDetailManager({
                   No items found.
                 </p>
               )}
+            </div>
+
+            {/* Financial & GST Breakdown */}
+            <div className="pt-3 border-t border-[var(--border-soft)] space-y-2 text-sm">
+              <div className="flex justify-between text-text-secondary">
+                <span>Subtotal (Base Items)</span>
+                <span>{formatMoney(subtotal, order.currency)}</span>
+              </div>
+              {parseFloat(addOnTotal || "0") > 0 && (
+                <div className="flex justify-between text-text-secondary">
+                  <span>Add-ons</span>
+                  <span>+{formatMoney(addOnTotal, order.currency)}</span>
+                </div>
+              )}
+              {parseFloat(discountAmount || "0") > 0 && (
+                <div className="flex justify-between text-primary font-medium">
+                  <span>Coupon Discount</span>
+                  <span>-{formatMoney(discountAmount, order.currency)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-text-secondary">
+                <span>GST (18%)</span>
+                <span>+{formatMoney(taxAmount, order.currency)}</span>
+              </div>
+              <div className="flex justify-between text-foreground font-bold pt-2 border-t border-[var(--border-soft)] text-base">
+                <span>Total Amount</span>
+                <span>{formatMoney(grandTotal, order.currency)}</span>
+              </div>
             </div>
           </Card>
 

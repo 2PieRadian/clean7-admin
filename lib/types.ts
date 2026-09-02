@@ -486,6 +486,9 @@ export type OrderResponse = {
   actualItemCount?: number | null;
   subtotalAmount?: string;
   addOnTotalAmount?: string;
+  discountAmount?: string;
+  taxAmount?: string;
+  taxRate?: number;
   grandTotalAmount?: string;
 
   bookingType?: "SCHEDULED" | "ASAP";
