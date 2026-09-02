@@ -14,8 +14,6 @@ import {
   MapPin,
   Trash2,
   Edit3,
-  Copy,
-  Check,
   AlertTriangle,
   UserCheck,
   UserX,
@@ -87,7 +85,6 @@ export function UserManager() {
   const [selectedUser, setSelectedUser] = useState<ProfileResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<ProfileResponse | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Profile API hooks
   const { data: profiles, isLoading, isFetching, refetch } = useProfiles({
@@ -200,13 +197,6 @@ export function UserManager() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(text);
-    setTimeout(() => setCopiedId(null), 2000);
-    toast.success("User ID copied to clipboard");
-  };
-
   return (
     <div className="space-y-6">
       {/* ── Top Metric Cards ── */}
@@ -265,8 +255,8 @@ export function UserManager() {
                 type="button"
                 onClick={() => setRoleFilter(option.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${roleFilter === option.value
-                    ? "bg-foreground text-background font-semibold shadow-sm"
-                    : "bg-surface-muted text-text-secondary hover:bg-surface-hover hover:text-foreground"
+                  ? "bg-foreground text-background font-semibold shadow-sm"
+                  : "bg-surface-muted text-text-secondary hover:bg-surface-hover hover:text-foreground"
                   }`}
               >
                 {option.label}
@@ -323,23 +313,6 @@ export function UserManager() {
                     <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                       <Mail className="h-3 w-3 text-text-muted" />
                       <span>{row.email}</span>
-                    </div>
-                    <div className="flex items-center gap-1 pt-0.5">
-                      <span className="font-mono text-[10px] text-text-muted truncate max-w-[130px]">
-                        ID: {row.authUserId.slice(0, 8)}...
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(row.authUserId)}
-                        className="text-text-muted hover:text-foreground transition p-0.5"
-                        title="Copy Auth User ID"
-                      >
-                        {copiedId === row.authUserId ? (
-                          <Check className="h-2.5 w-2.5 text-success" />
-                        ) : (
-                          <Copy className="h-2.5 w-2.5" />
-                        )}
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -449,9 +422,16 @@ export function UserManager() {
           <form onSubmit={handleSaveEdit} className="space-y-6">
             {/* Header info badge */}
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-muted border border-[var(--border-soft)]">
-              <div className="space-y-0.5">
-                <p className="text-xs text-text-muted uppercase font-medium">Auth ID</p>
-                <p className="font-mono text-xs text-foreground select-all">{selectedUser.authUserId}</p>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 text-primary flex items-center justify-center font-bold text-xs border border-primary/10">
+                  {getInitials(selectedUser.fullName, selectedUser.email)}
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm leading-tight">
+                    {selectedUser.fullName || "No name set"}
+                  </p>
+                  <p className="text-xs text-text-secondary">{selectedUser.email}</p>
+                </div>
               </div>
               <Badge tone={getRoleTone(selectedUser.role)} value={selectedUser.role}>
                 {selectedUser.role === "USER" ? "CUSTOMER" : selectedUser.role}
