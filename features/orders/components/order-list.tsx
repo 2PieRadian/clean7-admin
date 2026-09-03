@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -22,9 +23,13 @@ import {
   LayoutGrid,
   List,
   Truck,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { deleteOrder } from "../api/order-api";
 import {
   formatDate,
   formatMoney,
@@ -267,13 +272,31 @@ const columns = [
   columnHelper.display({
     id: "actions",
     header: "",
-    cell: () => (
-      <div className="flex justify-end">
-        <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-surface-muted text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-all">
-          <ArrowRight className="h-4 w-4" />
-        </span>
-      </div>
-    ),
+    cell: (info) => {
+      const order = info.row.original;
+      const meta = info.table.options.meta as { onDeleteOrder?: (order: OrderResponse) => void } | undefined;
+      return (
+        <div className="flex items-center justify-end gap-1">
+          {meta?.onDeleteOrder ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                meta.onDeleteOrder?.(order);
+              }}
+              title="Delete Order"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-full text-text-muted hover:text-danger hover:bg-danger/10 transition-all"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          ) : null}
+          <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-surface-muted text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-all">
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </div>
+      );
+    },
   }),
 ];
 
@@ -299,10 +322,12 @@ function OrderCardItem({
   order,
   today,
   highlightUnassigned,
+  onDelete,
 }: {
   order: OrderResponse;
   today: string;
   highlightUnassigned: boolean;
+  onDelete?: () => void;
 }) {
   const router = useRouter();
   const alert = getAlertLabel(order);
@@ -435,10 +460,26 @@ function OrderCardItem({
           </span>
         </div>
 
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
-          View Details
-          <ArrowRight className="h-3.5 w-3.5" />
-        </span>
+        <div className="flex items-center gap-2">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onDelete();
+              }}
+              title="Delete Order"
+              className="inline-flex items-center justify-center h-7 w-7 rounded-full text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
+            View Details
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -513,11 +554,19 @@ export function OrderList({
     });
   }, [orders, selectedCategory, quickFilter, today]);
 
+  const [orderToDelete, setOrderToDelete] = useState<OrderResponse | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
   const table = useReactTable({
     data: filteredOrders,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    meta: { branches },
+    meta: {
+      branches,
+      onDeleteOrder: (order: OrderResponse) => setOrderToDelete(order),
+    },
   });
 
   return (
@@ -682,12 +731,75 @@ export function OrderList({
                   order={order}
                   today={today}
                   highlightUnassigned={highlightUnassigned}
+                  onDelete={() => setOrderToDelete(order)}
                 />
               ))}
             </div>
           </>
         )}
       </Card>
+
+      <Modal
+        open={!!orderToDelete}
+        onClose={() => {
+          if (!isDeleting) {
+            setOrderToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        title="Delete Order"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm flex gap-3 items-start">
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Permanently delete this order?</p>
+              <p className="mt-1 text-xs opacity-90">
+                Order <strong>{orderToDelete?.orderNumber || orderToDelete?.orderCode || orderToDelete?.id}</strong> and all related line items, tracking history, logs, and artifacts will be permanently removed. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          {deleteError && (
+            <p className="text-xs text-danger font-medium">{deleteError}</p>
+          )}
+
+          <div className="pt-4 border-t border-[var(--border-soft)] flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => {
+                setOrderToDelete(null);
+                setDeleteError(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              type="button"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (!orderToDelete) return;
+                setIsDeleting(true);
+                setDeleteError(null);
+                try {
+                  await deleteOrder(orderToDelete.id);
+                  queryClient.invalidateQueries({ queryKey: ["orders"] });
+                  setOrderToDelete(null);
+                } catch (err: any) {
+                  setDeleteError(err?.message || "Failed to delete order.");
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Permanently Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

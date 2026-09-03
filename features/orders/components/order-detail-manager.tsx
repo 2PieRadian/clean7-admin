@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/browser-api";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ import {
   ChevronUp,
   ArrowRight,
   Info,
+  Trash2,
 } from "lucide-react";
 import { downloadOrderInvoice } from "../api/order-api";
 
@@ -184,6 +186,7 @@ export function OrderDetailManager({
     status: false,
     payment: false,
     reschedule: false,
+    delete: false,
   });
 
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
@@ -201,6 +204,8 @@ export function OrderDetailManager({
 
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
 
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
@@ -257,6 +262,23 @@ export function OrderDetailManager({
     }
   }
 
+  async function handleDeleteOrder() {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await apiRequest({
+        path: `/admin/orders/${order.id}`,
+        method: "DELETE",
+      });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      closeModal("delete");
+      router.push("/orders");
+    } catch (err: any) {
+      setError(err?.message || "Failed to delete order.");
+      setIsDeleting(false);
+    }
+  }
+
   async function mutate(
     path: string,
     method: "POST" | "PATCH",
@@ -278,6 +300,7 @@ export function OrderDetailManager({
         status: false,
         payment: false,
         reschedule: false,
+        delete: false,
       });
       queryClient.invalidateQueries({ queryKey: ["order", order.id] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -413,6 +436,15 @@ export function OrderDetailManager({
               >
                 <Download className="h-3.5 w-3.5 text-primary" />
                 {isDownloadingInvoice ? "Downloading..." : "PDF Invoice"}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                className="gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                onClick={() => openModal("delete")}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                Delete Order
               </Button>
             </div>
           </div>
@@ -2025,6 +2057,43 @@ export function OrderDetailManager({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={modals.delete}
+        onClose={() => closeModal("delete")}
+        title="Delete Order"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm flex gap-3 items-start">
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Are you sure you want to permanently delete this order?</p>
+              <p className="mt-1 text-xs opacity-90">
+                This will delete <strong>{order.orderNumber || order.orderCode || order.id}</strong> along with all associated line items, tracking history, logs, and artifacts. This action is intended for test data cleanup and cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-soft)] flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => closeModal("delete")}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              type="button"
+              disabled={isDeleting}
+              onClick={handleDeleteOrder}
+            >
+              {isDeleting ? "Deleting..." : "Permanently Delete"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

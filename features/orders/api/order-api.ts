@@ -138,6 +138,27 @@ export function useRescheduleOrder() {
   });
 }
 
+export function useDeleteOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      apiRequest({
+        path: `/admin/orders/${orderId}`,
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export async function deleteOrder(orderId: string): Promise<void> {
+  await apiRequest({
+    path: `/admin/orders/${orderId}`,
+    method: "DELETE",
+  });
+}
+
 export async function downloadOrderInvoice(orderId: string, orderNumber: string): Promise<void> {
   const session = getStoredSession();
   const token = session?.token;
