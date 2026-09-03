@@ -34,6 +34,7 @@ import { apiRequest } from "@/lib/browser-api";
 import type {
   BranchAdminResponse,
   DeliveryTripResponse,
+  DeliveryTripStopResponse,
   OrderResponse,
   OperatorProfileResponse,
 } from "@/lib/types";
@@ -46,6 +47,24 @@ import {
 } from "@/lib/format";
 
 type StatusFilter = "" | "CREATED" | "IN_PROGRESS" | "COMPLETED";
+
+function isStopDelivered(stop: DeliveryTripStopResponse, linkedOrder?: OrderResponse): boolean {
+  return (
+    stop.status === "COMPLETED" ||
+    stop.status === "DELIVERED" ||
+    Boolean(stop.deliveredAt) ||
+    linkedOrder?.status === "DELIVERED" ||
+    linkedOrder?.status === "COMPLETED"
+  );
+}
+
+function isStopFailed(stop: DeliveryTripStopResponse, linkedOrder?: OrderResponse): boolean {
+  return (
+    stop.status === "FAILED" ||
+    Boolean(stop.failureReason) ||
+    linkedOrder?.status === "DELIVERY_FAILED"
+  );
+}
 
 export default function DeliveryTripsPage() {
   const { user } = useAuth();
@@ -431,8 +450,8 @@ export default function DeliveryTripsPage() {
           type="button"
           onClick={() => setStatusFilter(statusFilter === "CREATED" ? "" : "CREATED")}
           className={`text-left rounded-2xl p-4 border transition-all duration-200 ${statusFilter === "CREATED"
-              ? "border-amber-500 bg-amber-500/10 shadow-md ring-2 ring-amber-400"
-              : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-amber-400/50"
+            ? "border-amber-500 bg-amber-500/10 shadow-md ring-2 ring-amber-400"
+            : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-amber-400/50"
             }`}
         >
           <div className="flex items-center justify-between">
@@ -457,8 +476,8 @@ export default function DeliveryTripsPage() {
           type="button"
           onClick={() => setStatusFilter(statusFilter === "IN_PROGRESS" ? "" : "IN_PROGRESS")}
           className={`text-left rounded-2xl p-4 border transition-all duration-200 ${statusFilter === "IN_PROGRESS"
-              ? "border-sky-500 bg-sky-500/10 shadow-md ring-2 ring-sky-400"
-              : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-sky-400/50"
+            ? "border-sky-500 bg-sky-500/10 shadow-md ring-2 ring-sky-400"
+            : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-sky-400/50"
             }`}
         >
           <div className="flex items-center justify-between">
@@ -483,8 +502,8 @@ export default function DeliveryTripsPage() {
           type="button"
           onClick={() => setStatusFilter(statusFilter === "COMPLETED" ? "" : "COMPLETED")}
           className={`text-left rounded-2xl p-4 border transition-all duration-200 ${statusFilter === "COMPLETED"
-              ? "border-emerald-500 bg-emerald-500/10 shadow-md ring-2 ring-emerald-400"
-              : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-emerald-400/50"
+            ? "border-emerald-500 bg-emerald-500/10 shadow-md ring-2 ring-emerald-400"
+            : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted hover:border-emerald-400/50"
             }`}
         >
           <div className="flex items-center justify-between">
@@ -540,8 +559,8 @@ export default function DeliveryTripsPage() {
               type="button"
               onClick={() => setStatusFilter("")}
               className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${statusFilter === ""
-                  ? "bg-foreground text-background shadow-sm"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
+                ? "bg-foreground text-background shadow-sm"
+                : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
                 }`}
             >
               All Trips ({trips.length})
@@ -550,8 +569,8 @@ export default function DeliveryTripsPage() {
               type="button"
               onClick={() => setStatusFilter(statusFilter === "CREATED" ? "" : "CREATED")}
               className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${statusFilter === "CREATED"
-                  ? "bg-amber-500 text-white shadow-sm"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
+                ? "bg-amber-500 text-white shadow-sm"
+                : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
                 }`}
             >
               <span className="h-2 w-2 rounded-full bg-amber-400" />
@@ -561,8 +580,8 @@ export default function DeliveryTripsPage() {
               type="button"
               onClick={() => setStatusFilter(statusFilter === "IN_PROGRESS" ? "" : "IN_PROGRESS")}
               className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${statusFilter === "IN_PROGRESS"
-                  ? "bg-sky-600 text-white shadow-sm"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
+                ? "bg-sky-600 text-white shadow-sm"
+                : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
                 }`}
             >
               <span className="h-2 w-2 rounded-full bg-sky-400" />
@@ -572,8 +591,8 @@ export default function DeliveryTripsPage() {
               type="button"
               onClick={() => setStatusFilter(statusFilter === "COMPLETED" ? "" : "COMPLETED")}
               className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${statusFilter === "COMPLETED"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
+                ? "bg-emerald-600 text-white shadow-sm"
+                : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:text-foreground hover:bg-surface-muted"
                 }`}
             >
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -677,9 +696,9 @@ export default function DeliveryTripsPage() {
               const riderName = rider?.displayName || "Unassigned";
               const tripStops = trip.stops ?? [];
               const totalStops = tripStops.length;
-              const deliveredCount = tripStops.filter((s) => s.status === "DELIVERED").length;
-              const failedCount = tripStops.filter((s) => s.status === "FAILED").length;
-              const pendingCount = tripStops.filter((s) => s.status === "PENDING").length;
+              const deliveredCount = tripStops.filter((s) => isStopDelivered(s, orderById[s.orderId])).length;
+              const failedCount = tripStops.filter((s) => isStopFailed(s, orderById[s.orderId])).length;
+              const pendingCount = Math.max(0, totalStops - deliveredCount - failedCount);
 
               // Check if all stops terminal
               const allStopsResolved = totalStops > 0 && pendingCount === 0;
@@ -701,8 +720,8 @@ export default function DeliveryTripsPage() {
                 <div
                   key={trip.id}
                   className={`rounded-2xl border transition-all duration-200 ${isSelected
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-[var(--border-soft)] bg-surface hover:border-primary/40 hover:shadow-sm"
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-[var(--border-soft)] bg-surface hover:border-primary/40 hover:shadow-sm"
                     }`}
                 >
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -743,8 +762,8 @@ export default function DeliveryTripsPage() {
                         )}
                         {trip.status === "IN_PROGRESS" && (
                           <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${allStopsResolved
-                              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-bold"
-                              : "text-sky-600 dark:text-sky-400 bg-sky-500/10"
+                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-bold"
+                            : "text-sky-600 dark:text-sky-400 bg-sky-500/10"
                             }`}>
                             {allStopsResolved ? (
                               <>
@@ -1044,12 +1063,12 @@ export default function DeliveryTripsPage() {
 
                                     {/* Stop Status Badge */}
                                     <div className="flex items-center gap-2">
-                                      {stop.status === "DELIVERED" ? (
+                                      {isStopDelivered(stop, linkedOrder) ? (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-bold">
                                           <CheckCircle2 className="h-3 w-3" />
                                           Delivered {stop.deliveredAt ? formatTime(stop.deliveredAt) : ""}
                                         </span>
-                                      ) : stop.status === "FAILED" ? (
+                                      ) : isStopFailed(stop, linkedOrder) ? (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-danger/15 text-danger px-2.5 py-0.5 text-xs font-bold">
                                           <AlertTriangle className="h-3 w-3" />
                                           Delivery Failed
@@ -1064,7 +1083,7 @@ export default function DeliveryTripsPage() {
                                   </div>
 
                                   {/* Failure details if failed */}
-                                  {stop.status === "FAILED" && (
+                                  {isStopFailed(stop, linkedOrder) && (
                                     <div className="rounded-xl bg-danger/10 border border-danger/20 p-3 text-xs text-danger space-y-1">
                                       <p className="font-bold">
                                         Failure Reason: {humanizeToken(stop.failureReason || "Unknown")}
@@ -1305,8 +1324,8 @@ export default function DeliveryTripsPage() {
                       key={order.id}
                       onClick={() => toggleOrderSelection(order.id)}
                       className={`cursor-pointer rounded-xl border p-3 transition-all flex items-start gap-3 ${isChecked
-                          ? "border-primary bg-primary/10 shadow-sm"
-                          : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted"
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-[var(--border-soft)] bg-surface hover:bg-surface-muted"
                         }`}
                     >
                       <input
