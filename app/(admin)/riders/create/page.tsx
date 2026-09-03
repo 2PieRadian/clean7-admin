@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse } from "@/lib/types";
 
-export default function CreateOperatorPage() {
+export default function CreateRiderPage() {
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +46,8 @@ export default function CreateOperatorPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Add Operator"
-        description="Creates sign-in and an operator profile for at-home services."
+        title="Add Rider"
+        description="Creates sign-in and a delivery rider profile in one step."
       />
 
       {loading ? <InlineLoadingCard lines={7} /> : null}
@@ -58,7 +58,7 @@ export default function CreateOperatorPage() {
         </Card>
       ) : null}
 
-      {!loading ? <OperatorCreateForm branches={branches} fixedRole="OPERATOR" /> : null}
+      {!loading ? <OperatorCreateForm branches={branches} fixedRole="RIDER" /> : null}
     </div>
   );
 }

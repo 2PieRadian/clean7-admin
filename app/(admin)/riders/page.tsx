@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse, OperatorProfileResponse } from "@/lib/types";
 
-export default function OperatorsPage() {
-  const [operators, setOperators] = useState<OperatorProfileResponse[]>([]);
+export default function RidersPage() {
+  const [riders, setRiders] = useState<OperatorProfileResponse[]>([]);
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function OperatorsPage() {
           apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" }),
         ]);
         if (!cancelled) {
-          setOperators(nextOperators);
+          setRiders(nextOperators);
           setBranches(nextBranches);
           setError(null);
           setLoading(false);
@@ -37,7 +37,7 @@ export default function OperatorsPage() {
       } catch (nextError) {
         if (!cancelled) {
           setError(
-            nextError instanceof Error ? nextError.message : "Unable to load operators.",
+            nextError instanceof Error ? nextError.message : "Unable to load riders.",
           );
           setLoading(false);
         }
@@ -52,8 +52,8 @@ export default function OperatorsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Operators"
-        description="See branch operators, and add new team members."
+        title="Delivery Riders"
+        description="See branch delivery riders, and add new fleet members."
       />
 
       {loading ? <InlineLoadingCard lines={8} /> : null}
@@ -66,10 +66,10 @@ export default function OperatorsPage() {
 
       {!loading && !error ? (
         <OperatorManager
-          operators={operators}
+          operators={riders}
           branches={branches}
           onReload={load}
-          role="OPERATOR"
+          role="RIDER"
         />
       ) : null}
     </div>

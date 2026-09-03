@@ -22,6 +22,7 @@ import {
   Briefcase,
   Mail,
   Tag,
+  Bike,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -81,6 +82,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
     title: "People & customers",
     items: [
       { href: "/operators", label: "Operators", icon: Users },
+      { href: "/riders", label: "Riders", icon: Bike },
       { href: "/careers", label: "Careers", icon: Briefcase, directorOnly: true },
       {
         href: "/branch-admins",

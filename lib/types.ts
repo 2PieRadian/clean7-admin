@@ -300,6 +300,7 @@ export type OperatorProfileResponse = {
   authUserId: string;
   displayName: string;
   phoneNumber: string | null;
+  email?: string | null;
   role: StaffRole;
   status: OperatorStatus;
   branchId: string | null;

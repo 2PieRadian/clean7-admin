@@ -7,13 +7,18 @@ import { Field, Select } from "@/components/ui/field";
 import { MutationStatus } from "@/components/admin/mutation-status";
 import { apiRequest } from "@/lib/browser-api";
 import type { BranchAdminResponse, StaffCreateResponse } from "@/lib/types";
+import { X } from "lucide-react";
 
 export function OperatorCreateForm({
   branches,
   onSuccess,
+  onClose,
+  fixedRole,
 }: {
   branches: BranchAdminResponse[];
   onSuccess?: () => void;
+  onClose?: () => void;
+  fixedRole?: "OPERATOR" | "RIDER";
 }) {
   const { user } = useAuth();
   const isDirector = user?.role === "DIRECTOR";
@@ -21,16 +26,37 @@ export function OperatorCreateForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [selectedRole, setSelectedRole] = useState("OPERATOR");
+  const [selectedRole, setSelectedRole] = useState(fixedRole || "OPERATOR");
+
+  const effectiveRole = fixedRole || selectedRole;
+  const roleLabel = effectiveRole === "RIDER" ? "Rider" : "Operator";
+  const title = fixedRole ? `Add ${roleLabel}` : "Add staff";
+  const subtitle = fixedRole
+    ? fixedRole === "RIDER"
+      ? "Creates login access and a delivery rider profile for pickup & delivery."
+      : "Creates login access and an operator profile for at-home services."
+    : "Creates login access and an operator or rider profile in one step.";
 
   return (
-    <div className="w-full bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl p-6 space-y-5">
-      <div>
-        <h2 className="text-xl font-semibold text-foreground">Add staff</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Creates login access and a operator or rider profile in one step.
-        </p>
+    <div className="w-full bg-surface">
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--border-soft)] bg-surface/95 backdrop-blur-md px-6 py-4">
+        <div>
+          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          <p className="mt-0.5 text-xs text-text-muted">{subtitle}</p>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+            title="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
+
+      <div className="p-6 sm:p-7">
 
       <form
         className="grid gap-4 md:grid-cols-2"
@@ -68,7 +94,7 @@ export function OperatorCreateForm({
                   password: String(formData.get("password") ?? ""),
                   phoneNumber:
                     String(formData.get("phoneNumber") ?? "").trim() || undefined,
-                  role: String(formData.get("role") ?? "OPERATOR"),
+                  role: String(fixedRole || formData.get("role") || "OPERATOR"),
                   branchId: resolvedBranchId,
                   dateOfBirth: String(formData.get("dateOfBirth") ?? "").trim() || undefined,
                   gender: String(formData.get("gender") ?? "").trim() || undefined,
@@ -79,7 +105,7 @@ export function OperatorCreateForm({
                   governmentIdNumber: String(formData.get("governmentIdNumber") ?? "").trim() || undefined,
                   profilePhotoUrl: String(formData.get("profilePhotoUrl") ?? "").trim() || undefined,
                   governmentIdProofUrl: String(formData.get("governmentIdProofUrl") ?? "").trim() || undefined,
-                  ...(selectedRole === "RIDER" ? {
+                  ...(effectiveRole === "RIDER" ? {
                     vehicleType: String(formData.get("vehicleType") ?? "").trim() || undefined,
                     vehicleNumber: String(formData.get("vehicleNumber") ?? "").trim() || undefined,
                     drivingLicenseNumber: String(formData.get("drivingLicenseNumber") ?? "").trim() || undefined,
@@ -93,7 +119,7 @@ export function OperatorCreateForm({
               if (onSuccess) {
                 onSuccess();
               } else {
-                setMessage("Staff member added. They can sign in with this email and password.");
+                setMessage(`${roleLabel} added. They can sign in with this email and password.`);
               }
             } catch (nextError) {
               setError(
@@ -120,16 +146,20 @@ export function OperatorCreateForm({
             hint="At least 8 characters."
           />
         </div>
-        <Select
-          label="Role"
-          name="role"
-          required
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-        >
-          <option value="OPERATOR">Operator (at-home services)</option>
-          <option value="RIDER">Rider (pickup & delivery)</option>
-        </Select>
+        {fixedRole ? (
+          <input type="hidden" name="role" value={fixedRole} />
+        ) : (
+          <Select
+            label="Role"
+            name="role"
+            required
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value as "OPERATOR" | "RIDER")}
+          >
+            <option value="OPERATOR">Operator (at-home services)</option>
+            <option value="RIDER">Rider (pickup & delivery)</option>
+          </Select>
+        )}
         {isDirector ? (
           <Select label="Branch" name="branchId" required defaultValue="">
             <option value="" disabled>
@@ -180,7 +210,7 @@ export function OperatorCreateForm({
         <Field label="Profile Photo URL" name="profilePhotoUrl" type="url" />
         <Field label="Government ID Proof URL" name="governmentIdProofUrl" type="url" />
 
-        {selectedRole === "RIDER" && (
+        {effectiveRole === "RIDER" && (
           <>
             <div className="md:col-span-2 text-sm font-semibold text-text-primary border-b border-[var(--border-soft)] pb-2 mt-4">
               Rider Details (Optional)
@@ -204,10 +234,11 @@ export function OperatorCreateForm({
         <div className="md:col-span-2 flex items-center justify-between gap-3">
           <MutationStatus error={error} success={message} />
           <Button type="submit" variant="success" disabled={isPending}>
-            {isPending ? "Adding..." : "Add staff"}
+            {isPending ? "Adding..." : fixedRole ? `Add ${roleLabel}` : "Add staff"}
           </Button>
         </div>
       </form>
+      </div>
     </div>
   );
 }
