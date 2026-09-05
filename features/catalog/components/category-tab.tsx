@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema } from "../schemas";
 import { useCategories, useCreateCategory, useUpdateCategory } from "../api/catalog-api";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Select, TextArea } from "@/components/ui/field";
 import { publishStates } from "@/lib/constants";
@@ -38,9 +37,10 @@ function deriveCode(name: string): string {
 interface CategoryFormProps {
   initialCategory?: CategorySummary | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) {
+export function CategoryForm({ initialCategory, onSuccess, onCancel }: CategoryFormProps) {
   const { data: categories = [] } = useCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -182,13 +182,7 @@ export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) 
   const isPending = isSubmitting || createCategory.isPending || updateCategory.isPending;
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">
-          {isEditing ? `Edit Category: ${initialCategory?.name}` : "Create Category"}
-        </h3>
-      </div>
-
+    <div className="space-y-4">
       <form className="grid gap-4" onSubmit={handleSubmit(onSubmit as any)}>
         <Field
           label="Category Name"
@@ -388,18 +382,25 @@ export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) 
           </Select>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isPending || duplicateName || duplicateSlugOrCode}
-        >
-          {isPending
-            ? isEditing
-              ? "Saving..."
-              : "Creating..."
-            : isEditing
-              ? "Save Changes"
-              : "Create Category"}
-        </Button>
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-soft)]">
+          {onCancel && (
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            disabled={isPending || duplicateName || duplicateSlugOrCode}
+          >
+            {isPending
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save Changes"
+                : "Create Category"}
+          </Button>
+        </div>
 
         {(createCategory.isError || updateCategory.isError) && (
           <p className="text-sm text-red-500">
@@ -412,6 +413,6 @@ export function CategoryForm({ initialCategory, onSuccess }: CategoryFormProps) 
           </p>
         )}
       </form>
-    </Card>
+    </div>
   );
 }

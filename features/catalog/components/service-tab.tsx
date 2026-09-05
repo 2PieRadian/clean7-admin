@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { serviceSchema } from "../schemas";
 import { useCategories, useCreateService, useUpdateService } from "../api/catalog-api";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Select, TextArea } from "@/components/ui/field";
 import { publishStates, serviceModes } from "@/lib/constants";
@@ -40,9 +39,10 @@ interface ServiceFormProps {
   defaultCategoryId?: string;
   initialService?: CatalogServiceSummary | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: ServiceFormProps) {
+export function ServiceForm({ defaultCategoryId, initialService, onSuccess, onCancel }: ServiceFormProps) {
   const { data: categories = [] } = useCategories();
   const createService = useCreateService();
   const updateService = useUpdateService();
@@ -144,13 +144,7 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
   const isPending = isSubmitting || createService.isPending || updateService.isPending;
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">
-          {isEditing ? `Edit Service: ${initialService?.name}` : "Create Service"}
-        </h3>
-      </div>
-
+    <div className="space-y-4">
       <form className="grid gap-4" onSubmit={handleSubmit(onSubmit as any, (formErrors) => {
         console.error("Service form validation errors:", formErrors);
       })}>
@@ -376,18 +370,25 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
           ))}
         </Select>
 
-        <Button
-          type="submit"
-          disabled={isPending}
-        >
-          {isPending
-            ? isEditing
-              ? "Saving..."
-              : "Creating..."
-            : isEditing
-              ? "Save Changes"
-              : "Create Service"}
-        </Button>
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-soft)]">
+          {onCancel && (
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            disabled={isPending}
+          >
+            {isPending
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save Changes"
+                : "Create Service"}
+          </Button>
+        </div>
 
         {(createService.isError || updateService.isError) && (
           <p className="text-sm text-red-500">
@@ -400,6 +401,6 @@ export function ServiceForm({ defaultCategoryId, initialService, onSuccess }: Se
           </p>
         )}
       </form>
-    </Card>
+    </div>
   );
 }

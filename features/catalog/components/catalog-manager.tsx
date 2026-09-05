@@ -155,11 +155,11 @@ function GlobalSettingsCard() {
   };
 
   return (
-    <div className="rounded-3xl border border-[var(--border-soft)] bg-surface p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4">Global Preferences</h3>
-      <div className="space-y-4 p-4 bg-surface-muted/30 rounded-xl border border-[var(--border-soft)] max-w-md">
+    <div className="rounded-2xl sm:rounded-3xl border border-[var(--border-soft)] bg-surface p-4 sm:p-6 shadow-sm">
+      <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Global Preferences</h3>
+      <div className="space-y-4 p-3 sm:p-4 bg-surface-muted/30 rounded-xl border border-[var(--border-soft)] max-w-md">
         <div className="flex justify-between items-center mb-1">
-          <label className="text-sm font-semibold text-foreground">Default App Icon Size</label>
+          <label className="text-xs sm:text-sm font-semibold text-foreground">Default App Icon Size</label>
           <span className="text-xs px-2 py-0.5 rounded bg-surface border border-[var(--border-soft)] font-mono font-medium">
             {currentSize}px
           </span>
@@ -167,7 +167,7 @@ function GlobalSettingsCard() {
         <p className="text-[11px] text-text-muted mb-2">
           Default size is 40px. Used for all services on the app home screen unless overridden individually.
         </p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <input
             type="range"
             min={0}
@@ -179,10 +179,10 @@ function GlobalSettingsCard() {
             onMouseUp={() => handleSave(currentSize)}
             onTouchEnd={() => handleSave(currentSize)}
           />
-          <span className="w-8 text-sm text-right font-medium">{currentSize}</span>
+          <span className="w-8 text-xs sm:text-sm text-right font-medium">{currentSize}</span>
         </div>
 
-        <div className="pt-3 border-t border-[var(--border-soft)] flex items-center justify-between gap-3">
+        <div className="pt-3 border-t border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
           <div>
             <p className="text-xs font-medium text-foreground">Reset All Services</p>
             <p className="text-[11px] text-text-muted">
@@ -195,7 +195,7 @@ function GlobalSettingsCard() {
             size="sm"
             onClick={handleResetAll}
             disabled={isResetting}
-            className="h-8 text-xs shrink-0 flex items-center gap-1.5"
+            className="w-full sm:w-auto h-8 text-xs shrink-0 flex items-center justify-center gap-1.5"
           >
             <RotateCcw className={`h-3.5 w-3.5 ${isResetting ? "animate-spin" : ""}`} />
             {isResetting ? "Resetting..." : "Reset All to 40"}
@@ -559,9 +559,9 @@ export function CatalogManager() {
   const renderModalContent = () => {
     switch (activeForm.type) {
       case "category":
-        return <CategoryForm initialCategory={activeForm.category} onSuccess={closeModal} />;
+        return <CategoryForm initialCategory={activeForm.category} onSuccess={closeModal} onCancel={closeModal} />;
       case "service":
-        return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} initialService={activeForm.service} onSuccess={closeModal} />;
+        return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} initialService={activeForm.service} onSuccess={closeModal} onCancel={closeModal} />;
       case "item":
         return (
           <ItemForm
@@ -598,47 +598,49 @@ export function CatalogManager() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-24 sm:pb-20">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="font-semibold text-2xl text-foreground flex items-center gap-2">
-            <LayoutList className="h-6 w-6 text-primary" />
-            Manage Catalog
+          <h2 className="font-semibold text-xl sm:text-2xl text-foreground flex items-center gap-2">
+            <LayoutList className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+            <span>Manage Catalog</span>
           </h2>
           <p className="text-xs text-text-muted mt-1">
             Drag items smoothly using the grip handles to customize order across the customer app and website.
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Category Order Status Pill */}
           {isCatOrderDirty && (
-            <div className="flex items-center gap-2 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-full text-xs font-medium animate-in fade-in">
-              <span>Category order modified</span>
-              <Button
-                size="sm"
-                className="h-7 text-xs px-2.5 bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={saveCategoryOrder}
-                disabled={isSavingCatOrder}
-              >
-                {isSavingCatOrder ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
-                Save Order
-              </Button>
-              <button
-                onClick={resetCategoryOrder}
-                className="p-1 hover:text-foreground text-text-muted transition-colors rounded-full"
-                title="Discard category order"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </button>
+            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl sm:rounded-full text-xs font-medium animate-in fade-in">
+              <span className="truncate">Category order modified</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs px-2.5 bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={saveCategoryOrder}
+                  disabled={isSavingCatOrder}
+                >
+                  {isSavingCatOrder ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
+                  Save Order
+                </Button>
+                <button
+                  onClick={resetCategoryOrder}
+                  className="p-1 hover:text-foreground text-text-muted transition-colors rounded-full"
+                  title="Discard category order"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           )}
-          <Button onClick={() => setActiveForm({ type: "category" })}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setActiveForm({ type: "category" })} className="flex-1 sm:flex-initial justify-center text-xs sm:text-sm">
+            <Plus className="h-4 w-4 mr-1.5" />
             Create Category
           </Button>
-          <Button variant="secondary" onClick={() => setActiveForm({ type: "service" })}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button variant="secondary" onClick={() => setActiveForm({ type: "service" })} className="flex-1 sm:flex-initial justify-center text-xs sm:text-sm">
+            <Plus className="h-4 w-4 mr-1.5" />
             Add Service
           </Button>
         </div>
@@ -647,7 +649,7 @@ export function CatalogManager() {
       <GlobalSettingsCard />
 
       {/* Catalog Categories Container */}
-      <div className="space-y-4 rounded-3xl border border-[var(--border-soft)] bg-surface p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl sm:rounded-3xl border border-[var(--border-soft)] bg-surface p-3 sm:p-5 md:p-6 shadow-sm">
         {catLoading ? (
           <p className="text-sm text-text-muted py-4">Loading catalog...</p>
         ) : currentCategories.length === 0 ? (
@@ -665,29 +667,35 @@ export function CatalogManager() {
               const svcOrderDirty = isSvcOrderDirty(cat);
 
               return (
-                <div className="border border-[var(--border-soft)] rounded-3xl overflow-hidden bg-surface transition-shadow hover:shadow-sm">
+                <div className="border border-[var(--border-soft)] rounded-2xl sm:rounded-3xl overflow-hidden bg-surface transition-shadow hover:shadow-sm">
                   {/* Category Header */}
-                  <div className="flex items-center justify-between bg-surface-muted/50 px-4 py-3 border-b border-[var(--border-soft)]">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 bg-surface-muted/50 p-3 sm:px-4 sm:py-3 border-b border-[var(--border-soft)]">
+                    <div className="flex items-start sm:items-center gap-2 flex-1 min-w-0">
                       {/* Smooth Drag Handle for Category */}
-                      <div {...handleProps} title="Drag to reorder category">
+                      <div
+                        {...handleProps}
+                        title="Drag to reorder category"
+                        className="touch-none cursor-grab active:cursor-grabbing p-1.5 -ml-1 text-text-muted hover:text-foreground shrink-0 rounded-lg hover:bg-surface transition-colors mt-0.5 sm:mt-0"
+                      >
                         <GripVertical className="h-4 w-4" />
                       </div>
 
                       <button
                         onClick={() => toggleCat(cat.id)}
-                        className="flex items-center gap-3 flex-1 text-left font-semibold text-[15px] truncate"
+                        className="flex items-start sm:items-center gap-2.5 flex-1 min-w-0 text-left font-semibold text-sm sm:text-[15px]"
                       >
-                        {isExpanded ? (
-                          <ChevronDown className="h-5 w-5 text-text-muted shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 text-text-muted shrink-0" />
-                        )}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="truncate">{cat.name}</span>
+                        <span className="mt-0.5 sm:mt-0 shrink-0">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-text-muted" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-text-muted" />
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                          <span className="break-words font-semibold leading-snug">{cat.name}</span>
                           {cat.appImageUrl && (
                             <span
-                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200"
+                              className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0"
                               title="App photo uploaded"
                             >
                               App Photo
@@ -695,7 +703,7 @@ export function CatalogManager() {
                           )}
                           {cat.webImageUrl && (
                             <span
-                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
                               title="Website photo uploaded"
                             >
                               Web Photo
@@ -705,15 +713,15 @@ export function CatalogManager() {
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end pl-7 md:pl-0 pt-1 md:pt-0 border-t md:border-t-0 border-[var(--border-soft)]/50">
                       {/* Service Order Modified Pill in Category Header */}
                       {svcOrderDirty && (
-                        <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-medium mr-1">
-                          <span>Services reordered</span>
+                        <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-xs font-medium mr-1">
+                          <span className="text-[11px]">Services reordered</span>
                           <button
                             onClick={() => saveServiceOrder(cat.id)}
                             disabled={savingSvcOrders[cat.id]}
-                            className="bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 disabled:opacity-50 transition-colors"
+                            className="bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 disabled:opacity-50 transition-colors"
                           >
                             {savingSvcOrders[cat.id] ? (
                               <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -741,9 +749,9 @@ export function CatalogManager() {
                       </button>
                       <button
                         onClick={() => setActiveForm({ type: "service", defaultCategoryId: cat.id })}
-                        className="text-xs font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1 bg-primary/5 px-3 py-1 rounded-full transition-colors"
+                        className="text-xs font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1 bg-primary/5 px-2.5 sm:px-3 py-1 rounded-full transition-colors"
                       >
-                        <Plus className="h-3 w-3" /> Add Service
+                        <Plus className="h-3 w-3" /> <span className="hidden xs:inline">Add</span> Service
                       </button>
                       <DeleteAction
                         name={cat.name}
@@ -754,9 +762,9 @@ export function CatalogManager() {
 
                   {/* Category Expanded Content: Services */}
                   {isExpanded && (
-                    <div className="p-3 space-y-2">
+                    <div className="p-2.5 sm:p-3 space-y-2">
                       {catServices.length === 0 ? (
-                        <p className="text-sm text-text-muted px-8 py-2">No services in this category.</p>
+                        <p className="text-xs sm:text-sm text-text-muted px-4 sm:px-8 py-2">No services in this category.</p>
                       ) : (
                         <SortableList
                           items={catServices}
@@ -772,57 +780,65 @@ export function CatalogManager() {
                             const addOnOrderDirty = isAddOnOrderDirty(svc);
 
                             return (
-                              <div className="ml-6 border-l-2 border-primary/20 pl-4 py-1">
-                                {/* Service Row Header */}
-                                <div className="flex items-center justify-between py-2 group">
-                                  <div className="flex items-center gap-2">
+                              <div className="ml-1 sm:ml-4 border-l-2 border-primary/25 pl-2 sm:pl-3.5 py-1">
+                                {/* Service Row Header: 2-tier on mobile, single row on desktop */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 py-2 sm:py-1.5 border-b sm:border-b-0 border-[var(--border-soft)]/40">
+                                  <div className="flex items-start sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                                     {/* Smooth Drag Handle for Service */}
-                                    <div {...svcHandleProps} title="Drag to reorder service">
+                                    <div
+                                      {...svcHandleProps}
+                                      title="Drag to reorder service"
+                                      className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 text-text-muted hover:text-foreground shrink-0 rounded hover:bg-surface-muted transition-colors mt-0.5 sm:mt-0"
+                                    >
                                       <GripVertical className="h-4 w-4" />
                                     </div>
 
                                     <button
                                       onClick={() => toggleSvc(svc.id)}
-                                      className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                                      className="flex items-start sm:items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold sm:font-medium text-foreground hover:text-primary transition-colors min-w-0 flex-1 text-left"
                                     >
-                                      {isSvcExpanded ? (
-                                        <ChevronDown className="h-4 w-4 text-text-muted" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-text-muted" />
-                                      )}
-                                      {svc.name}
+                                      <span className="mt-0.5 sm:mt-0 shrink-0">
+                                        {isSvcExpanded ? (
+                                          <ChevronDown className="h-4 w-4 text-text-muted" />
+                                        ) : (
+                                          <ChevronRight className="h-4 w-4 text-text-muted" />
+                                        )}
+                                      </span>
+                                      <span className="break-words font-medium leading-snug">{svc.name}</span>
                                     </button>
                                   </div>
 
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="fulfillment" value={svc.serviceMode} />
-                                    <button
-                                      onClick={() =>
-                                        setActiveForm({
-                                          type: "service",
-                                          service: svc,
-                                          defaultCategoryId: cat.id,
-                                        })
-                                      }
-                                      className="text-xs font-medium text-text-secondary hover:text-foreground hover:bg-surface-muted px-2 py-1 rounded-full transition-colors border border-[var(--border-soft)] flex items-center gap-1"
-                                      title="Edit Service"
-                                    >
-                                      <Edit2 className="h-3 w-3" /> Edit
-                                    </button>
-                                    <DeleteServiceAction serviceId={svc.id} serviceName={svc.name} />
+                                  <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-3 shrink-0 pl-6 sm:pl-0">
+                                    <Badge variant="fulfillment" value={svc.serviceMode} className="text-[10px] sm:text-xs font-normal" />
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() =>
+                                          setActiveForm({
+                                            type: "service",
+                                            service: svc,
+                                            defaultCategoryId: cat.id,
+                                          })
+                                        }
+                                        className="text-xs font-medium text-text-secondary hover:text-foreground hover:bg-surface-muted px-2.5 py-1 rounded-full transition-colors border border-[var(--border-soft)] flex items-center gap-1"
+                                        title="Edit Service"
+                                      >
+                                        <Edit2 className="h-3 w-3" /> Edit
+                                      </button>
+                                      <DeleteServiceAction serviceId={svc.id} serviceName={svc.name} />
+                                    </div>
                                   </div>
                                 </div>
 
                                 {/* Service Expanded Content: Items & Addons */}
                                 {isSvcExpanded && (
-                                  <div className="ml-6 mt-2 space-y-5 pb-3">
+                                  <div className="ml-0 sm:ml-3 mt-2 space-y-4 pb-2">
                                     {/* ITEMS SECTION */}
-                                    <div className="bg-surface-muted/30 p-4 rounded-3xl border border-[var(--border-soft)]/50">
-                                      <div className="flex items-center justify-between text-xs font-semibold text-text-muted mb-3 uppercase tracking-wider">
-                                        <span className="flex items-center gap-2">
+                                    <div className="bg-surface-muted/30 p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-[var(--border-soft)]/50">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-text-muted mb-2.5 uppercase tracking-wider">
+                                        <span className="flex items-center gap-1.5">
                                           <Package className="h-3.5 w-3.5" /> Items
                                         </span>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                                           {/* Item Order Modified Status Pill */}
                                           {itemOrderDirty && (
                                             <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[11px] normal-case font-medium">
@@ -853,7 +869,7 @@ export function CatalogManager() {
                                             onClick={() =>
                                               setActiveForm({ type: "item", defaultServiceId: svc.id })
                                             }
-                                            className="text-primary hover:underline flex items-center gap-1 normal-case font-medium"
+                                            className="text-primary hover:underline flex items-center gap-1 normal-case font-medium text-xs"
                                           >
                                             <Plus className="h-3 w-3" /> Add Item
                                           </button>
@@ -861,7 +877,7 @@ export function CatalogManager() {
                                       </div>
 
                                       {svcItems.length === 0 ? (
-                                        <p className="text-sm text-text-muted/70 italic py-1">No items found</p>
+                                        <p className="text-xs sm:text-sm text-text-muted/70 italic py-1">No items found</p>
                                       ) : (
                                         <SortableList
                                           items={svcItems}
@@ -870,50 +886,58 @@ export function CatalogManager() {
                                           className="space-y-2"
                                         >
                                           {(item, _itemIdx, itemHandleProps) => (
-                                            <div className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)] hover:border-[var(--border-soft)]/80 transition-colors">
-                                              <div className="flex items-center gap-2.5">
+                                            <div className="text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-0 bg-surface p-2.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border border-[var(--border-soft)] hover:border-[var(--border-soft)]/80 transition-colors">
+                                              <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
                                                 {/* Smooth Drag Handle for Item */}
-                                                <div {...itemHandleProps} title="Drag to reorder item">
+                                                <div
+                                                  {...itemHandleProps}
+                                                  title="Drag to reorder item"
+                                                  className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 text-text-muted hover:text-foreground shrink-0 rounded hover:bg-surface-muted transition-colors mt-0.5 sm:mt-0"
+                                                >
                                                   <GripVertical className="h-3.5 w-3.5" />
                                                 </div>
-                                                <span className="font-medium text-foreground">{item.name}</span>
-                                                {item.unitLabel && (
-                                                  <span className="text-xs text-text-muted font-mono bg-surface-muted px-2 py-0.5 rounded-full">
-                                                    /{item.unitLabel}
-                                                  </span>
-                                                )}
-                                                {item.publishState && item.publishState !== "ACTIVE" && (
-                                                  <Badge value={item.publishState} className="text-[10px] px-1.5 py-0" />
-                                                )}
+                                                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                                                  <span className="font-medium text-foreground text-xs sm:text-sm break-words leading-snug">{item.name}</span>
+                                                  {item.unitLabel && (
+                                                    <span className="text-[10px] sm:text-xs text-text-muted font-mono bg-surface-muted px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
+                                                      /{item.unitLabel}
+                                                    </span>
+                                                  )}
+                                                  {item.publishState && item.publishState !== "ACTIVE" && (
+                                                    <Badge value={item.publishState} className="text-[10px] px-1.5 py-0 shrink-0" />
+                                                  )}
+                                                </div>
                                               </div>
 
-                                              <div className="flex items-center gap-2">
-                                                {/* Clean Price Display (redundant edit button removed!) */}
+                                              <div className="flex items-center justify-between sm:justify-end gap-2 pl-6 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--border-soft)]/40">
+                                                {/* Clean Price Display */}
                                                 <span className="text-text-muted font-mono bg-surface-muted px-2.5 py-0.5 rounded-full text-xs font-semibold">
                                                   ₹{String(item.price)}
                                                 </span>
 
-                                                {/* Single Primary Edit Button */}
-                                                <button
-                                                  onClick={() =>
-                                                    setActiveForm({
-                                                      type: "item",
-                                                      defaultServiceId: svc.id,
-                                                      item: { ...item, serviceId: svc.id },
-                                                    })
-                                                  }
-                                                  className="p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
-                                                  title="Edit item"
-                                                >
-                                                  <Edit2 className="h-3.5 w-3.5" />
-                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                  {/* Single Primary Edit Button */}
+                                                  <button
+                                                    onClick={() =>
+                                                      setActiveForm({
+                                                        type: "item",
+                                                        defaultServiceId: svc.id,
+                                                        item: { ...item, serviceId: svc.id },
+                                                      })
+                                                    }
+                                                    className="p-1.5 sm:p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
+                                                    title="Edit item"
+                                                  >
+                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                  </button>
 
-                                                <DeleteAction
-                                                  name={item.name}
-                                                  onConfirm={() =>
-                                                    deleteItem.mutateAsync(item.id).catch((e) => alert(e.message))
-                                                  }
-                                                />
+                                                  <DeleteAction
+                                                    name={item.name}
+                                                    onConfirm={() =>
+                                                      deleteItem.mutateAsync(item.id).catch((e) => alert(e.message))
+                                                    }
+                                                  />
+                                                </div>
                                               </div>
                                             </div>
                                           )}
@@ -922,12 +946,12 @@ export function CatalogManager() {
                                     </div>
 
                                     {/* ADD-ONS SECTION */}
-                                    <div className="bg-surface-muted/30 p-4 rounded-3xl border border-[var(--border-soft)]/50">
-                                      <div className="flex items-center justify-between text-xs font-semibold text-text-muted mb-3 uppercase tracking-wider">
-                                        <span className="flex items-center gap-2">
+                                    <div className="bg-surface-muted/30 p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-[var(--border-soft)]/50">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-text-muted mb-2.5 uppercase tracking-wider">
+                                        <span className="flex items-center gap-1.5">
                                           <Tags className="h-3.5 w-3.5" /> Add-ons
                                         </span>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                                           {/* Add-on Order Modified Status Pill */}
                                           {addOnOrderDirty && (
                                             <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[11px] normal-case font-medium">
@@ -958,7 +982,7 @@ export function CatalogManager() {
                                             onClick={() =>
                                               setActiveForm({ type: "addon", defaultServiceId: svc.id })
                                             }
-                                            className="text-primary hover:underline flex items-center gap-1 normal-case font-medium"
+                                            className="text-primary hover:underline flex items-center gap-1 normal-case font-medium text-xs"
                                           >
                                             <Plus className="h-3 w-3" /> Add Add-on
                                           </button>
@@ -966,7 +990,7 @@ export function CatalogManager() {
                                       </div>
 
                                       {svcAddons.length === 0 ? (
-                                        <p className="text-sm text-text-muted/70 italic py-1">No add-ons found</p>
+                                        <p className="text-xs sm:text-sm text-text-muted/70 italic py-1">No add-ons found</p>
                                       ) : (
                                         <SortableList
                                           items={svcAddons}
@@ -975,50 +999,58 @@ export function CatalogManager() {
                                           className="space-y-2"
                                         >
                                           {(addon, _addonIdx, addonHandleProps) => (
-                                            <div className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)] hover:border-[var(--border-soft)]/80 transition-colors">
-                                              <div className="flex items-center gap-2.5">
+                                            <div className="text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-0 bg-surface p-2.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border border-[var(--border-soft)] hover:border-[var(--border-soft)]/80 transition-colors">
+                                              <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
                                                 {/* Smooth Drag Handle for Add-on */}
-                                                <div {...addonHandleProps} title="Drag to reorder add-on">
+                                                <div
+                                                  {...addonHandleProps}
+                                                  title="Drag to reorder add-on"
+                                                  className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 text-text-muted hover:text-foreground shrink-0 rounded hover:bg-surface-muted transition-colors mt-0.5 sm:mt-0"
+                                                >
                                                   <GripVertical className="h-3.5 w-3.5" />
                                                 </div>
-                                                <span className="font-medium text-foreground">{addon.name}</span>
-                                                {addon.unitLabel && (
-                                                  <span className="text-xs text-text-muted font-mono bg-surface-muted px-2 py-0.5 rounded-full">
-                                                    /{addon.unitLabel}
-                                                  </span>
-                                                )}
-                                                {addon.publishState && addon.publishState !== "ACTIVE" && (
-                                                  <Badge value={addon.publishState} className="text-[10px] px-1.5 py-0" />
-                                                )}
+                                                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                                                  <span className="font-medium text-foreground text-xs sm:text-sm break-words leading-snug">{addon.name}</span>
+                                                  {addon.unitLabel && (
+                                                    <span className="text-[10px] sm:text-xs text-text-muted font-mono bg-surface-muted px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
+                                                      /{addon.unitLabel}
+                                                    </span>
+                                                  )}
+                                                  {addon.publishState && addon.publishState !== "ACTIVE" && (
+                                                    <Badge value={addon.publishState} className="text-[10px] px-1.5 py-0 shrink-0" />
+                                                  )}
+                                                </div>
                                               </div>
 
-                                              <div className="flex items-center gap-2">
+                                              <div className="flex items-center justify-between sm:justify-end gap-2 pl-6 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--border-soft)]/40">
                                                 {/* Clean Price Display */}
                                                 <span className="text-text-muted font-mono bg-surface-muted px-2.5 py-0.5 rounded-full text-xs font-semibold">
                                                   ₹{String(addon.price)}
                                                 </span>
 
-                                                {/* Single Primary Edit Button */}
-                                                <button
-                                                  onClick={() =>
-                                                    setActiveForm({
-                                                      type: "addon",
-                                                      defaultServiceId: svc.id,
-                                                      addon: { ...addon, serviceId: svc.id },
-                                                    })
-                                                  }
-                                                  className="p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
-                                                  title="Edit add-on"
-                                                >
-                                                  <Edit2 className="h-3.5 w-3.5" />
-                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                  {/* Single Primary Edit Button */}
+                                                  <button
+                                                    onClick={() =>
+                                                      setActiveForm({
+                                                        type: "addon",
+                                                        defaultServiceId: svc.id,
+                                                        addon: { ...addon, serviceId: svc.id },
+                                                      })
+                                                    }
+                                                    className="p-1.5 sm:p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
+                                                    title="Edit add-on"
+                                                  >
+                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                  </button>
 
-                                                <DeleteAction
-                                                  name={addon.name}
-                                                  onConfirm={() =>
-                                                    deleteAddOn.mutateAsync(addon.id).catch((e) => alert(e.message))
-                                                  }
-                                                />
+                                                  <DeleteAction
+                                                    name={addon.name}
+                                                    onConfirm={() =>
+                                                      deleteAddOn.mutateAsync(addon.id).catch((e) => alert(e.message))
+                                                    }
+                                                  />
+                                                </div>
                                               </div>
                                             </div>
                                           )}
@@ -1043,31 +1075,31 @@ export function CatalogManager() {
 
       {/* Floating Bottom Bar when ANY ordering is unsaved */}
       {hasAnyUnsavedOrder && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-foreground text-background dark:bg-surface dark:text-foreground px-5 py-3 rounded-full shadow-2xl border border-[var(--border-soft)] flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <SlidersHorizontal className="h-4 w-4 text-primary" />
-            <span>You have unsaved catalog ordering changes</span>
+        <div className="fixed bottom-4 sm:bottom-6 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-xl z-50 bg-foreground text-background dark:bg-surface dark:text-foreground p-3 sm:px-5 sm:py-3 rounded-2xl sm:rounded-full shadow-2xl border border-[var(--border-soft)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium justify-center sm:justify-start">
+            <SlidersHorizontal className="h-4 w-4 text-primary shrink-0" />
+            <span>Unsaved catalog ordering changes</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             <Button
               size="sm"
               onClick={saveAllOrders}
               disabled={isSavingAll}
-              className="h-8 shadow-md"
+              className="flex-1 sm:flex-initial h-8 text-xs sm:text-sm shadow-md"
             >
               {isSavingAll ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
               ) : (
                 <Check className="h-3.5 w-3.5 mr-1.5" />
               )}
-              Save All Order Changes
+              Save All Changes
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={resetAllOrders}
               disabled={isSavingAll}
-              className="h-8 hover:bg-surface-muted text-text-muted hover:text-foreground"
+              className="h-8 text-xs sm:text-sm hover:bg-surface-muted text-text-muted hover:text-foreground"
             >
               Discard All
             </Button>
