@@ -4,11 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { itemSchema } from "../schemas";
 import { useServices, useCreateItem, useUpdateItem } from "../api/catalog-api";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { publishStates, pricingTypes } from "@/lib/constants";
 import { humanizeToken } from "@/lib/format";
+import type { Resolver } from "react-hook-form";
+import type { CatalogItemResponse } from "@/lib/types";
 import { z } from "zod";
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -17,10 +18,12 @@ export function ItemForm({
   defaultServiceId,
   initialItem,
   onSuccess,
+  onCancel,
 }: {
   defaultServiceId?: string;
-  initialItem?: any;
+  initialItem?: (Partial<CatalogItemResponse> & { basePrice?: number }) | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }) {
   const { data: services = [] } = useServices();
   const createItem = useCreateItem();
@@ -33,12 +36,12 @@ export function ItemForm({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ItemFormData>({
-    resolver: zodResolver(itemSchema) as any,
+    resolver: zodResolver(itemSchema) as Resolver<ItemFormData>,
     defaultValues: {
       serviceId: initialItem?.serviceId ?? defaultServiceId ?? "",
       name: initialItem?.name ?? "",
       pricingType: initialItem?.pricingType ?? "PER_ITEM",
-      basePrice: initialItem?.basePrice ?? initialItem?.price ?? 0,
+      basePrice: initialItem?.basePrice ?? (initialItem?.price ? Number(initialItem.price) : 0),
       currency: initialItem?.currency ?? "INR",
       unitLabel: initialItem?.unitLabel ?? "",
       minQty: initialItem?.minQty ?? null,
@@ -55,7 +58,7 @@ export function ItemForm({
       ? `Updated item ${data.name}`
       : `Created item ${data.name}`;
 
-    if (isEditing && initialItem) {
+    if (isEditing && initialItem && initialItem.id) {
       await updateItem.mutateAsync({
         id: initialItem.id,
         ...data,
@@ -72,99 +75,148 @@ export function ItemForm({
   };
 
   return (
-    <Card className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">
-        {isEditing ? `Edit item: ${initialItem.name}` : "Create item"}
-      </h3>
-      <form className="grid gap-3" onSubmit={handleSubmit(onSubmit as any)}>
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+        void handleSubmit(onSubmit)(e);
+      }}
+    >
+      <div className="grid grid-cols-12 gap-3">
         {!defaultServiceId && !isEditing ? (
-          <Select
-            label="Service"
-            required
-            {...register("serviceId")}
-            hint={errors.serviceId?.message}
-          >
-            <option value="">Select a service</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
+          <div className="col-span-12">
+            <Select
+              label="Service"
+              required
+              {...register("serviceId")}
+              hint={errors.serviceId?.message}
+            >
+              <option value="">Select a service</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+          </div>
         ) : (
           <input type="hidden" {...register("serviceId")} />
         )}
 
-        <Field
-          label="Name"
-          required
-          {...register("name")}
-          hint={errors.name?.message}
-        />
+        {/* Row 1: Name and Unit Label */}
+        <div className="col-span-12 sm:col-span-8">
+          <Field
+            label="Name"
+            placeholder="e.g. Dry Clean Shirt, Wash & Fold"
+            required
+            {...register("name")}
+            hint={errors.name?.message}
+          />
+        </div>
 
-        <Select
-          label="Pricing type"
-          {...register("pricingType")}
-          hint={errors.pricingType?.message}
+        <div className="col-span-12 sm:col-span-4">
+          <Field
+            label="Unit label"
+            placeholder="e.g. item, piece, kg"
+            {...register("unitLabel")}
+            hint={errors.unitLabel?.message}
+          />
+        </div>
+
+        {/* Row 2: Pricing Type, Base Price, Currency */}
+        <div className="col-span-12 sm:col-span-5">
+          <Select
+            label="Pricing type"
+            {...register("pricingType")}
+            hint={errors.pricingType?.message}
+          >
+            {pricingTypes.map((p) => (
+              <option key={p} value={p}>
+                {humanizeToken(p)}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="col-span-7 sm:col-span-4">
+          <Field
+            label="Base price (₹)"
+            type="number"
+            step="0.01"
+            required
+            {...register("basePrice")}
+            hint={errors.basePrice?.message}
+          />
+        </div>
+
+        <div className="col-span-5 sm:col-span-3">
+          <Field
+            label="Currency"
+            {...register("currency")}
+            hint={errors.currency?.message}
+          />
+        </div>
+
+        {/* Row 3: Min Qty, Max Qty, Sort Order, Publish State */}
+        <div className="col-span-6 sm:col-span-3">
+          <Field
+            label="Min qty"
+            type="number"
+            placeholder="No min"
+            {...register("minQty")}
+            hint={errors.minQty?.message}
+          />
+        </div>
+
+        <div className="col-span-6 sm:col-span-3">
+          <Field
+            label="Max qty"
+            type="number"
+            placeholder="No max"
+            {...register("maxQty")}
+            hint={errors.maxQty?.message}
+          />
+        </div>
+
+        <div className="col-span-6 sm:col-span-3">
+          <Field
+            label="Sort order"
+            type="number"
+            {...register("sortOrder")}
+            hint={errors.sortOrder?.message}
+          />
+        </div>
+
+        <div className="col-span-6 sm:col-span-3">
+          <Select
+            label="Publish state"
+            {...register("publishState")}
+            hint={errors.publishState?.message}
+          >
+            {publishStates.map((p) => (
+              <option key={p} value={p}>
+                {humanizeToken(p)}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      {activeMutation.isError && (
+        <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">
+          {activeMutation.error?.message ||
+            `Failed to ${isEditing ? "update" : "create"} item`}
+        </p>
+      )}
+
+      <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-soft)]">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel ?? onSuccess}
+          disabled={isSubmitting || activeMutation.isPending}
         >
-          {pricingTypes.map((p) => (
-            <option key={p} value={p}>
-              {humanizeToken(p)}
-            </option>
-          ))}
-        </Select>
-
-        <Field
-          label="Base price"
-          type="number"
-          step="0.01"
-          required
-          {...register("basePrice")}
-          hint={errors.basePrice?.message}
-        />
-        <Field
-          label="Currency"
-          {...register("currency")}
-          hint={errors.currency?.message}
-        />
-        <Field
-          label="Unit label"
-          placeholder="item"
-          {...register("unitLabel")}
-          hint={errors.unitLabel?.message}
-        />
-
-        <Field
-          label="Min qty"
-          type="number"
-          {...register("minQty")}
-          hint={errors.minQty?.message}
-        />
-        <Field
-          label="Max qty"
-          type="number"
-          {...register("maxQty")}
-          hint={errors.maxQty?.message}
-        />
-        <Field
-          label="Sort order"
-          type="number"
-          {...register("sortOrder")}
-          hint={errors.sortOrder?.message}
-        />
-
-        <Select
-          label="Publish state"
-          {...register("publishState")}
-          hint={errors.publishState?.message}
-        >
-          {publishStates.map((p) => (
-            <option key={p} value={p}>
-              {humanizeToken(p)}
-            </option>
-          ))}
-        </Select>
-
+          Cancel
+        </Button>
         <Button
           type="submit"
           disabled={isSubmitting || activeMutation.isPending}
@@ -177,19 +229,7 @@ export function ItemForm({
               ? "Save changes"
               : "Create item"}
         </Button>
-
-        {activeMutation.isError && (
-          <p className="text-sm text-red-500">
-            {activeMutation.error?.message ||
-              `Failed to ${isEditing ? "update" : "create"} item`}
-          </p>
-        )}
-        {activeMutation.isSuccess && (
-          <p className="text-sm text-green-500">
-            Item {isEditing ? "updated" : "created"} successfully!
-          </p>
-        )}
-      </form>
-    </Card>
+      </div>
+    </form>
   );
 }

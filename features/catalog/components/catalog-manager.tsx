@@ -569,6 +569,7 @@ export function CatalogManager() {
             defaultServiceId={activeForm.defaultServiceId}
             initialItem={activeForm.item}
             onSuccess={closeModal}
+            onCancel={closeModal}
           />
         );
       case "addon":
@@ -578,6 +579,7 @@ export function CatalogManager() {
             defaultServiceId={activeForm.defaultServiceId}
             initialAddOn={activeForm.addon}
             onSuccess={closeModal}
+            onCancel={closeModal}
           />
         );
       default:
