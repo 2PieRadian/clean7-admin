@@ -61,8 +61,21 @@ export function buildBranchPayload(
     throw new Error("Branches need latitude and longitude from the map location.");
   }
 
-  const payload = {
-    code: readText(formData, "code"),
+  const code = readOptionalText(formData, "code");
+
+  const payload: {
+    name: string;
+    city: string | null;
+    addressLine1: string | null;
+    addressLine2: string | null;
+    state: string | null;
+    postalCode: string | null;
+    latitude: number;
+    longitude: number;
+    serviceRadiusKm: number;
+    code?: string;
+    assignedBranchAdminAuthUserId?: string | null;
+  } = {
     name: readText(formData, "name"),
 
     city: readOptionalText(formData, "city"),
@@ -75,12 +88,13 @@ export function buildBranchPayload(
     serviceRadiusKm: readServiceRadiusKm(formData),
   };
 
+  if (code) {
+    payload.code = code;
+  }
+
   if (options.includeAssignedBranchAdmin) {
-    return {
-      ...payload,
-      assignedBranchAdminAuthUserId:
-        readOptionalText(formData, "assignedBranchAdminAuthUserId"),
-    };
+    payload.assignedBranchAdminAuthUserId =
+      readOptionalText(formData, "assignedBranchAdminAuthUserId");
   }
 
   return payload;

@@ -30,6 +30,11 @@ export const serviceSchema = z.object({
   changeSummary: z.string().optional(),
 });
 
+const optionalNumber = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+  z.number().nullable().optional()
+);
+
 export const itemSchema = z.object({
   serviceId: z.string().min(1, "Service is required"),
   code: z.string().optional(),
@@ -39,8 +44,8 @@ export const itemSchema = z.object({
   basePrice: z.coerce.number().min(0, "Price must be positive"),
   currency: z.string().default("INR"),
   unitLabel: z.string().optional().nullable(),
-  minQty: z.coerce.number().optional().nullable(),
-  maxQty: z.coerce.number().optional().nullable(),
+  minQty: optionalNumber,
+  maxQty: optionalNumber,
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
   changeSummary: z.string().optional(),
@@ -55,7 +60,7 @@ export const addOnSchema = z.object({
   price: z.coerce.number().min(0, "Price must be positive"),
   currency: z.string().default("INR"),
   unitLabel: z.string().optional().nullable(),
-  maxQty: z.coerce.number().optional().nullable(),
+  maxQty: optionalNumber,
   sortOrder: z.coerce.number().default(0),
   publishState: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]),
   changeSummary: z.string().optional(),

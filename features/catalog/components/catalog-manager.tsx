@@ -120,8 +120,8 @@ type ActiveForm =
   | { type: "none" }
   | { type: "category"; category?: any }
   | { type: "service"; service?: any; defaultCategoryId?: string }
-  | { type: "item"; defaultServiceId?: string }
-  | { type: "addon"; defaultServiceId?: string };
+  | { type: "item"; item?: any; defaultServiceId?: string }
+  | { type: "addon"; addon?: any; defaultServiceId?: string };
 
 function GlobalSettingsCard() {
   const { data: iconSizeSetting, isLoading } = useSetting("HOME_SERVICE_ICON_SIZE");
@@ -261,9 +261,23 @@ export function CatalogManager() {
       case "service":
         return <ServiceForm defaultCategoryId={activeForm.defaultCategoryId} initialService={activeForm.service} onSuccess={closeModal} />;
       case "item":
-        return <ItemForm defaultServiceId={activeForm.defaultServiceId} onSuccess={closeModal} />;
+        return (
+          <ItemForm
+            key={activeForm.item?.id || `new-item-${activeForm.defaultServiceId}`}
+            defaultServiceId={activeForm.defaultServiceId}
+            initialItem={activeForm.item}
+            onSuccess={closeModal}
+          />
+        );
       case "addon":
-        return <AddOnForm defaultServiceId={activeForm.defaultServiceId} onSuccess={closeModal} />;
+        return (
+          <AddOnForm
+            key={activeForm.addon?.id || `new-addon-${activeForm.defaultServiceId}`}
+            defaultServiceId={activeForm.defaultServiceId}
+            initialAddOn={activeForm.addon}
+            onSuccess={closeModal}
+          />
+        );
       default:
         return null;
     }
@@ -273,8 +287,8 @@ export function CatalogManager() {
     switch (activeForm.type) {
       case "category": return activeForm.category ? `Edit Category: ${activeForm.category.name}` : "Create Category";
       case "service": return activeForm.service ? `Edit Service: ${activeForm.service.name}` : "Add Service";
-      case "item": return "Add Item";
-      case "addon": return "Add Add-on";
+      case "item": return activeForm.item ? `Edit Item: ${activeForm.item.name}` : "Add Item";
+      case "addon": return activeForm.addon ? `Edit Add-on: ${activeForm.addon.name}` : "Add Add-on";
       default: return "";
     }
   };
@@ -389,9 +403,26 @@ export function CatalogManager() {
                                       {svcItems.length === 0 && <li className="text-sm text-text-muted/70 italic">No items found</li>}
                                       {svcItems.map(item => (
                                         <li key={item.id} className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)]">
-                                          <span className="font-medium text-foreground">{item.name}</span>
                                           <div className="flex items-center gap-2">
+                                            <span className="font-medium text-foreground">{item.name}</span>
+                                            {item.unitLabel && (
+                                              <span className="text-xs text-text-muted font-mono bg-surface-muted px-2 py-0.5 rounded-full">
+                                                /{item.unitLabel}
+                                              </span>
+                                            )}
+                                            {item.publishState && item.publishState !== "ACTIVE" && (
+                                              <Badge value={item.publishState} className="text-[10px] px-1.5 py-0" />
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-1.5">
                                             <InlinePriceEditor id={item.id} initialPrice={Number(item.price)} type="item" />
+                                            <button
+                                              onClick={() => setActiveForm({ type: "item", defaultServiceId: svc.id, item: { ...item, serviceId: svc.id } })}
+                                              className="p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
+                                              title="Edit item"
+                                            >
+                                              <Edit2 className="h-3.5 w-3.5" />
+                                            </button>
                                             <DeleteAction name={item.name} onConfirm={() => deleteItem.mutateAsync(item.id).catch(e => alert(e.message))} />
                                           </div>
                                         </li>
@@ -409,9 +440,26 @@ export function CatalogManager() {
                                       {svcAddons.length === 0 && <li className="text-sm text-text-muted/70 italic">No add-ons found</li>}
                                       {svcAddons.map(addon => (
                                         <li key={addon.id} className="text-sm flex justify-between items-center bg-surface px-4 py-2 rounded-full border border-[var(--border-soft)]">
-                                          <span className="font-medium text-foreground">{addon.name}</span>
                                           <div className="flex items-center gap-2">
+                                            <span className="font-medium text-foreground">{addon.name}</span>
+                                            {addon.unitLabel && (
+                                              <span className="text-xs text-text-muted font-mono bg-surface-muted px-2 py-0.5 rounded-full">
+                                                /{addon.unitLabel}
+                                              </span>
+                                            )}
+                                            {addon.publishState && addon.publishState !== "ACTIVE" && (
+                                              <Badge value={addon.publishState} className="text-[10px] px-1.5 py-0" />
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-1.5">
                                             <InlinePriceEditor id={addon.id} initialPrice={Number(addon.price)} type="addon" />
+                                            <button
+                                              onClick={() => setActiveForm({ type: "addon", defaultServiceId: svc.id, addon: { ...addon, serviceId: svc.id } })}
+                                              className="p-1 text-text-muted hover:text-foreground hover:bg-surface-muted rounded-full transition-colors"
+                                              title="Edit add-on"
+                                            >
+                                              <Edit2 className="h-3.5 w-3.5" />
+                                            </button>
                                             <DeleteAction name={addon.name} onConfirm={() => deleteAddOn.mutateAsync(addon.id).catch(e => alert(e.message))} />
                                           </div>
                                         </li>

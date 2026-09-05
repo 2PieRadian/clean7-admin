@@ -135,7 +135,10 @@ export function useCreateItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: any) => apiRequest({ path: "/admin/items", method: "POST", body }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
   });
 }
 
@@ -143,25 +146,34 @@ export function useCreateAddOn() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: any) => apiRequest({ path: "/admin/addons", method: "POST", body }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
   });
 }
 
 export function useUpdateItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; basePrice: number; changeSummary: string }) =>
+    mutationFn: ({ id, ...body }: { id: string;[key: string]: any }) =>
       apiRequest({ path: `/admin/items/${id}`, method: "PATCH", body }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
   });
 }
 
 export function useUpdateAddOn() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; price: number; changeSummary: string }) =>
+    mutationFn: ({ id, ...body }: { id: string;[key: string]: any }) =>
       apiRequest({ path: `/admin/addons/${id}`, method: "PATCH", body }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
   });
 }
 
@@ -182,7 +194,10 @@ export function useDeleteItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiRequest({ path: `/admin/items/${id}`, method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
   });
 }
 
@@ -190,6 +205,9 @@ export function useDeleteAddOn() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiRequest({ path: `/admin/addons/${id}`, method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["addons"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
   });
 }
