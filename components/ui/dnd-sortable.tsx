@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 export function reorderArray<T>(list: T[], startIndex: number, endIndex: number): T[] {
   if (startIndex === endIndex) return list;
@@ -11,196 +10,185 @@ export function reorderArray<T>(list: T[], startIndex: number, endIndex: number)
   return result;
 }
 
-// Module-level ref to track active dragging handle so that clicking other elements on the item doesn't trigger drag
-let currentActiveDragGroupId: string | null = null;
-let currentActiveDragIndex: number | null = null;
-
-export interface SortableItemProps {
-  id: string;
-  index: number;
-  groupId: string;
+export interface SortableListProps<T> {
+  items: T[];
+  keyExtractor: (item: T, index: number) => string;
   onReorder: (sourceIndex: number, targetIndex: number) => void;
   className?: string;
-  children: React.ReactNode;
+  children: (
+    item: T,
+    index: number,
+    handleProps: {
+      onPointerDown: (e: React.PointerEvent) => void;
+      className: string;
+      style?: React.CSSProperties;
+    },
+    isDragging: boolean
+  ) => React.ReactNode;
 }
 
-export function SortableItem({
-  id,
-  index,
-  groupId,
+export function SortableList<T>({
+  items,
+  keyExtractor,
   onReorder,
   className = "",
   children,
-}: SortableItemProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [dragCanStart, setDragCanStart] = useState(false);
-  const itemRef = useRef<HTMLDivElement>(null);
+}: SortableListProps<T>) {
+  const [dragState, setDragState] = useState<{
+    draggingIndex: number;
+    hoverIndex: number;
+    translateY: number;
+    displacement: number;
+    startY: number;
+    rects: { top: number; bottom: number; height: number; midY: number }[];
+  } | null>(null);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!dragCanStart) {
-      e.preventDefault();
-      return;
-    }
-
-    currentActiveDragGroupId = groupId;
-    currentActiveDragIndex = index;
-
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData(
-      "text/plain",
-      JSON.stringify({ index, groupId, id })
-    );
-
-    setIsDragging(true);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (currentActiveDragGroupId !== groupId) return;
+  const handlePointerDown = (index: number, e: React.PointerEvent) => {
+    // Only primary mouse button or touch
+    if (e.button !== 0) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (!isDragOver && currentActiveDragIndex !== index) {
-      setIsDragOver(true);
+    e.stopPropagation();
+
+    const handleEl = e.currentTarget as HTMLElement;
+    const container = handleEl.closest("[data-sortable-container]") as HTMLElement;
+    if (!container) return;
+
+    const childElements = Array.from(container.children) as HTMLElement[];
+    const rects = childElements.map((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        top: r.top,
+        bottom: r.bottom,
+        height: r.height,
+        midY: r.top + r.height / 2,
+      };
+    });
+
+    const dragItemHeight = rects[index]?.height ?? 50;
+    let gap = 8;
+    if (rects.length > 1 && rects[0] && rects[1]) {
+      gap = Math.max(0, rects[1].top - rects[0].bottom);
     }
+
+    setDragState({
+      draggingIndex: index,
+      hoverIndex: index,
+      translateY: 0,
+      displacement: dragItemHeight + gap,
+      startY: e.clientY,
+      rects,
+    });
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Only clear if leaving the item bounds
-    if (itemRef.current && !itemRef.current.contains(e.relatedTarget as Node)) {
-      setIsDragOver(false);
-    }
-  };
+  useEffect(() => {
+    if (!dragState) return;
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    setIsDragging(false);
-    setDragCanStart(false);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "grabbing";
 
-    try {
-      const dataStr = e.dataTransfer.getData("text/plain");
-      if (!dataStr) return;
-      const data = JSON.parse(dataStr);
+    const onPointerMove = (e: PointerEvent) => {
+      const deltaY = e.clientY - dragState.startY;
+      const rects = dragState.rects;
+      if (!rects || rects.length <= 1) return;
 
-      if (data.groupId === groupId && typeof data.index === "number") {
-        if (data.index !== index) {
-          onReorder(data.index, index);
+      const currentDragIndex = dragState.draggingIndex;
+      const currentItemMid = (rects[currentDragIndex]?.midY ?? 0) + deltaY;
+
+      let newHoverIndex = currentDragIndex;
+      for (let i = 0; i < rects.length; i++) {
+        if (i === currentDragIndex) continue;
+        const targetRect = rects[i];
+        if (!targetRect) continue;
+
+        if (deltaY > 0) {
+          if (currentItemMid > targetRect.midY) {
+            newHoverIndex = Math.max(newHoverIndex, i);
+          }
+        } else if (deltaY < 0) {
+          if (currentItemMid < targetRect.midY) {
+            newHoverIndex = Math.min(newHoverIndex, i);
+          }
         }
       }
-    } catch {
-      // ignore parsing error
-    } finally {
-      currentActiveDragGroupId = null;
-      currentActiveDragIndex = null;
-    }
-  };
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setIsDragOver(false);
-    setDragCanStart(false);
-    currentActiveDragGroupId = null;
-    currentActiveDragIndex = null;
-  };
+      newHoverIndex = Math.max(0, Math.min(rects.length - 1, newHoverIndex));
+
+      setDragState((prev) =>
+        prev ? { ...prev, hoverIndex: newHoverIndex, translateY: deltaY } : null
+      );
+    };
+
+    const onPointerUp = () => {
+      if (dragState.draggingIndex !== dragState.hoverIndex) {
+        onReorder(dragState.draggingIndex, dragState.hoverIndex);
+      }
+      setDragState(null);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [dragState, onReorder]);
 
   return (
-    <div
-      ref={itemRef}
-      draggable={dragCanStart}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onDragEnd={handleDragEnd}
-      className={`relative transition-all duration-150 ${className} ${isDragging ? "opacity-35 scale-[0.99] ring-2 ring-primary/40 border-dashed" : ""
-        } ${isDragOver
-          ? "ring-2 ring-primary bg-primary/5 shadow-md -translate-y-0.5"
-          : ""
-        }`}
-    >
-      {/* Drop Target Indicator Pill */}
-      {isDragOver && (
-        <div className="absolute -top-1.5 left-4 right-4 h-1 bg-primary rounded-full z-20 pointer-events-none shadow-sm animate-pulse" />
-      )}
-      {children}
-    </div>
-  );
-}
+    <div data-sortable-container="true" className={`relative ${className}`}>
+      {items.map((item, index) => {
+        const key = keyExtractor(item, index);
+        const isDragging = dragState?.draggingIndex === index;
+        const draggingIndex = dragState?.draggingIndex ?? -1;
+        const hoverIndex = dragState?.hoverIndex ?? -1;
+        const displacement = dragState?.displacement ?? 0;
 
-export interface SortableHandleProps {
-  index: number;
-  totalCount: number;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  setDragCanStart?: (can: boolean) => void;
-  className?: string;
-  showArrows?: boolean;
-}
+        let translateY = 0;
+        let transition = "transform 220ms cubic-bezier(0.2, 0, 0, 1)";
+        let zIndex = 1;
 
-export function SortableHandle({
-  index,
-  totalCount,
-  onMoveUp,
-  onMoveDown,
-  setDragCanStart,
-  className = "",
-  showArrows = true,
-}: SortableHandleProps) {
-  return (
-    <div
-      className={`flex items-center gap-0.5 text-text-muted select-none ${className}`}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {showArrows && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveUp?.();
-          }}
-          disabled={index === 0}
-          title="Move Up"
-          className="p-1 rounded hover:bg-surface-muted hover:text-foreground disabled:opacity-20 disabled:pointer-events-none transition-colors"
-        >
-          <ChevronUp className="h-3 w-3" />
-        </button>
-      )}
-
-      <div
-        title="Drag to reorder"
-        className="p-1 rounded hover:bg-surface-muted hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
-        onMouseDown={(e) => {
-          // Allow drag only when mouse is pressed down on handle
-          const sortableParent = (e.currentTarget as HTMLElement).closest("[draggable]");
-          if (sortableParent) {
-            sortableParent.setAttribute("draggable", "true");
+        if (isDragging) {
+          translateY = dragState?.translateY ?? 0;
+          transition = "none";
+          zIndex = 50;
+        } else if (draggingIndex !== -1 && hoverIndex !== -1 && displacement > 0) {
+          if (draggingIndex < hoverIndex) {
+            if (index > draggingIndex && index <= hoverIndex) {
+              translateY = -displacement;
+            }
+          } else if (draggingIndex > hoverIndex) {
+            if (index >= hoverIndex && index < draggingIndex) {
+              translateY = displacement;
+            }
           }
-          setDragCanStart?.(true);
-        }}
-        onMouseUp={() => {
-          setDragCanStart?.(false);
-        }}
-        onTouchStart={() => {
-          setDragCanStart?.(true);
-        }}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </div>
+        }
 
-      {showArrows && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveDown?.();
-          }}
-          disabled={index >= totalCount - 1}
-          title="Move Down"
-          className="p-1 rounded hover:bg-surface-muted hover:text-foreground disabled:opacity-20 disabled:pointer-events-none transition-colors"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </button>
-      )}
+        const handleProps = {
+          onPointerDown: (e: React.PointerEvent) => handlePointerDown(index, e),
+          className:
+            "cursor-grab active:cursor-grabbing hover:text-foreground text-text-muted transition-colors p-1 rounded select-none touch-none",
+          style: { touchAction: "none" as const },
+        };
+
+        return (
+          <div
+            key={key}
+            style={{
+              transform: translateY !== 0 ? `translate3d(0, ${translateY}px, 0)` : undefined,
+              transition: dragState ? transition : undefined,
+              zIndex,
+            }}
+            className={`relative ${isDragging
+                ? "shadow-2xl ring-2 ring-primary/70 rounded-3xl bg-surface/95 backdrop-blur-sm opacity-95 scale-[1.01]"
+                : ""
+              }`}
+          >
+            {children(item, index, handleProps, isDragging)}
+          </div>
+        );
+      })}
     </div>
   );
 }
