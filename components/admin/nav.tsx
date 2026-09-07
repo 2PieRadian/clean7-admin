@@ -23,6 +23,7 @@ import {
   Mail,
   Tag,
   Bike,
+  GitFork,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -58,9 +59,9 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         directorOnly: true,
       },
       {
-        href: "/geo-overrides",
-        label: "Area Pricing",
-        icon: Globe2,
+        href: "/branch-services",
+        label: "Branch-wise Services",
+        icon: GitFork,
         directorOnly: true,
       },
       {
@@ -238,6 +239,15 @@ function isActivePath(pathname: string, href: string) {
 
   if (href === "/catalogue") {
     return pathname === "/catalogue" || pathname.startsWith("/catalogue/");
+  }
+
+  if (href === "/branch-services") {
+    return (
+      pathname === "/branch-services" ||
+      pathname.startsWith("/branch-services/") ||
+      pathname === "/geo-overrides" ||
+      pathname.startsWith("/geo-overrides/")
+    );
   }
 
   if (href === "/blogs") {

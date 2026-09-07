@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/browser-api";
@@ -604,10 +605,13 @@ export function CatalogManager() {
         <div>
           <h2 className="font-semibold text-xl sm:text-2xl text-foreground flex items-center gap-2">
             <LayoutList className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
-            <span>Manage Catalog</span>
+            <span>Base Catalog (Global Services & Pricing)</span>
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            Drag items smoothly using the grip handles to customize order across the customer app and website.
+            Global base templates for categories, services, items, and pricing. To assign offerings or customize pricing and delivery promise times for specific branches, visit{" "}
+            <Link href="/branch-services" className="text-primary font-medium hover:underline">
+              Branch-wise Services
+            </Link>.
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">

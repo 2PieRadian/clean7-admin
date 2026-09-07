@@ -59,15 +59,33 @@ async function requestWithToken<T>(token: string | null, options: ApiOptions) {
     extraHeaders["idempotency-key"] = newIdempotencyKey();
   }
 
-  const response = await fetch(buildUrl(options.path, options.query), {
-    method,
-    headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...extraHeaders,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(options.path, options.query), {
+      method,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...extraHeaders,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message.includes("Failed to fetch")
+        ? "Network connection failed. If developing locally, ensure you access the admin panel via http://localhost:3000."
+        : error instanceof Error
+          ? error.message
+          : "Failed to connect to server.";
+
+    return {
+      response: new Response(JSON.stringify({ success: false, error: { message } }), {
+        status: 503,
+        statusText: "Service Unavailable",
+      }),
+      json: { success: false, error: { message } } as T,
+    };
+  }
 
   let json: unknown;
   try {

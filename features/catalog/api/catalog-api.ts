@@ -5,6 +5,8 @@ import type {
   CatalogServiceSummary,
   CatalogItemResponse,
   CatalogAddOnResponse,
+  BranchCatalogResponse,
+  BranchCatalogConfig,
 } from "@/lib/types";
 
 // Queries
@@ -211,3 +213,108 @@ export function useDeleteAddOn() {
     },
   });
 }
+
+// Branch Catalog Queries & Mutations
+export function useBranchCatalog(branchId: string) {
+  return useQuery({
+    queryKey: ["branch-catalog", branchId],
+    queryFn: () =>
+      apiRequest<BranchCatalogResponse>({
+        path: `/admin/branch-catalog/${branchId}`,
+      }),
+    enabled: Boolean(branchId),
+  });
+}
+
+export function useSaveBranchCatalog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      branchId,
+      config,
+    }: {
+      branchId: string;
+      config: Partial<BranchCatalogConfig>;
+    }) =>
+      apiRequest({
+        path: `/admin/branch-catalog/${branchId}`,
+        method: "PUT",
+        body: config,
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-catalog", variables.branchId] });
+      queryClient.invalidateQueries({ queryKey: ["geo-overrides"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+
+export function usePickFromBase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      branchId,
+      selection,
+    }: {
+      branchId: string;
+      selection: {
+        categoryIds?: string[];
+        serviceIds?: string[];
+        itemIds?: string[];
+        addOnIds?: string[];
+      };
+    }) =>
+      apiRequest({
+        path: `/admin/branch-catalog/${branchId}/pick-from-base`,
+        method: "POST",
+        body: selection,
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-catalog", variables.branchId] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+
+export function useImportAllBaseToBranch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (branchId: string) =>
+      apiRequest({
+        path: `/admin/branch-catalog/${branchId}/import-all`,
+        method: "POST",
+      }),
+    onSuccess: (_, branchId) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-catalog", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+
+export function useRemoveBranchEntity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      branchId,
+      targetType,
+      targetId,
+    }: {
+      branchId: string;
+      targetType: "CATEGORY" | "SERVICE" | "ITEM" | "ADDON";
+      targetId: string;
+    }) =>
+      apiRequest({
+        path: `/admin/branch-catalog/${branchId}/entity/${targetType}/${targetId}`,
+        method: "DELETE",
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-catalog", variables.branchId] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+

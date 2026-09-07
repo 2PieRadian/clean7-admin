@@ -248,6 +248,118 @@ export type GeoOverrideResponse = {
   updatedAt?: string;
 };
 
+export type BranchCatalogResolvedItem = {
+  id: string;
+  serviceId: string;
+  code: string;
+  slug: string;
+  name: string;
+  baseName: string;
+  pricingType: PricingType;
+  price: number;
+  basePrice: number;
+  isOverridden: boolean;
+  currency: string;
+  unitLabel: string | null;
+  minQty: number | null;
+  maxQty: number | null;
+  sortOrder: number;
+  publishState: PublishState;
+  isBranchCustom: boolean;
+};
+
+export type BranchCatalogResolvedAddOn = {
+  id: string;
+  serviceId: string;
+  code: string;
+  name: string;
+  baseName: string;
+  description: string | null;
+  pricingType: PricingType;
+  price: number;
+  basePrice: number;
+  isOverridden: boolean;
+  currency: string;
+  unitLabel: string | null;
+  maxQty: number | null;
+  sortOrder: number;
+  publishState: PublishState;
+  isBranchCustom: boolean;
+};
+
+export type BranchCatalogResolvedService = {
+  id: string;
+  categoryId: string;
+  code: string;
+  slug: string;
+  name: string;
+  baseName: string;
+  shortDescription?: string | null;
+  longDescription?: string | null;
+  appImageUrl?: string | null;
+  webImageUrl?: string | null;
+  iconSize?: number | null;
+  serviceMode: ServiceMode;
+  durationEstimateMinutes?: number | null;
+  arrivalSlaMinutes?: number | null;
+  tags?: JsonValue;
+  sortOrder: number;
+  publishState: PublishState;
+  items: BranchCatalogResolvedItem[];
+  addOns: BranchCatalogResolvedAddOn[];
+  isBranchCustom: boolean;
+};
+
+export type BranchCatalogResolvedCategory = {
+  id: string;
+  code: string;
+  slug: string;
+  name: string;
+  baseName: string;
+  description?: string | null;
+  iconUrl?: string | null;
+  appImageUrl?: string | null;
+  webImageUrl?: string | null;
+  sortOrder: number;
+  publishState: PublishState;
+  services: BranchCatalogResolvedService[];
+  isBranchCustom: boolean;
+};
+
+export type BranchCatalogStats = {
+  totalBaseCategories: number;
+  totalBaseServices: number;
+  totalBaseItems: number;
+  totalBaseAddOns: number;
+  activeCategoriesInBranch: number;
+  activeServicesInBranch: number;
+  activeItemsInBranch: number;
+};
+
+export type BranchCatalogConfig = {
+  branchId: string;
+  isCustomized: boolean;
+  categoryIds: string[];
+  serviceIds: string[];
+  itemIds: string[];
+  addOnIds: string[];
+  overrides: {
+    categories?: Record<string, { name?: string; description?: string; publishState?: PublishState }>;
+    services?: Record<string, { name?: string; shortDescription?: string; arrivalSlaMinutes?: number; durationEstimateMinutes?: number; publishState?: PublishState }>;
+    items?: Record<string, { price?: number; name?: string; unitLabel?: string; publishState?: PublishState }>;
+    addons?: Record<string, { price?: number; name?: string; publishState?: PublishState }>;
+  };
+};
+
+export type BranchCatalogResponse = {
+  branchId: string;
+  isCustomized: boolean;
+  config: BranchCatalogConfig;
+  categories: BranchCatalogResolvedCategory[];
+  baseCatalog: CategorySummary[];
+  stats: BranchCatalogStats;
+};
+
 export type BranchAdminResponse = {
   id: string;
   code: string;

@@ -18,6 +18,19 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const bottleneckOrders = useMemo(() => {
+    if (!metrics) return [];
+    const seen = new Set<string>();
+    const unique: OrderResponse[] = [];
+    for (const order of [...metrics.stuckOrders, ...metrics.delayedOrders]) {
+      if (order?.id && !seen.has(order.id)) {
+        seen.add(order.id);
+        unique.push(order);
+      }
+    }
+    return unique.slice(0, 5);
+  }, [metrics]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -129,11 +142,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Stuck & Delayed Orders List */}
-          {(metrics.stuckOrders.length > 0 || metrics.delayedOrders.length > 0) && (
+          {bottleneckOrders.length > 0 && (
             <div>
               <h2 className="mb-4 text-lg font-semibold text-foreground">Operational Bottlenecks</h2>
               <div className="grid gap-3">
-                {Array.from(new Set([...metrics.stuckOrders, ...metrics.delayedOrders])).slice(0, 5).map((order) => {
+                {bottleneckOrders.map((order) => {
                   const reason = getStuckOrderReasoning(order) || "Delayed behind schedule.";
                   return (
                     <Link key={order.id} href={`/orders/${order.id}`} className="block group">
@@ -150,7 +163,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-semibold text-rose-600 transition-transform group-hover:translate-x-1">Review &rarr;</span>
                       </Card>
                     </Link>
-                  )
+                  );
                 })}
               </div>
             </div>

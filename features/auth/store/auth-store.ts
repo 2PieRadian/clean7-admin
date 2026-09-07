@@ -34,21 +34,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    const currentUser = await getCurrentUser(stored);
+    try {
+      const currentUser = await getCurrentUser(stored);
 
-    if (!currentUser || (currentUser.role !== "DIRECTOR" && currentUser.role !== "BRANCH_ADMIN")) {
-      clearStoredSession();
-      set({ loading: false, user: null, session: null });
-      return;
+      if (!currentUser || (currentUser.role !== "DIRECTOR" && currentUser.role !== "BRANCH_ADMIN")) {
+        clearStoredSession();
+        set({ loading: false, user: null, session: null });
+        return;
+      }
+
+      const nextSession = {
+        ...stored,
+        user: currentUser,
+      };
+
+      setStoredSession(nextSession);
+      set({ loading: false, user: currentUser, session: nextSession });
+    } catch (err) {
+      console.error("Auth bootstrap failed:", err);
+      if (stored.user && (stored.user.role === "DIRECTOR" || stored.user.role === "BRANCH_ADMIN")) {
+        set({ loading: false, user: stored.user, session: stored });
+      } else {
+        clearStoredSession();
+        set({ loading: false, user: null, session: null });
+      }
     }
-
-    const nextSession = {
-      ...stored,
-      user: currentUser,
-    };
-
-    setStoredSession(nextSession);
-    set({ loading: false, user: currentUser, session: nextSession });
   },
 
   login: async (email: string, password: string) => {
@@ -88,22 +98,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   reloadUser: async () => {
-    const stored = getStoredSession();
-    const currentUser = await getCurrentUser(stored);
+    try {
+      const stored = getStoredSession();
+      const currentUser = await getCurrentUser(stored);
 
-    if (!stored || !currentUser) {
-      clearStoredSession();
-      set({ user: null, session: null });
-      return;
+      if (!stored || !currentUser) {
+        clearStoredSession();
+        set({ user: null, session: null });
+        return;
+      }
+
+      const nextSession = {
+        ...stored,
+        user: currentUser,
+      };
+
+      setStoredSession(nextSession);
+      set({ user: currentUser, session: nextSession });
+    } catch (err) {
+      console.error("Failed to reload user:", err);
     }
-
-    const nextSession = {
-      ...stored,
-      user: currentUser,
-    };
-
-    setStoredSession(nextSession);
-    set({ user: currentUser, session: nextSession });
   },
 }));
 

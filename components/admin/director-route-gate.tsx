@@ -11,6 +11,7 @@ import type { AuthUser } from "@/lib/types";
 const DIRECTOR_ONLY_PREFIXES = [
   "/branches",
   "/catalogue",
+  "/branch-services",
   "/geo-overrides",
   "/payments",
   "/branch-admins",

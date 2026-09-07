@@ -58,28 +58,37 @@ export async function getCurrentUser(session?: SessionData | null) {
 
   if (!activeSession) return null;
 
-  const response = await fetch(`${getGatewayUrl()}/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${activeSession.token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${getGatewayUrl()}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${activeSession.token}`,
+      },
+    });
 
-  if (response.status === 401) {
-    clearStoredSession();
+    if (response.status === 401) {
+      clearStoredSession();
+      return null;
+    }
+
+    const json = (await response.json()) as ApiEnvelope<AuthUser>;
+
+    if (!response.ok || !json.success) {
+      return null;
+    }
+
+    const nextSession: SessionData = {
+      ...activeSession,
+      user: json.data,
+    };
+
+    setStoredSession(nextSession);
+    return json.data;
+  } catch (error) {
+    console.error("Failed to fetch current user:", error);
+    // If the token is still valid, return the cached user session instead of crashing
+    if (activeSession.user && !isSessionTokenExpired(activeSession.token)) {
+      return activeSession.user;
+    }
     return null;
   }
-
-  const json = (await response.json()) as ApiEnvelope<AuthUser>;
-
-  if (!response.ok || !json.success) {
-    return null;
-  }
-
-  const nextSession: SessionData = {
-    ...activeSession,
-    user: json.data,
-  };
-
-  setStoredSession(nextSession);
-  return json.data;
 }

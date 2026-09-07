@@ -9,6 +9,10 @@ function AuthBootstrap({ children }: { children: ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hostname === "127.0.0.1") {
+      window.location.hostname = "localhost";
+      return;
+    }
     void bootstrap();
   }, [bootstrap]);
 
