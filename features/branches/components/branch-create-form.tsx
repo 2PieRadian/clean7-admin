@@ -55,9 +55,9 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit as any)}>
         <Field label="Branch name" placeholder="Delhi Central" required {...register("name")} hint={errors.name?.message} />
-        <Field label="Phone number" placeholder="+91-9876543210" {...register("phoneNumber")} hint={errors.phoneNumber?.message} />
-        <Field label="GSTIN" placeholder="09AAJCE8249F1ZA" {...register("gstin")} hint={errors.gstin?.message} />
-        <Field label="CIN" placeholder="U96010UW2026PTC255529" {...register("cin")} hint={errors.cin?.message} />
+        <Field label="Phone number (Optional)" placeholder="+91-9876543210" {...register("phoneNumber")} hint={errors.phoneNumber?.message} />
+        <Field label="GSTIN (Optional)" placeholder="09AAJCE8249F1ZA" {...register("gstin")} hint={errors.gstin?.message} />
+        <Field label="CIN (Optional)" placeholder="U96010UW2026PTC255529" {...register("cin")} hint={errors.cin?.message} />
         <Field label="City" placeholder="Bengaluru" {...register("city")} hint={errors.city?.message} />
         <Select label="State" {...register("state")} hint={errors.state?.message}>
           <option value="">Select a state</option>

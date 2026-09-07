@@ -220,19 +220,19 @@ export default function BranchDetailPage() {
             />
             <div className="grid gap-4 md:grid-cols-3">
               <Field
-                label="Phone number"
+                label="Phone number (Optional)"
                 name="phoneNumber"
                 defaultValue={branch.phoneNumber ?? branch.phone ?? ""}
                 placeholder="+91-9876543210"
               />
               <Field
-                label="GSTIN"
+                label="GSTIN (Optional)"
                 name="gstin"
                 defaultValue={branch.gstin ?? ""}
                 placeholder="09AAJCE8249F1ZA"
               />
               <Field
-                label="CIN"
+                label="CIN (Optional)"
                 name="cin"
                 defaultValue={branch.cin ?? ""}
                 placeholder="U96010UW2026PTC255529"
