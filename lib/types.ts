@@ -364,6 +364,10 @@ export type BranchAdminResponse = {
   id: string;
   code: string;
   name: string;
+  phoneNumber?: string | null;
+  phone?: string | null;
+  gstin?: string | null;
+  cin?: string | null;
   city?: string | null;
   addressLine1?: string | null;
   addressLine2?: string | null;

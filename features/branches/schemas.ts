@@ -3,6 +3,10 @@ import { indianStates } from "@/lib/constants";
 
 export const branchCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  phoneNumber: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  gstin: z.string().optional().nullable(),
+  cin: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   state: z.enum(indianStates as unknown as [string, ...string[]]).optional().nullable(),
   addressLine1: z.string().optional().nullable(),

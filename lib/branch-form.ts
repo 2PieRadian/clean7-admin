@@ -65,6 +65,10 @@ export function buildBranchPayload(
 
   const payload: {
     name: string;
+    phoneNumber?: string | null;
+    phone?: string | null;
+    gstin?: string | null;
+    cin?: string | null;
     city: string | null;
     addressLine1: string | null;
     addressLine2: string | null;
@@ -77,7 +81,10 @@ export function buildBranchPayload(
     assignedBranchAdminAuthUserId?: string | null;
   } = {
     name: readText(formData, "name"),
-
+    phoneNumber: readOptionalText(formData, "phoneNumber") ?? readOptionalText(formData, "phone"),
+    phone: readOptionalText(formData, "phoneNumber") ?? readOptionalText(formData, "phone"),
+    gstin: readOptionalText(formData, "gstin"),
+    cin: readOptionalText(formData, "cin"),
     city: readOptionalText(formData, "city"),
     addressLine1: readOptionalText(formData, "addressLine1"),
     addressLine2: readOptionalText(formData, "addressLine2"),

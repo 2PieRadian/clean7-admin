@@ -101,6 +101,16 @@ export default function BranchesPage() {
                     : "No coordinates",
               },
               {
+                key: "phone",
+                header: "Phone",
+                render: (branch) => branch.phoneNumber || branch.phone || "—",
+              },
+              {
+                key: "gstin",
+                header: "GSTIN",
+                render: (branch) => branch.gstin || "—",
+              },
+              {
                 key: "city",
                 header: "City / PIN",
                 render: (branch) => [branch.city, branch.postalCode].filter(Boolean).join(" · ") || "—",
