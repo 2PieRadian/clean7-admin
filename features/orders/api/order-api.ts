@@ -170,7 +170,16 @@ export async function downloadOrderInvoice(orderId: string, orderNumber: string)
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to download invoice: ${response.statusText}`);
+    let errorMessage = `Failed to download invoice: ${response.statusText}`;
+    try {
+      const errorJson = await response.json();
+      if (errorJson?.error?.message) {
+        errorMessage = errorJson.error.message;
+      } else if (errorJson?.message) {
+        errorMessage = errorJson.message;
+      }
+    } catch { }
+    throw new Error(errorMessage);
   }
 
   const blob = await response.blob();

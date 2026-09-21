@@ -240,18 +240,30 @@ export function OrderDetailManager({
   const subtotal = order.subtotalAmount;
   const addOnTotal = order.addOnTotalAmount;
   const discountAmount = order.discountAmount;
+  const expressFeeAmount = order.expressFeeAmount;
   const numSub = parseFloat(subtotal || "0");
   const numAdd = parseFloat(addOnTotal || "0");
   const numDisc = parseFloat(discountAmount || "0");
+  const numExpress = parseFloat(expressFeeAmount || (order.bookingType === "ASAP" && parseFloat(grandTotal || "0") > 0 ? "70" : "0"));
   const numGrand = parseFloat(grandTotal || "0");
   const baseTaxable = Math.max(0, numSub + numAdd - numDisc);
-  const taxAmount = order.taxAmount ?? (numGrand > baseTaxable ? (numGrand - baseTaxable).toFixed(2) : "0");
+  const taxAmount = order.taxAmount ?? (numGrand > (baseTaxable + numExpress) ? (numGrand - baseTaxable - numExpress).toFixed(2) : (baseTaxable * 0.18).toFixed(2));
   const blockers = order.fulfillment?.blockers ?? [];
   const serviceMode = order.serviceMode ?? "PICKUP_DELIVERY";
 
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
 
+  const isPaid = order.paymentStatus === "PAID" || order.paymentStatus === "COD_COLLECTED";
+
   async function handleDownloadInvoice() {
+    if (!isPaid) {
+      setError(
+        order.paymentMethod === "COD"
+          ? "Tax invoice is generated only after cash payment is collected on delivery."
+          : "Tax invoice is generated only after payment has been completed.",
+      );
+      return;
+    }
     setIsDownloadingInvoice(true);
     try {
       await downloadOrderInvoice(order.id, order.orderNumber || order.orderCode || "Order");
@@ -430,12 +442,13 @@ export function OrderDetailManager({
               <Button
                 variant="secondary"
                 size="sm"
-                className="gap-1.5"
+                className={`gap-1.5 ${!isPaid ? "opacity-60" : ""}`}
                 onClick={handleDownloadInvoice}
                 disabled={isDownloadingInvoice}
+                title={!isPaid ? "Tax invoice will be available once payment is completed" : "Download official tax invoice"}
               >
-                <Download className="h-3.5 w-3.5 text-primary" />
-                {isDownloadingInvoice ? "Downloading..." : "PDF Invoice"}
+                <Download className={`h-3.5 w-3.5 ${isPaid ? "text-primary" : "text-slate-400"}`} />
+                {isDownloadingInvoice ? "Downloading..." : isPaid ? "PDF Invoice" : "Invoice (Unpaid)"}
               </Button>
               <Button
                 variant="danger"
@@ -1419,6 +1432,12 @@ export function OrderDetailManager({
                 <span>GST (18%)</span>
                 <span>+{formatMoney(taxAmount, order.currency)}</span>
               </div>
+              {numExpress > 0 && (
+                <div className="flex justify-between text-amber-600 dark:text-amber-400 font-medium">
+                  <span>⚡ Express Arrival Promise Fee</span>
+                  <span>+{formatMoney(String(numExpress), order.currency)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-baseline text-foreground font-bold pt-2 border-t border-[var(--border-soft)] text-base">
                 <span>Total Amount</span>
                 <span>{formatMoney(grandTotal, order.currency)}</span>

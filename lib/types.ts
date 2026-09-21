@@ -606,6 +606,7 @@ export type OrderResponse = {
   discountAmount?: string;
   taxAmount?: string;
   taxRate?: number;
+  expressFeeAmount?: string;
   grandTotalAmount?: string;
 
   bookingType?: "SCHEDULED" | "ASAP";
