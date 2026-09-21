@@ -52,7 +52,11 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Workspace preferences"
-        description="Workspace preferences, express booking charges, brochure uploads, and social links."
+        description={
+          isDirector
+            ? "Workspace preferences, express booking charges, brochure uploads, and social links."
+            : "Workspace preferences and express booking charges."
+        }
       />
 
       <Card className="space-y-4 p-5 md:p-6">
@@ -130,7 +134,7 @@ export default function SettingsPage() {
 
       <ExpressDeliverySettings />
 
-      <SocialMediaSettings />
+      {isDirector ? <SocialMediaSettings /> : null}
     </div>
   );
 }
