@@ -86,6 +86,11 @@ export default function SettingsPage() {
             </li>
 
             <li>
+              <Link href="/banners" className="underline-offset-4 hover:underline">
+                Home Banners Carousel
+              </Link>
+            </li>
+            <li>
               <Link href="/profiles" className="underline-offset-4 hover:underline">
                 Profile lookup (legacy path)
               </Link>

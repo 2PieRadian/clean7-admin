@@ -276,3 +276,86 @@ export async function uploadStaffImage(
   await putToSignedUrl(uploadURL, file, onProgress);
   return fileURL;
 }
+
+export async function uploadBannerImage(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  if (!file) {
+    throw new Error("No file provided");
+  }
+
+  // Automatically compress images to high quality WebP before S3 upload
+  file = await compressImageForUpload(file, 1200, 0.85);
+
+  const preSignedResponse = await fetch(
+    `${getGatewayUrl()}/admin/upload/banner-image`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(getStoredSession()?.token ? { Authorization: `Bearer ${getStoredSession()?.token}` } : {})
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type || "image/png",
+      }),
+    }
+  );
+
+  if (!preSignedResponse.ok) {
+    // Fallback to category-image / article-image upload if banner-image endpoint is unavailable
+    const fallbackResponse = await fetch(
+      `${getGatewayUrl()}/admin/upload/category-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(getStoredSession()?.token ? { Authorization: `Bearer ${getStoredSession()?.token}` } : {})
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type || "image/png",
+          imageVariant: "general",
+        }),
+      }
+    );
+
+    if (!fallbackResponse.ok) {
+      const articleFallback = await fetch(
+        `${getGatewayUrl()}/admin/upload/article-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(getStoredSession()?.token ? { Authorization: `Bearer ${getStoredSession()?.token}` } : {})
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type || "image/png",
+          }),
+        }
+      );
+
+      if (!articleFallback.ok) {
+        throw new Error("Failed to get pre-signed URL for banner image upload");
+      }
+
+      const fallbackData = await articleFallback.json();
+      const { uploadURL, fileURL } = fallbackData.data;
+      await putToSignedUrl(uploadURL, file, onProgress);
+      return fileURL;
+    }
+
+    const fallbackData = await fallbackResponse.json();
+    const { uploadURL, fileURL } = fallbackData.data;
+    await putToSignedUrl(uploadURL, file, onProgress);
+    return fileURL;
+  }
+
+  const responseData = await preSignedResponse.json();
+  const { uploadURL, fileURL } = responseData.data;
+
+  await putToSignedUrl(uploadURL, file, onProgress);
+  return fileURL;
+}

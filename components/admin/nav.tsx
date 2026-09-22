@@ -24,6 +24,7 @@ import {
   Tag,
   Bike,
   GitFork,
+  GalleryHorizontal,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -77,6 +78,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         directorOnly: true,
       },
       { href: "/blogs", label: "Blogs", icon: BookOpen, directorOnly: true },
+      { href: "/banners", label: "Home Banners", icon: GalleryHorizontal, directorOnly: true },
     ],
   },
   {
