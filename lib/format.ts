@@ -132,7 +132,44 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   COD_COLLECTED: "COD collected",
 };
 
-export function orderStatusLabel(status: string) {
+export function orderStatusLabel(
+  status: string,
+  serviceMode?: ServiceMode | string,
+  isWalkIn?: boolean,
+  assignmentState?: string | null,
+  categoryCode?: string | null,
+) {
+  const isLaundry =
+    serviceMode === "PICKUP_DELIVERY" ||
+    (categoryCode && categoryCode.toUpperCase() === "LAUNDRY");
+
+  const isAtHome =
+    serviceMode === "AT_HOME" ||
+    (categoryCode && categoryCode.toUpperCase() !== "LAUNDRY" && !isLaundry);
+
+  if (isAtHome) {
+    if (status === "CONFIRMED") return "Confirmed";
+    if (status === "ASSIGNED") return "Operator Assigned";
+    if (status === "IN_PROGRESS") {
+      if (assignmentState === "EN_ROUTE") return "Operator En Route";
+      if (assignmentState === "ON_SITE") return "Operator On Site";
+      if (assignmentState === "WORK_STARTED") return "Service Underway";
+      if (assignmentState === "PROOF_SUBMITTED") return "Proof & Payment";
+      return "Service In Progress";
+    }
+    if (status === "COMPLETED") return "Service Completed";
+    if (status === "CANCELLED") return "Cancelled";
+  }
+
+  if (isLaundry) {
+    if (status === "ASSIGNED") return "Rider Assigned";
+    if (status === "IN_PROGRESS") return "Pickup Completed";
+  }
+
+  if (isWalkIn) {
+    if (status === "READY_FOR_DELIVERY") return "Ready for Pickup";
+  }
+
   return ORDER_STATUS_LABELS[status] ?? humanizeToken(status);
 }
 
@@ -338,38 +375,53 @@ export type DeliveryPromiseInfo = {
 };
 
 export function deliveryPromiseInfo(order: OrderResponse): DeliveryPromiseInfo {
+  const isLaundry =
+    order.serviceCategoryCode?.toUpperCase() === "LAUNDRY" ||
+    order.serviceMode === "PICKUP_DELIVERY";
+  const isPickupDone = isLaundry && Boolean((order as any).pickupCompletedAt);
+  const isAsapFinished =
+    order.slaStatus === "MET" ||
+    order.slaStatus === "COMPLETED_ON_TIME" ||
+    order.status === "COMPLETED" ||
+    order.status === "DELIVERED";
+
   if (order.bookingType === "ASAP") {
-    let statusLabel = "In Progress";
+    let statusLabel = isLaundry ? (isPickupDone ? "Pickup Completed" : "Pickup In Progress") : "In Progress";
     let badgeClass = "bg-sky-500/10 text-sky-700 ring-1 ring-sky-500/20";
     let isOverdue = false;
 
-    if (order.slaStatus === "MET" || order.status === "COMPLETED" || order.status === "DELIVERED") {
-      statusLabel = "Delivered on Time";
+    if (isAsapFinished) {
+      statusLabel = isLaundry ? "Delivered" : "Completed on Time";
+      badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
+    } else if (isPickupDone) {
+      statusLabel = "Pickup Completed on Time";
       badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
     } else if (order.slaStatus === "BREACHED") {
-      statusLabel = "Delayed past target";
+      statusLabel = isLaundry ? "Pickup delayed past target" : "Arrival delayed past target";
       badgeClass = "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20";
       isOverdue = true;
     } else if (order.slaStatus === "ON_TRACK") {
-      statusLabel = "On Track";
+      statusLabel = isLaundry ? "Pickup on Track" : "On Track";
       badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
     } else if (order.slaStatus === "AT_RISK") {
-      statusLabel = "Running Late";
+      statusLabel = isLaundry ? "Pickup Running Late" : "Running Late";
       badgeClass = "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20";
     } else if (order.slaStatus === "NOT_STARTED") {
-      statusLabel = "Starting Soon";
+      statusLabel = isLaundry ? "Pickup Starting Soon" : "Starting Soon";
       badgeClass = "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300";
     }
 
-    const timeDetail = order.promisedArrivalTo
-      ? `Target: ${formatTime(order.promisedArrivalTo)}`
-      : order.slaStartedAt
-        ? `Started: ${formatTime(order.slaStartedAt)}`
-        : "Urgent delivery window";
+    const timeDetail = isLaundry && isPickupDone
+      ? "Carefully processing · Delivered fresh once ready"
+      : order.promisedArrivalTo
+        ? `${isLaundry ? "Pickup Target:" : "Reach by:"} ${formatTime(order.promisedArrivalTo)}`
+        : order.slaStartedAt
+          ? `Started: ${formatTime(order.slaStartedAt)}`
+          : isLaundry ? "Urgent pickup window" : "Urgent service window";
 
     return {
       isAsap: true,
-      typeLabel: "⚡ ASAP Express",
+      typeLabel: isLaundry ? "⚡ ASAP Pickup" : "⚡ ASAP Service",
       statusLabel,
       badgeClass,
       timeDetail,
@@ -382,7 +434,7 @@ export function deliveryPromiseInfo(order: OrderResponse): DeliveryPromiseInfo {
   if (!order.scheduledDate) {
     return {
       isAsap: false,
-      typeLabel: "📅 Scheduled",
+      typeLabel: isLaundry ? "📅 Scheduled Delivery" : "📅 Scheduled Service",
       statusLabel: slotName,
       badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300",
       timeDetail: slotName,
@@ -411,19 +463,19 @@ export function deliveryPromiseInfo(order: OrderResponse): DeliveryPromiseInfo {
   let badgeClass = "bg-slate-100 text-slate-700 ring-1 ring-slate-300/40 dark:bg-slate-800 dark:text-slate-300";
 
   if (isPast) {
-    statusLabel = `Delayed (Was ${formatDate(order.scheduledDate)})`;
+    statusLabel = isLaundry ? `Delayed (Was ${formatDate(order.scheduledDate)})` : `Arrival Delayed (Was ${formatDate(order.scheduledDate)})`;
     badgeClass = "bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20";
   } else if (isCompleted) {
-    statusLabel = "Delivered";
+    statusLabel = isLaundry ? "Delivered" : "Service Completed";
     badgeClass = "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20";
   } else if (dateStr === todayStr) {
-    statusLabel = `Due Today · ${slotName}`;
+    statusLabel = isLaundry ? `Due Today · ${slotName}` : `Arrival Window · ${slotName}`;
     badgeClass = "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20";
   }
 
   return {
     isAsap: false,
-    typeLabel: "📅 Scheduled",
+    typeLabel: isLaundry ? "📅 Scheduled Delivery" : "📅 Scheduled Service",
     statusLabel,
     badgeClass,
     timeDetail: `${datePrefix} · ${slotName}`,

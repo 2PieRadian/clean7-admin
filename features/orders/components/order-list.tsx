@@ -24,6 +24,11 @@ import {
   List,
   Truck,
   Trash2,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -41,9 +46,36 @@ import {
 } from "@/lib/format";
 import type { OrderResponse, BranchAdminResponse } from "@/lib/types";
 
-function getAlertLabel(order: OrderResponse): string | null {
+export function getAlertLabel(order: OrderResponse): string | null {
+  const isWalkIn =
+    order.customerAuthUserId === "walk-in-guest" ||
+    order.serviceAddressSnapshot?.id === "walk-in-address" ||
+    order.serviceAddressSnapshot?.line1 === "In-Store";
+
+  if (isWalkIn) {
+    if (order.status === "READY_FOR_DELIVERY") {
+      return "Ready for Pickup";
+    }
+    return null;
+  }
+
   const s = order.status;
-  if ((s === "CONFIRMED" || s === "IN_PROGRESS") && !order.pickupRiderAuthUserId) {
+  const isAtHome =
+    order.serviceMode === "AT_HOME" ||
+    (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() !== "LAUNDRY");
+
+  if (isAtHome) {
+    if (
+      (s === "CONFIRMED" || s === "IN_PROGRESS") &&
+      !order.assignedOperatorAuthUserId
+    ) {
+      return "Needs Operator";
+    }
+    return null;
+  }
+
+  // Laundry / Pickup & Delivery
+  if ((s === "CONFIRMED" || (s === "IN_PROGRESS" && !order.pickupCompletedAt)) && !order.pickupRiderAuthUserId) {
     return "Needs Pickup Rider";
   }
   if (s === "READY_FOR_DELIVERY") {
@@ -75,7 +107,7 @@ const columns = [
         <div className="space-y-1 min-w-[190px]">
           <Link
             href={`/orders/${order.id}`}
-            className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-[rgba(39,193,165,0.35)] underline-offset-4 line-clamp-1"
+            className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-[rgba(184,137,62,0.35)] underline-offset-4 line-clamp-1"
           >
             {order.serviceCategoryName ?? order.serviceCategoryCode ?? "Order"}
             {order.serviceName ? ` · ${order.serviceName}` : ""}
@@ -148,8 +180,8 @@ const columns = [
     id: "deliveryTarget",
     header: () => (
       <div>
-        <span>Delivery Target</span>
-        <p className="text-[10px] font-normal normal-case text-text-muted">Commitment / Slot</p>
+        <span>Arrival / Pickup Target</span>
+        <p className="text-[10px] font-normal normal-case text-text-muted">Reach Target (At-Home) / Pickup (Laundry)</p>
       </div>
     ),
     cell: (info) => {
@@ -184,30 +216,68 @@ const columns = [
     ),
     cell: (info) => {
       const order = info.row.original;
+      const isWalkIn =
+        order.customerAuthUserId === "walk-in-guest" ||
+        order.serviceAddressSnapshot?.id === "walk-in-address" ||
+        order.serviceAddressSnapshot?.line1 === "In-Store";
+      const isAtHome =
+        order.serviceMode === "AT_HOME" ||
+        (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() !== "LAUNDRY");
       const alert = getAlertLabel(order);
       const isFulfilled = order.status === "DELIVERED" || order.status === "COMPLETED";
 
       return (
         <div className="space-y-1 min-w-[140px]">
           {alert ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 ring-1 ring-amber-400/30">
-              <AlertTriangle className="h-2.5 w-2.5" />
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${isWalkIn && order.status === "READY_FOR_DELIVERY"
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-400/30"
+              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-400/30"
+              }`}>
+              {isWalkIn && order.status === "READY_FOR_DELIVERY" ? (
+                <CheckCircle2 className="h-2.5 w-2.5" />
+              ) : (
+                <AlertTriangle className="h-2.5 w-2.5" />
+              )}
               {alert}
+            </span>
+          ) : isAtHome ? (
+            order.assignedOperatorAuthUserId ? (
+              <span className="inline-flex items-center gap-1 text-xs text-text-secondary font-medium">
+                <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                Operator Assigned
+              </span>
+            ) : isFulfilled ? (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                Completed
+              </span>
+            ) : (
+              <span className="text-xs text-text-muted">Unassigned</span>
+            )
+          ) : isFulfilled ? (
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              Completed
+            </span>
+          ) : order.pickupCompletedAt ? (
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              Pickup Completed
             </span>
           ) : order.pickupRiderAuthUserId ? (
             <span className="inline-flex items-center gap-1 text-xs text-text-secondary font-medium">
               <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
-              Rider Assigned
+              Pickup Rider Assigned
             </span>
           ) : order.assignedOperatorAuthUserId ? (
             <span className="inline-flex items-center gap-1 text-xs text-text-secondary font-medium">
               <User className="h-3.5 w-3.5 text-primary shrink-0" />
               Operator Assigned
             </span>
-          ) : isFulfilled ? (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              Completed
+          ) : isWalkIn ? (
+            <span className="inline-flex items-center gap-1 text-xs text-text-secondary font-medium">
+              <Package className="h-3.5 w-3.5 text-text-muted shrink-0" />
+              Walk-in (Counter)
             </span>
           ) : (
             <span className="text-xs text-text-muted">Unassigned</span>
@@ -250,7 +320,24 @@ const columns = [
         <p className="text-[10px] font-normal normal-case text-text-muted">Current Stage</p>
       </div>
     ),
-    cell: (info) => <Badge value={info.getValue()}>{orderStatusLabel(info.getValue())}</Badge>,
+    cell: (info) => {
+      const order = info.row.original;
+      const isWalkIn =
+        order.customerAuthUserId === "walk-in-guest" ||
+        order.serviceAddressSnapshot?.id === "walk-in-address" ||
+        order.serviceAddressSnapshot?.line1 === "In-Store";
+      return (
+        <Badge value={info.getValue()}>
+          {orderStatusLabel(
+            info.getValue(),
+            order.serviceMode,
+            isWalkIn,
+            order.fulfillment?.assignmentState,
+            order.serviceCategoryCode,
+          )}
+        </Badge>
+      );
+    },
   }),
 
   columnHelper.accessor("createdAt", {
@@ -318,6 +405,144 @@ const QUICK_FILTERS = [
   { id: "AWAITING_ASSIGNMENT", label: "Needs Assignment" },
 ];
 
+export type OrderListPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  onPageChange: (newPage: number) => void;
+  onLimitChange: (newLimit: number) => void;
+};
+
+function PaginationBar({
+  page,
+  limit,
+  total,
+  totalPages,
+  onPageChange,
+  onLimitChange,
+  loading = false,
+}: OrderListPagination & { loading?: boolean }) {
+  const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, total);
+
+  const pageNumbers = useMemo(() => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+
+      if (page < totalPages - 2) pages.push("...");
+      if (!pages.includes(totalPages)) pages.push(totalPages);
+    }
+    return pages;
+  }, [page, totalPages]);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border-soft)] text-sm">
+      <div className="text-text-secondary text-xs sm:text-sm">
+        Showing <span className="font-semibold text-foreground">{startItem}</span> to{" "}
+        <span className="font-semibold text-foreground">{endItem}</span> of{" "}
+        <span className="font-semibold text-foreground">{total}</span> orders
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1.5 text-xs text-text-muted">
+          <span>Rows per page:</span>
+          <select
+            value={limit}
+            onChange={(e) => onLimitChange(Number(e.target.value))}
+            className="input-surface px-2 py-1 text-xs rounded-lg font-medium text-foreground bg-surface border border-[var(--border-soft)] cursor-pointer"
+            disabled={loading}
+            aria-label="Rows per page"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onPageChange(1)}
+            disabled={page <= 1 || loading}
+            className="p-1.5 rounded-lg border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition"
+            title="First Page"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1 || loading}
+            className="p-1.5 rounded-lg border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition"
+            title="Previous Page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div className="hidden sm:flex items-center gap-1">
+            {pageNumbers.map((p, idx) =>
+              p === "..." ? (
+                <span key={`ellipsis-${idx}`} className="px-1.5 text-text-muted select-none">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={`page-${p}`}
+                  type="button"
+                  onClick={() => onPageChange(Number(p))}
+                  disabled={loading}
+                  className={`min-w-8 h-8 px-2 rounded-lg text-xs font-semibold transition ${p === page
+                    ? "bg-primary text-white shadow-sm"
+                    : "border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground"
+                    }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+          </div>
+
+          <span className="sm:hidden text-xs text-text-muted px-2">
+            {page} / {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= totalPages || loading}
+            className="p-1.5 rounded-lg border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition"
+            title="Next Page"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onPageChange(totalPages)}
+            disabled={page >= totalPages || loading}
+            className="p-1.5 rounded-lg border border-[var(--border-soft)] bg-surface text-text-secondary hover:bg-surface-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition"
+            title="Last Page"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OrderCardItem({
   order,
   today,
@@ -330,6 +555,10 @@ function OrderCardItem({
   onDelete?: () => void;
 }) {
   const router = useRouter();
+  const isWalkIn =
+    order.customerAuthUserId === "walk-in-guest" ||
+    order.serviceAddressSnapshot?.id === "walk-in-address" ||
+    order.serviceAddressSnapshot?.line1 === "In-Store";
   const alert = getAlertLabel(order);
   const promise = deliveryPromiseInfo(order);
   const pay = paymentBadgeInfo(order.paymentStatus);
@@ -357,9 +586,6 @@ function OrderCardItem({
       <div className="space-y-2 pb-3 border-b border-[var(--border-soft)]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-mono text-xs font-bold text-foreground bg-surface-muted px-2 py-0.5 rounded-md border border-[var(--border-soft)]">
-              {order.orderNumber || order.orderCode || `#${order.id.slice(0, 6)}`}
-            </span>
             {order.bookingType === "ASAP" && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 ring-1 ring-amber-400/30">
                 <Zap className="h-2.5 w-2.5" /> ASAP
@@ -375,7 +601,15 @@ function OrderCardItem({
               </span>
             )}
           </div>
-          <Badge value={order.status}>{orderStatusLabel(order.status)}</Badge>
+          <Badge value={order.status}>
+            {orderStatusLabel(
+              order.status,
+              order.serviceMode,
+              isWalkIn,
+              order.fulfillment?.assignmentState,
+              order.serviceCategoryCode,
+            )}
+          </Badge>
         </div>
 
         <div>
@@ -414,10 +648,12 @@ function OrderCardItem({
           )}
         </div>
 
-        {/* Delivery Target (Clear Human Friendly Promise) */}
+        {/* Delivery / Reach Target (Clear Human Friendly Promise) */}
         <div className="rounded-xl bg-surface-muted/60 p-2.5 border border-[var(--border-soft)] space-y-1">
           <div className="flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-text-secondary">Delivery Target</span>
+            <span className="font-semibold text-text-secondary">
+              {order.serviceMode === "AT_HOME" ? "Reach Target (Arrival)" : "Pickup Target (Arrival)"}
+            </span>
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${promise.badgeClass}`}>
               {promise.isOverdue && <AlertTriangle className="h-2.5 w-2.5" />}
               {!promise.isOverdue && promise.isAsap && <Zap className="h-2.5 w-2.5" />}
@@ -436,6 +672,18 @@ function OrderCardItem({
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             <span>Action Required: {alert}</span>
           </div>
+        ) : (order.serviceMode === "AT_HOME" || (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() !== "LAUNDRY")) ? (
+          order.assignedOperatorAuthUserId ? (
+            <p className="flex items-center gap-1.5 text-text-secondary text-[11px] font-medium">
+              <User className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Operator Assigned</span>
+            </p>
+          ) : null
+        ) : order.pickupCompletedAt ? (
+          <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            <span>Pickup Completed</span>
+          </p>
         ) : order.pickupRiderAuthUserId ? (
           <p className="flex items-center gap-1.5 text-text-secondary text-[11px] font-medium">
             <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -490,36 +738,58 @@ export function OrderList({
   loading = false,
   branches = [],
   highlightUnassigned = false,
+  pagination,
+  selectedCategory: controlledCategory,
+  onCategoryChange,
+  quickFilter: controlledQuickFilter,
+  onQuickFilterChange,
 }: {
   orders: OrderResponse[];
   loading?: boolean;
   branches?: BranchAdminResponse[];
   highlightUnassigned?: boolean;
+  pagination?: OrderListPagination;
+  selectedCategory?: string;
+  onCategoryChange?: (category: string) => void;
+  quickFilter?: string;
+  onQuickFilterChange?: (filter: string) => void;
 }) {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [quickFilter, setQuickFilter] = useState("ALL");
+  const [internalSelectedCategory, setInternalSelectedCategory] = useState("ALL");
+  const [internalQuickFilter, setInternalQuickFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+
+  const isServerPaginated = !!pagination;
+  const activeCategory = controlledCategory ?? internalSelectedCategory;
+  const activeQuickFilter = controlledQuickFilter ?? internalQuickFilter;
 
   const today = useMemo(() => startOfTodayIsoDate(), []);
 
   const filteredOrders = useMemo(() => {
+    if (isServerPaginated) {
+      return orders;
+    }
+
     return orders.filter((o) => {
-      if (selectedCategory !== "ALL" && o.serviceCategoryCode !== selectedCategory) {
+      if (activeCategory !== "ALL" && o.serviceCategoryCode !== activeCategory) {
         return false;
       }
 
-      if (quickFilter !== "ALL") {
-        if (quickFilter === "WAITING_PICKUP") {
-          if (o.status !== "CONFIRMED" && o.status !== "IN_PROGRESS") return false;
+      if (activeQuickFilter !== "ALL") {
+        const isLaundry =
+          o.serviceMode === "PICKUP_DELIVERY" ||
+          o.serviceCategoryCode?.toUpperCase() === "LAUNDRY";
+
+        if (activeQuickFilter === "WAITING_PICKUP") {
+          if (!isLaundry || (o.status !== "CONFIRMED" && o.status !== "IN_PROGRESS")) return false;
         }
-        if (quickFilter === "PROCESSING") {
-          if (o.status !== "PROCESSING") return false;
+        if (activeQuickFilter === "PROCESSING") {
+          if (!isLaundry || o.status !== "PROCESSING") return false;
         }
-        if (quickFilter === "READY_DELIVERY") {
-          if (o.status !== "READY_FOR_DELIVERY") return false;
+        if (activeQuickFilter === "READY_DELIVERY") {
+          if (!isLaundry || o.status !== "READY_FOR_DELIVERY") return false;
         }
-        if (quickFilter === "DELAYED") {
+        if (activeQuickFilter === "DELAYED") {
           const d = o.scheduledDate ? String(o.scheduledDate).slice(0, 10) : null;
           if (
             !d ||
@@ -530,29 +800,20 @@ export function OrderList({
           )
             return false;
         }
-        if (quickFilter === "COMPLETED_TODAY") {
+        if (activeQuickFilter === "COMPLETED_TODAY") {
           const updatedDate = o.updatedAt ? String(o.updatedAt).slice(0, 10) : null;
           if (updatedDate !== today || (o.status !== "COMPLETED" && o.status !== "DELIVERED"))
             return false;
         }
-        if (quickFilter === "AWAITING_ASSIGNMENT") {
+        if (activeQuickFilter === "AWAITING_ASSIGNMENT") {
           const alert = getAlertLabel(o);
-          if (
-            !alert &&
-            !(
-              !o.assignedOperatorAuthUserId &&
-              o.serviceMode === "AT_HOME" &&
-              (o.status === "PENDING" || o.status === "CONFIRMED")
-            )
-          ) {
-            return false;
-          }
+          if (!alert) return false;
         }
       }
 
       return true;
     });
-  }, [orders, selectedCategory, quickFilter, today]);
+  }, [orders, isServerPaginated, activeCategory, activeQuickFilter, today]);
 
   const [orderToDelete, setOrderToDelete] = useState<OrderResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -576,8 +837,14 @@ export function OrderList({
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
-            onClick={() => setSelectedCategory(c.id)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${selectedCategory === c.id
+            onClick={() => {
+              if (onCategoryChange) {
+                onCategoryChange(c.id);
+              } else {
+                setInternalSelectedCategory(c.id);
+              }
+            }}
+            className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${activeCategory === c.id
               ? "bg-foreground text-surface shadow-sm"
               : "bg-surface-muted text-text-secondary hover:bg-surface-primary hover:text-foreground"
               }`}
@@ -593,7 +860,14 @@ export function OrderList({
           <div>
             <h2 className="text-lg font-semibold text-foreground">Orders Queue</h2>
             <p className="text-sm text-text-secondary">
-              Showing {filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""} · Track schedules, customer details, and fulfillment
+              {pagination ? (
+                <>
+                  Showing {pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1} to{" "}
+                  {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders · Track schedules, customer details, and fulfillment
+                </>
+              ) : (
+                <>Showing {filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""} · Track schedules, customer details, and fulfillment</>
+              )}
             </p>
           </div>
 
@@ -603,8 +877,14 @@ export function OrderList({
               {QUICK_FILTERS.map((f) => (
                 <button
                   key={f.id}
-                  onClick={() => setQuickFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${quickFilter === f.id
+                  onClick={() => {
+                    if (onQuickFilterChange) {
+                      onQuickFilterChange(f.id);
+                    } else {
+                      setInternalQuickFilter(f.id);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${activeQuickFilter === f.id
                     ? "bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
                     : "bg-surface text-text-muted ring-1 ring-[var(--border-soft)] hover:bg-surface-muted hover:text-foreground"
                     }`}
@@ -656,12 +936,12 @@ export function OrderList({
             <div className="flex flex-col items-center justify-center space-y-2">
               <p className="text-base font-semibold text-foreground">No orders found.</p>
               <p className="text-sm text-text-muted max-w-[320px]">
-                {quickFilter === "WAITING_PICKUP" && "No orders are currently waiting for pickup assignment."}
-                {quickFilter === "DELAYED" && "No delayed orders right now. Great job!"}
-                {quickFilter === "AWAITING_ASSIGNMENT" && "All operational assignments are up to date."}
-                {quickFilter === "PROCESSING" && "No orders are currently being processed."}
-                {quickFilter === "READY_DELIVERY" && "No orders are ready for delivery pickup."}
-                {quickFilter === "ALL" && "There are no orders matching your current filters."}
+                {activeQuickFilter === "WAITING_PICKUP" && "No orders are currently waiting for pickup assignment."}
+                {activeQuickFilter === "DELAYED" && "No delayed orders right now. Great job!"}
+                {activeQuickFilter === "AWAITING_ASSIGNMENT" && "All operational assignments are up to date."}
+                {activeQuickFilter === "PROCESSING" && "No orders are currently being processed."}
+                {activeQuickFilter === "READY_DELIVERY" && "No orders are ready for delivery pickup."}
+                {(activeQuickFilter === "ALL" || !activeQuickFilter) && "There are no orders matching your current filters."}
               </p>
             </div>
           </div>
@@ -735,6 +1015,14 @@ export function OrderList({
                 />
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {pagination && (
+              <PaginationBar
+                {...pagination}
+                loading={loading}
+              />
+            )}
           </>
         )}
       </Card>

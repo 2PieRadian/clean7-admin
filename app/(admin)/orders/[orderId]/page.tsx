@@ -6,7 +6,6 @@ import { OrderDetailManager } from "@/features/orders/components/order-detail-ma
 import { useOrder } from "@/features/orders/api/order-api";
 import { Card } from "@/components/ui/card";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
-import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
 import type { OperatorProfileResponse } from "@/lib/types";
 
@@ -14,7 +13,7 @@ export default function OrderDetailPage() {
   const params = useParams<{ orderId: string }>();
   const orderId = String(params.orderId ?? "");
   const [operators, setOperators] = useState<OperatorProfileResponse[]>([]);
-  
+
   const { data: order, isLoading: loadingOrder, error: orderError } = useOrder(orderId);
 
   useEffect(() => {
@@ -30,7 +29,7 @@ export default function OrderDetailPage() {
         console.error("Failed to load operators", e);
       }
     }
-    
+
     void loadOperators();
 
     return () => {
@@ -40,22 +39,13 @@ export default function OrderDetailPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={
-          order
-            ? order.orderNumber || order.orderCode || "Order"
-            : "Order details"
-        }
-        description="Update status, payment, assignments, intake, and schedule using admin APIs."
-      />
-
-      {loadingOrder ? (
-        <InlineLoadingCard lines={8} />
-      ) : null}
+      {loadingOrder ? <InlineLoadingCard lines={8} /> : null}
 
       {orderError ? (
         <Card>
-          <p className="text-sm text-danger">{orderError instanceof Error ? orderError.message : "Unable to load order detail."}</p>
+          <p className="text-sm text-danger">
+            {orderError instanceof Error ? orderError.message : "Unable to load order detail."}
+          </p>
         </Card>
       ) : null}
 

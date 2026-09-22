@@ -25,6 +25,25 @@ export const orderStatuses: OrderStatus[] = [
   "CANCELLED",
 ];
 
+export const pickupDeliveryStatusTimeline: OrderStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "IN_PROGRESS",
+  "RECEIVED_AT_BRANCH",
+  "PROCESSING",
+  "READY_FOR_DELIVERY",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "COMPLETED",
+];
+
+export const atHomeStatusTimeline: OrderStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "IN_PROGRESS",
+  "COMPLETED",
+];
+
 export const paymentStatuses: PaymentStatus[] = [
   "PENDING",
   "PAID",
