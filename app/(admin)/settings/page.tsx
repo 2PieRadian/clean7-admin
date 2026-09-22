@@ -159,12 +159,13 @@ function SocialMediaSettings() {
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
-        const res = await apiRequest<{ data: any }>({
+        const res = await apiRequest<any>({
           path: "/admin/settings/social_links",
           method: "GET",
         });
-        if (res.data && res.data.value) {
-          setLinks((prev) => ({ ...prev, ...res.data.value }));
+        const val = res?.value ?? res?.data?.value;
+        if (val) {
+          setLinks((prev) => ({ ...prev, ...val }));
         }
       } catch (error) {
         console.error("Failed to fetch social links", error);
@@ -276,16 +277,17 @@ function ExpressDeliverySettings() {
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
-        const res = await apiRequest<{ data: any }>({
+        const res = await apiRequest<any>({
           path: "/admin/settings/express_delivery",
           method: "GET",
         });
-        if (res.data && res.data.value) {
+        const val = res?.value ?? res?.data?.value;
+        if (val) {
           setSettings((prev) => ({
             ...prev,
-            ...res.data.value,
-            fee: Number(res.data.value.fee ?? 70),
-            enabled: res.data.value.enabled !== false,
+            ...val,
+            fee: Number(val.fee ?? 70),
+            enabled: val.enabled !== false,
           }));
         }
       } catch (error) {

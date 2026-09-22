@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
+import { useEffect, useState, useCallback } from "react";
+
 import {
   GripVertical,
   Plus,
@@ -74,38 +74,49 @@ export default function BannersPage() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   // Fetch settings from catalogue-service
-  useEffect(() => {
-    async function loadSettings() {
-      setIsLoading(true);
-      setError(null);
+  const loadSettings = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      let rawSetting: any = null;
       try {
-        const response = await apiRequest<{ data: any }>({
+        rawSetting = await apiRequest<any>({
           path: "/admin/settings/home_carousel",
           method: "GET",
         });
-
-        if (response.data?.value) {
-          const val = response.data.value as HomeCarouselSetting;
-          const loaded: HomeCarouselSetting = {
-            timerSeconds: typeof val.timerSeconds === "number" ? val.timerSeconds : 4,
-            slides: Array.isArray(val.slides) ? val.slides : [],
-          };
-          setSettings(loaded);
-          setTimerInput(loaded.timerSeconds);
-        } else {
-          setSettings(DEFAULT_SETTINGS);
-          setTimerInput(DEFAULT_SETTINGS.timerSeconds);
-        }
-      } catch (err: any) {
-        console.error("Failed to load carousel settings:", err);
-        setError("Failed to load banner carousel settings.");
-      } finally {
-        setIsLoading(false);
+      } catch (adminErr) {
+        console.warn("Retrying with public catalog settings endpoint:", adminErr);
+        rawSetting = await apiRequest<any>({
+          path: "/catalog/settings/home_carousel",
+          method: "GET",
+          requireAuth: false,
+        });
       }
-    }
 
-    loadSettings();
+      // Handle null, { value: ... }, or { data: { value: ... } }
+      const val = rawSetting?.value ?? rawSetting?.data?.value ?? null;
+      if (val) {
+        const loaded: HomeCarouselSetting = {
+          timerSeconds: typeof val.timerSeconds === "number" ? Math.max(1, val.timerSeconds) : 4,
+          slides: Array.isArray(val.slides) ? val.slides : [],
+        };
+        setSettings(loaded);
+        setTimerInput(loaded.timerSeconds);
+      } else {
+        setSettings(DEFAULT_SETTINGS);
+        setTimerInput(DEFAULT_SETTINGS.timerSeconds);
+      }
+    } catch (err: any) {
+      console.error("Failed to load carousel settings:", err);
+      setError(err?.message || "Failed to load banner carousel settings.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
 
   // Save settings helper
   const saveCarouselSettings = async (updated: HomeCarouselSetting) => {
@@ -232,12 +243,12 @@ export default function BannersPage() {
       updatedSlides = settings.slides.map((slide) =>
         slide.id === editingSlide.id
           ? {
-              ...slide,
-              title: slideTitle.trim() || undefined,
-              imageUrl: slideImageUrl.trim(),
-              linkUrl: slideLinkUrl.trim() || undefined,
-              isActive: slideIsActive,
-            }
+            ...slide,
+            title: slideTitle.trim() || undefined,
+            imageUrl: slideImageUrl.trim(),
+            linkUrl: slideLinkUrl.trim() || undefined,
+            isActive: slideIsActive,
+          }
           : slide
       );
     } else {
@@ -280,9 +291,14 @@ export default function BannersPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
+        <div className="flex items-center justify-between gap-3 p-4 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => void loadSettings()}>
+            Retry
+          </Button>
         </div>
       )}
 
@@ -389,11 +405,10 @@ export default function BannersPage() {
                 {activeSlides.map((_, idx) => (
                   <span
                     key={idx}
-                    className={`transition-all duration-300 rounded-full ${
-                      idx === previewIndex
-                        ? "w-5 h-1.5 bg-[#C9A24B]"
-                        : "w-1.5 h-1.5 bg-white/60 dark:bg-white/40"
-                    }`}
+                    className={`transition-all duration-300 rounded-full ${idx === previewIndex
+                      ? "w-5 h-1.5 bg-[#C9A24B]"
+                      : "w-1.5 h-1.5 bg-white/60 dark:bg-white/40"
+                      }`}
                   />
                 ))}
               </div>
@@ -443,9 +458,8 @@ export default function BannersPage() {
           >
             {(slide, index, handleProps, isDragging) => (
               <div
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-xl border border-[var(--border-soft)] bg-surface transition-shadow ${
-                  isDragging ? "shadow-xl ring-2 ring-primary/40" : "hover:border-primary/30 shadow-sm"
-                }`}
+                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-xl border border-[var(--border-soft)] bg-surface transition-shadow ${isDragging ? "shadow-xl ring-2 ring-primary/40" : "hover:border-primary/30 shadow-sm"
+                  }`}
               >
                 <div className="flex items-center gap-3.5 min-w-0">
                   {/* Smooth Drag Handle (Rule 20) */}
@@ -490,11 +504,10 @@ export default function BannersPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleActive(slide.id)}
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold transition ${
-                      slide.isActive
-                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50"
-                        : "bg-surface-muted text-text-muted border border-[var(--border-soft)]"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold transition ${slide.isActive
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50"
+                      : "bg-surface-muted text-text-muted border border-[var(--border-soft)]"
+                      }`}
                   >
                     {slide.isActive ? "Active" : "Inactive"}
                   </button>
