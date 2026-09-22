@@ -22,6 +22,7 @@ import {
   Briefcase,
   Mail,
   Tag,
+  BarChart3,
   Bike,
   GitFork,
   GalleryHorizontal,
@@ -100,6 +101,12 @@ const navGroups: { title: string; items: NavItem[] }[] = [
   {
     title: "Finance",
     items: [
+      {
+        href: "/analytics",
+        label: "Analytics",
+        icon: BarChart3,
+        directorOnly: true,
+      },
       {
         href: "/payments",
         label: "Payments",
@@ -267,6 +274,10 @@ function isActivePath(pathname: string, href: string) {
 
   if (href === "/payments") {
     return pathname === "/payments" || pathname.startsWith("/payments/");
+  }
+
+  if (href === "/analytics") {
+    return pathname === "/analytics" || pathname.startsWith("/analytics/");
   }
 
   if (href === "/settings") {

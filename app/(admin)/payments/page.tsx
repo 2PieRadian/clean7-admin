@@ -20,6 +20,7 @@ export default function FinancePage() {
 
   const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders({});
 
+  // Load branches for filter dropdown
   useEffect(() => {
     let cancelled = false;
     async function loadBranches() {
@@ -34,6 +35,7 @@ export default function FinancePage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Unique categories derived from loaded orders
   const uniqueCategories = useMemo(() => {
     const categories = new Map<string, string>();
     orders.forEach(order => {
@@ -44,6 +46,65 @@ export default function FinancePage() {
     return Array.from(categories.entries()).map(([code, name]) => ({ code, name }));
   }, [orders]);
 
+  // Orders scoped to the selected branch (or all branches)
+  const branchOrders = useMemo(() => {
+    if (!branchFilter) return orders;
+    return orders.filter((o) => o.branchId === branchFilter);
+  }, [orders, branchFilter]);
+
+  // Financial KPIs calculated logically from orders (server-side loaded data)
+  const financeSummary = useMemo(() => {
+    let collectedRevenue = 0;
+    let pendingCollection = 0;
+    let paidOrdersCount = 0;
+    let pendingOrdersCount = 0;
+    let completedOrdersCount = 0;
+    let cancelledOrdersCount = 0;
+    let refundedAmount = 0;
+    let refundedOrdersCount = 0;
+
+    for (const order of branchOrders) {
+      const amount = Number(order.grandTotalAmount || 0);
+
+      // Status tracking
+      if (order.status === "COMPLETED" || order.status === "DELIVERED") {
+        completedOrdersCount++;
+      } else if (order.status === "CANCELLED") {
+        cancelledOrdersCount++;
+      }
+
+      // Financial status tracking (exclude CANCELLED orders from active revenue/pending)
+      if (order.paymentStatus === "REFUNDED") {
+        refundedAmount += amount;
+        refundedOrdersCount++;
+      } else if (order.status !== "CANCELLED") {
+        if (order.paymentStatus === "PAID" || order.paymentStatus === "COD_COLLECTED") {
+          collectedRevenue += amount;
+          paidOrdersCount++;
+        } else if (
+          order.paymentStatus === "COD_PENDING_COLLECTION" ||
+          order.paymentStatus === "PENDING"
+        ) {
+          pendingCollection += amount;
+          pendingOrdersCount++;
+        }
+      }
+    }
+
+    return {
+      collectedRevenue,
+      pendingCollection,
+      paidOrdersCount,
+      pendingOrdersCount,
+      totalOrdersCount: branchOrders.length,
+      completedOrdersCount,
+      cancelledOrdersCount,
+      refundedAmount,
+      refundedOrdersCount,
+    };
+  }, [branchOrders]);
+
+  // Filtered orders for the transactions table
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       if (branchFilter && order.branchId !== branchFilter) return false;
@@ -53,46 +114,82 @@ export default function FinancePage() {
     });
   }, [orders, branchFilter, categoryFilter, paymentStatusFilter]);
 
-  const { totalRevenue, pendingCollection } = useMemo(() => {
-    let rev = 0;
-    let pending = 0;
-    for (const order of filteredOrders) {
-      const amount = Number(order.grandTotalAmount || 0);
-      if (order.paymentStatus === "PAID") {
-        rev += amount;
-      } else if (order.paymentStatus === "COD_PENDING_COLLECTION" || order.paymentStatus === "PENDING") {
-        pending += amount;
-      }
-    }
-    return { totalRevenue: rev, pendingCollection: pending };
-  }, [filteredOrders]);
-
   if (orderError) {
     return <Card className="p-4 text-danger">Failed to load transactions.</Card>;
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Finance & Transactions"
-        description="View and filter all financial transactions, revenue, and payouts across branches."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageHeader
+          title="Finance & Transactions"
+          description="View and filter all financial transactions, revenue, and payouts across branches."
+        />
+        <Link
+          href="/analytics"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 text-sm font-semibold transition-all shadow-sm shrink-0 self-start sm:self-auto"
+        >
+          <span>View Analytics & Charts</span>
+          <span>→</span>
+        </Link>
+      </div>
 
       {loadingOrders ? (
         <InlineLoadingCard lines={4} />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-6 flex flex-col justify-center space-y-2">
-              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">Total Collected Revenue</span>
-              <span className="text-3xl font-bold text-success">{formatMoney(totalRevenue)}</span>
+              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+                Total Collected Revenue
+              </span>
+              <span className="text-3xl font-bold text-success">
+                {formatMoney(financeSummary.collectedRevenue)}
+              </span>
+              <span className="text-xs text-text-muted">
+                {financeSummary.paidOrdersCount} paid orders (Online + COD Collected)
+              </span>
             </Card>
+
             <Card className="p-6 flex flex-col justify-center space-y-2">
-              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">Pending Collection</span>
-              <span className="text-3xl font-bold text-warning">{formatMoney(pendingCollection)}</span>
+              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+                Pending Collection
+              </span>
+              <span className="text-3xl font-bold text-warning">
+                {formatMoney(financeSummary.pendingCollection)}
+              </span>
+              <span className="text-xs text-text-muted">
+                {financeSummary.pendingOrdersCount} orders awaiting collection
+              </span>
+            </Card>
+
+            <Card className="p-6 flex flex-col justify-center space-y-2">
+              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+                Total Orders
+              </span>
+              <span className="text-3xl font-bold text-foreground">
+                {financeSummary.totalOrdersCount}
+              </span>
+              <span className="text-xs text-text-muted">
+                {financeSummary.completedOrdersCount} completed · {financeSummary.cancelledOrdersCount} cancelled
+              </span>
+            </Card>
+
+            <Card className="p-6 flex flex-col justify-center space-y-2">
+              <span className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+                Refunded
+              </span>
+              <span className="text-3xl font-bold text-danger">
+                {formatMoney(financeSummary.refundedAmount)}
+              </span>
+              <span className="text-xs text-text-muted">
+                {financeSummary.refundedOrdersCount} refunded order{financeSummary.refundedOrdersCount !== 1 ? "s" : ""}
+              </span>
             </Card>
           </div>
 
+          {/* Filters Card */}
           <Card className="space-y-5 p-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Select
@@ -130,11 +227,13 @@ export default function FinancePage() {
                 <option value="PENDING">Pending</option>
                 <option value="FAILED">Failed</option>
                 <option value="COD_PENDING_COLLECTION">COD Pending</option>
+                <option value="COD_COLLECTED">COD Collected</option>
                 <option value="REFUNDED">Refunded</option>
               </Select>
             </div>
           </Card>
 
+          {/* Transactions Table */}
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-text-secondary whitespace-nowrap">

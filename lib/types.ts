@@ -36,6 +36,58 @@ export interface DashboardMetricsResponse {
   idleOperatorsCount: number;
 }
 
+export interface FinanceStatsResponse {
+  branchId: string | null;
+  currency: string | null;
+  totals: {
+    subtotalAmount: number;
+    addOnTotalAmount: number;
+    grandTotalAmount: number;
+    outstandingAmount: number;
+    collectedAmount: number;
+    refundedAmount: number;
+  };
+  orders: {
+    totalOrders: number;
+    completedOrders: number;
+    cancelledOrders: number;
+    activeOrders: number;
+  };
+  payments: {
+    paidOrders: number;
+    paidAmount: number;
+    pendingOrders: number;
+    pendingAmount: number;
+    codPendingOrders: number;
+    codPendingAmount: number;
+    codCollectedOrders: number;
+    codCollectedAmount: number;
+    failedOrders: number;
+    failedAmount: number;
+    refundedOrders: number;
+    refundedAmount: number;
+  };
+  serviceBreakdown: Array<{
+    serviceName: string;
+    orders: number;
+    revenue: number;
+  }>;
+  paymentMethodBreakdown: Array<{
+    method: string;
+    orders: number;
+    amount: number;
+  }>;
+  orderStatusBreakdown: Array<{
+    status: string;
+    count: number;
+  }>;
+  monthlyTrend: Array<{
+    month: string;
+    revenue: number;
+    orders: number;
+  }>;
+}
+
 /** Roles returned by auth; admin web allows only DIRECTOR and BRANCH_ADMIN. */
 export type UserRole = "USER" | "DIRECTOR" | "BRANCH_ADMIN" | "OPERATOR" | "RIDER";
 
