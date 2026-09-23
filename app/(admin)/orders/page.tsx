@@ -6,6 +6,7 @@ import { useOrders } from "@/features/orders/api/order-api";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
+import { useAuth } from "@/features/auth/store/auth-store";
 import type { BranchAdminResponse, OrderResponse } from "@/lib/types";
 import { slotCodes, orderStatuses, paymentStatuses } from "@/lib/constants";
 import { humanizeToken } from "@/lib/format";
@@ -32,6 +33,9 @@ type QuickFilter =
   | "booking_scheduled";
 
 export default function OrdersPage() {
+  const { user } = useAuth();
+  const isDirector = user?.role === "DIRECTOR";
+
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -62,7 +66,12 @@ export default function OrdersPage() {
     async function loadBranches() {
       try {
         const nextBranches = await apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" });
-        if (!cancelled) setBranches(nextBranches);
+        if (!cancelled) {
+          setBranches(nextBranches);
+          if (!isDirector && nextBranches[0]?.id && !branchFilter) {
+            setBranchFilter(nextBranches[0].id);
+          }
+        }
       } catch (e) {
         console.error("Failed to load branches", e);
       }
@@ -71,7 +80,7 @@ export default function OrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isDirector, branchFilter]);
 
   const filteredOrders = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -270,7 +279,7 @@ export default function OrdersPage() {
             }}
             aria-label="Filter by branch"
           >
-            <option value="">All Branches</option>
+            {isDirector && <option value="">All Branches</option>}
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}

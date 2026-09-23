@@ -16,10 +16,12 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import { Building2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { Select } from "@/components/ui/field";
+import { useAuth } from "@/features/auth/store/auth-store";
 import { apiRequest } from "@/lib/browser-api";
 import { useOrders } from "@/features/orders/api/order-api";
 import { formatMoney, orderStatusLabel } from "@/lib/format";
@@ -165,11 +167,11 @@ function ChartSection({
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
+  const isDirector = user?.role === "DIRECTOR";
+
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
-
-  // Load all orders for instant, responsive analytics calculation
-  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders({});
 
   // Load branches
   useEffect(() => {
@@ -177,20 +179,51 @@ export default function AnalyticsPage() {
     async function load() {
       try {
         const data = await apiRequest<BranchAdminResponse[]>({ path: "/admin/branches" });
-        if (!cancelled) setBranches(data);
+        if (!cancelled) {
+          setBranches(data);
+          // For branch admins, automatically lock/select their assigned branch
+          if (!isDirector && data.length > 0) {
+            setBranchFilter((current) => {
+              if (current && data.some((b) => b.id === current)) {
+                return current;
+              }
+              return data[0].id;
+            });
+          }
+        }
       } catch (e) {
         console.error("Failed to load branches", e);
       }
     }
     void load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isDirector]);
 
-  // Filter orders by selected branch
+  // Load orders for responsive analytics calculation
+  const orderQuery = useMemo(() => {
+    if (!isDirector && branchFilter) {
+      return { branchId: branchFilter };
+    }
+    return undefined;
+  }, [isDirector, branchFilter]);
+
+  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders(orderQuery);
+
+  // Filter orders by selected branch (strictly enforce branch admin scope)
   const branchOrders = useMemo(() => {
+    if (!isDirector) {
+      if (branchFilter) {
+        return orders.filter((o) => o.branchId === branchFilter);
+      }
+      if (branches.length > 0) {
+        const allowedBranchIds = new Set(branches.map((b) => b.id));
+        return orders.filter((o) => allowedBranchIds.has(o.branchId));
+      }
+      return [];
+    }
     if (!branchFilter) return orders;
     return orders.filter((o) => o.branchId === branchFilter);
-  }, [orders, branchFilter]);
+  }, [orders, branchFilter, isDirector, branches]);
 
   // Compute full financial and operations analytics from branchOrders
   const analytics = useMemo(() => {
@@ -438,32 +471,65 @@ export default function AnalyticsPage() {
     );
   }
 
-  const selectedBranchName = branches.find((b) => b.id === branchFilter)?.name || "All Branches";
+  const selectedBranchName = useMemo(() => {
+    if (branchFilter) {
+      return branches.find((b) => b.id === branchFilter)?.name || "Branch";
+    }
+    if (!isDirector && branches.length > 0) {
+      return branches[0].name;
+    }
+    return "All Branches";
+  }, [branchFilter, branches, isDirector]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
-          title="Financial Analytics & Reports"
+          title={isDirector ? "Financial Analytics & Reports" : "Branch Analytics & Reports"}
           description={`Comprehensive live financial dashboard, service popularity, and payment analytics for ${selectedBranchName}.`}
         />
 
         {/* Branch Filter */}
         <div className="w-full sm:w-72 shrink-0">
-          <Select
-            label="Filter by Branch"
-            name="branch"
-            value={branchFilter}
-            onChange={(e) => setBranchFilter(e.target.value)}
-          >
-            <option value="">All Branches (Aggregate)</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
+          {isDirector ? (
+            <Select
+              label="Filter by Branch"
+              name="branch"
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+            >
+              <option value="">All Branches (Aggregate)</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          ) : branches.length > 1 ? (
+            <Select
+              label="Filter by Branch"
+              name="branch"
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Assigned Branch
+              </span>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-surface-elevated/60 text-sm font-semibold text-foreground">
+                <Building2 className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="truncate">{branches[0]?.name || "Loading branch..."}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

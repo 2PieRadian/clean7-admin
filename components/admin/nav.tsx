@@ -105,7 +105,6 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         href: "/analytics",
         label: "Analytics",
         icon: BarChart3,
-        directorOnly: true,
       },
       {
         href: "/payments",
