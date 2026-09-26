@@ -240,16 +240,22 @@ export function OrderDetailManager({
     deliveryTrip?.riderAuthUserId ?? (order as any).deliveryRiderAuthUserId;
 
   const pickupRider = useMemo(
-    () => effectiveOperators.find((o) => o.authUserId === order.pickupRiderAuthUserId),
-    [effectiveOperators, order.pickupRiderAuthUserId],
+    () =>
+      order.pickupRider ??
+      effectiveOperators.find((o) => o.authUserId === order.pickupRiderAuthUserId),
+    [effectiveOperators, order.pickupRiderAuthUserId, order.pickupRider],
   );
   const deliveryRider = useMemo(
-    () => effectiveOperators.find((o) => o.authUserId === deliveryRiderAuthUserId),
-    [effectiveOperators, deliveryRiderAuthUserId],
+    () =>
+      order.deliveryRider ??
+      effectiveOperators.find((o) => o.authUserId === deliveryRiderAuthUserId),
+    [effectiveOperators, deliveryRiderAuthUserId, order.deliveryRider],
   );
   const assignedOperator = useMemo(
-    () => effectiveOperators.find((o) => o.authUserId === order.assignedOperatorAuthUserId),
-    [effectiveOperators, order.assignedOperatorAuthUserId],
+    () =>
+      order.assignedOperator ??
+      effectiveOperators.find((o) => o.authUserId === order.assignedOperatorAuthUserId),
+    [effectiveOperators, order.assignedOperatorAuthUserId, order.assignedOperator],
   );
 
   const isOrderCompleted =
@@ -1832,9 +1838,16 @@ export function OrderDetailManager({
                                 </span>
                               )}
                           </div>
-                          <p className="font-semibold text-foreground">
-                            {assignedOperator?.displayName || "Not assigned"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground">
+                              {assignedOperator?.displayName || "Not assigned"}
+                            </p>
+                            {assignedOperator?.isDeleted && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                Former Staff
+                              </span>
+                            )}
+                          </div>
                           {assignedOperator?.phoneNumber && (
                             <p className="text-xs text-text-secondary mt-0.5">
                               {assignedOperator.phoneNumber}
@@ -1857,7 +1870,7 @@ export function OrderDetailManager({
                           size="sm"
                           onClick={() => openModal("operator")}
                         >
-                          {assignedOperator ? "Reassign" : "Assign Professional"}
+                          {assignedOperator && !assignedOperator.isDeleted ? "Reassign" : "Assign Professional"}
                         </Button>
                       </div>
                     </div>
@@ -1874,9 +1887,16 @@ export function OrderDetailManager({
                           <p className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
                             Pickup Rider
                           </p>
-                          <p className="font-semibold text-foreground">
-                            {pickupRider?.displayName || "Not assigned"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground">
+                              {pickupRider?.displayName || "Not assigned"}
+                            </p>
+                            {pickupRider?.isDeleted && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                Former Rider
+                              </span>
+                            )}
+                          </div>
                           {pickupRider?.phoneNumber && (
                             <p className="text-xs text-text-secondary mt-0.5">
                               {pickupRider.phoneNumber}
@@ -1906,7 +1926,7 @@ export function OrderDetailManager({
                           size="sm"
                           onClick={() => openModal("pickupRider")}
                         >
-                          {pickupRider ? "Reassign Rider" : "Assign Pickup Rider"}
+                          {pickupRider && !pickupRider.isDeleted ? "Reassign Rider" : "Assign Pickup Rider"}
                         </Button>
                       </div>
                     </div>
@@ -1923,9 +1943,16 @@ export function OrderDetailManager({
                           <p className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
                             Delivery Rider
                           </p>
-                          <p className="font-semibold text-foreground">
-                            {deliveryRider?.displayName || "Not assigned"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground">
+                              {deliveryRider?.displayName || "Not assigned"}
+                            </p>
+                            {deliveryRider?.isDeleted && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                Former Rider
+                              </span>
+                            )}
+                          </div>
                           {deliveryRider?.phoneNumber && (
                             <p className="text-xs text-text-secondary mt-0.5">
                               {deliveryRider.phoneNumber}

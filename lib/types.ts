@@ -471,6 +471,7 @@ export type OperatorProfileResponse = {
   email?: string | null;
   role: StaffRole;
   status: OperatorStatus;
+  isDeleted?: boolean;
   branchId: string | null;
   serviceCategoryCodes: string[];
   serviceZones: string[];
@@ -681,7 +682,35 @@ export type OrderResponse = {
   fulfillment?: OrderFulfillmentSummary;
   /** May appear on detailed responses */
   assignedOperatorAuthUserId?: string | null;
+  assignedOperator?: {
+    authUserId: string;
+    displayName: string;
+    phoneNumber?: string | null;
+    role?: string | null;
+    profilePhotoUrl?: string | null;
+    isDeleted?: boolean;
+  } | null;
   pickupRiderAuthUserId?: string | null;
+  pickupRider?: {
+    authUserId: string;
+    displayName: string;
+    phoneNumber?: string | null;
+    role?: string | null;
+    vehicleType?: string | null;
+    vehicleNumber?: string | null;
+    profilePhotoUrl?: string | null;
+    isDeleted?: boolean;
+  } | null;
+  deliveryRider?: {
+    authUserId: string;
+    displayName: string;
+    phoneNumber?: string | null;
+    role?: string | null;
+    vehicleType?: string | null;
+    vehicleNumber?: string | null;
+    profilePhotoUrl?: string | null;
+    isDeleted?: boolean;
+  } | null;
   pickupCompletedAt?: string | null;
   /** Legacy alias */
   orderCode?: string;
