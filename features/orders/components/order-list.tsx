@@ -44,7 +44,8 @@ import {
   deliveryPromiseInfo,
   paymentBadgeInfo,
 } from "@/lib/format";
-import type { OrderResponse, BranchAdminResponse } from "@/lib/types";
+import { useCategories } from "@/features/catalog/api/catalog-api";
+import type { OrderResponse, BranchAdminResponse, CategorySummary } from "@/lib/types";
 
 export function getAlertLabel(order: OrderResponse): string | null {
   const isWalkIn =
@@ -387,13 +388,6 @@ const columns = [
   }),
 ];
 
-const CATEGORIES = [
-  { id: "ALL", label: "All Orders" },
-  { id: "LAUNDRY", label: "Laundry" },
-  { id: "HOME_CLEANING", label: "Home Cleaning" },
-  { id: "CAR_WASH", label: "Car Wash" },
-  { id: "PEST_CONTROL", label: "Pest Control" },
-];
 
 const QUICK_FILTERS = [
   { id: "ALL", label: "All Orders" },
@@ -743,6 +737,7 @@ export function OrderList({
   onCategoryChange,
   quickFilter: controlledQuickFilter,
   onQuickFilterChange,
+  categories: propCategories,
 }: {
   orders: OrderResponse[];
   loading?: boolean;
@@ -753,15 +748,77 @@ export function OrderList({
   onCategoryChange?: (category: string) => void;
   quickFilter?: string;
   onQuickFilterChange?: (filter: string) => void;
+  categories?: CategorySummary[];
 }) {
   const router = useRouter();
   const [internalSelectedCategory, setInternalSelectedCategory] = useState("ALL");
   const [internalQuickFilter, setInternalQuickFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
+  const { data: fetchedCategories = [], isLoading: categoriesLoading } = useCategories();
+  const categories = propCategories ?? fetchedCategories;
+
   const isServerPaginated = !!pagination;
   const activeCategory = controlledCategory ?? internalSelectedCategory;
   const activeQuickFilter = controlledQuickFilter ?? internalQuickFilter;
+
+  const categoryTabs = useMemo(() => {
+    const tabs: Array<{ id: string; label: string; code: string }> = [
+      { id: "ALL", label: "All Orders", code: "ALL" },
+    ];
+
+    const seenCodes = new Set<string>(["ALL"]);
+
+    const sortedCategories = [...categories].sort((a, b) => {
+      const orderA = a.sortOrder ?? 0;
+      const orderB = b.sortOrder ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    for (const cat of sortedCategories) {
+      const code = (cat.code || cat.id || "").trim();
+      if (!code) continue;
+      const upper = code.toUpperCase();
+      if (!seenCodes.has(upper)) {
+        seenCodes.add(upper);
+        tabs.push({
+          id: cat.code || cat.id,
+          label: cat.name || cat.code || "Category",
+          code: cat.code || cat.id,
+        });
+      }
+    }
+
+    // Graceful fallback from orders: if any orders have serviceCategoryCode not yet in backend categories list
+    for (const order of orders) {
+      const rawCode = (order.serviceCategoryCode || "").trim();
+      if (!rawCode) continue;
+      const upper = rawCode.toUpperCase();
+      if (!seenCodes.has(upper)) {
+        seenCodes.add(upper);
+        tabs.push({
+          id: rawCode,
+          label: order.serviceCategoryName || humanizeToken(rawCode),
+          code: rawCode,
+        });
+      }
+    }
+
+    return tabs;
+  }, [categories, orders]);
+
+  const isTabActive = (tab: { id: string; code: string }) => {
+    if (tab.id === "ALL") {
+      return !activeCategory || activeCategory === "ALL";
+    }
+    return (
+      activeCategory === tab.id ||
+      activeCategory === tab.code ||
+      activeCategory.toUpperCase() === tab.code.toUpperCase() ||
+      activeCategory.toUpperCase() === tab.id.toUpperCase()
+    );
+  };
 
   const today = useMemo(() => startOfTodayIsoDate(), []);
 
@@ -771,8 +828,33 @@ export function OrderList({
     }
 
     return orders.filter((o) => {
-      if (activeCategory !== "ALL" && o.serviceCategoryCode !== activeCategory) {
-        return false;
+      if (activeCategory && activeCategory !== "ALL") {
+        const orderCatCode = (o.serviceCategoryCode || "").trim().toUpperCase();
+        const filterTarget = activeCategory.trim().toUpperCase();
+
+        let matches = orderCatCode === filterTarget;
+
+        if (!matches && categories.length > 0) {
+          const matchedCategory = categories.find(
+            (c) =>
+              c.code?.trim().toUpperCase() === filterTarget ||
+              c.id === activeCategory ||
+              c.slug?.trim().toUpperCase() === filterTarget
+          );
+          if (matchedCategory) {
+            const catCode = (matchedCategory.code || "").trim().toUpperCase();
+            const catSlug = (matchedCategory.slug || "").trim().toUpperCase();
+            const catName = (matchedCategory.name || "").trim().toLowerCase();
+            const orderCatName = (o.serviceCategoryName || "").trim().toLowerCase();
+
+            matches =
+              orderCatCode === catCode ||
+              orderCatCode === catSlug ||
+              (Boolean(orderCatName) && orderCatName === catName);
+          }
+        }
+
+        if (!matches) return false;
       }
 
       if (activeQuickFilter !== "ALL") {
@@ -834,7 +916,7 @@ export function OrderList({
     <div className="space-y-6">
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto thin-scrollbar pb-1">
-        {CATEGORIES.map((c) => (
+        {categoryTabs.map((c) => (
           <button
             key={c.id}
             onClick={() => {
@@ -844,7 +926,7 @@ export function OrderList({
                 setInternalSelectedCategory(c.id);
               }
             }}
-            className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${activeCategory === c.id
+            className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${isTabActive(c)
               ? "bg-foreground text-surface shadow-sm"
               : "bg-surface-muted text-text-secondary hover:bg-surface-primary hover:text-foreground"
               }`}
@@ -852,6 +934,13 @@ export function OrderList({
             {c.label}
           </button>
         ))}
+        {categoriesLoading && categories.length === 0 && (
+          <div className="flex items-center gap-2 animate-pulse">
+            <div className="h-9 w-24 rounded-full bg-surface-muted" />
+            <div className="h-9 w-28 rounded-full bg-surface-muted" />
+            <div className="h-9 w-24 rounded-full bg-surface-muted" />
+          </div>
+        )}
       </div>
 
       {/* Main Orders Card */}

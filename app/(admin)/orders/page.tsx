@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { OrderList } from "@/features/orders/components/order-list";
 import { useOrders } from "@/features/orders/api/order-api";
+import { useCategories } from "@/features/catalog/api/catalog-api";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { apiRequest } from "@/lib/browser-api";
@@ -51,6 +52,7 @@ export default function OrdersPage() {
   const [limit, setLimit] = useState(20);
 
   const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders({});
+  const { data: categories = [] } = useCategories();
 
   // Debounce search by 350ms to prevent unnecessary UI re-filtering
   useEffect(() => {
@@ -86,7 +88,34 @@ export default function OrdersPage() {
     const q = debouncedSearch.trim().toLowerCase();
     return orders.filter((order) => {
       if (branchFilter && order.branchId !== branchFilter) return false;
-      if (categoryFilter !== "ALL" && order.serviceCategoryCode !== categoryFilter) return false;
+      if (categoryFilter && categoryFilter !== "ALL") {
+        const orderCatCode = (order.serviceCategoryCode || "").trim().toUpperCase();
+        const filterTarget = categoryFilter.trim().toUpperCase();
+
+        let matches = orderCatCode === filterTarget;
+
+        if (!matches && categories.length > 0) {
+          const matchedCategory = categories.find(
+            (c) =>
+              c.code?.trim().toUpperCase() === filterTarget ||
+              c.id === categoryFilter ||
+              c.slug?.trim().toUpperCase() === filterTarget
+          );
+          if (matchedCategory) {
+            const catCode = (matchedCategory.code || "").trim().toUpperCase();
+            const catSlug = (matchedCategory.slug || "").trim().toUpperCase();
+            const catName = (matchedCategory.name || "").trim().toLowerCase();
+            const orderCatName = (order.serviceCategoryName || "").trim().toLowerCase();
+
+            matches =
+              orderCatCode === catCode ||
+              orderCatCode === catSlug ||
+              (Boolean(orderCatName) && orderCatName === catName);
+          }
+        }
+
+        if (!matches) return false;
+      }
       if (bookingTypeFilter && order.bookingType !== bookingTypeFilter) return false;
       if (slotFilter && order.scheduledSlotCode !== slotFilter) return false;
       if (dateFilter && order.scheduledDate && !order.scheduledDate.startsWith(dateFilter)) return false;
@@ -135,6 +164,7 @@ export default function OrdersPage() {
     orders,
     branchFilter,
     categoryFilter,
+    categories,
     bookingTypeFilter,
     slotFilter,
     dateFilter,
@@ -334,6 +364,7 @@ export default function OrdersPage() {
         orders={paginatedOrders}
         loading={loadingOrders}
         branches={branches}
+        categories={categories}
         highlightUnassigned={
           quickFilter === "delivery_unassigned" ||
           quickFilter === "pickup_unassigned" ||
