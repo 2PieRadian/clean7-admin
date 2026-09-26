@@ -8,18 +8,22 @@ export function Modal({
   onClose,
   title,
   children,
+  className,
+  maxWidth = "max-w-2xl",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  className?: string;
+  maxWidth?: string;
 }) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className={`w-full ${maxWidth} max-h-[92vh] overflow-y-auto scrollbar-hide bg-surface border border-[var(--border-soft)] rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 ${className || ""}`}
         role="dialog"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--border-soft)] bg-surface/90 backdrop-blur-md">

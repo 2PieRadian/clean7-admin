@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 import {
   GripVertical,
@@ -15,6 +15,7 @@ import {
   Eye,
   Play,
   Pause,
+  Layers,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { Modal } from "@/components/ui/modal";
 import { SortableList, reorderArray } from "@/components/ui/dnd-sortable";
 import { apiRequest } from "@/lib/browser-api";
 import { uploadBannerImage } from "@/lib/upload-utils";
+import type { CategorySummary, CatalogServiceSummary } from "@/lib/types";
 
 export interface CarouselSlide {
   id: string;
@@ -43,13 +45,110 @@ const DEFAULT_SETTINGS: HomeCarouselSetting = {
   slides: [],
 };
 
-const DESTINATION_PRESETS = [
-  { label: "None (No action on click)", value: "" },
-  { label: "Laundry Service (/service-laundry)", value: "/service-laundry" },
-  { label: "Car Wash (/service-car-wash)", value: "/service-car-wash" },
-  { label: "Cleaning Services (/service-cleaning)", value: "/service-cleaning" },
-  { label: "Pest Control (/service-pest-control)", value: "/service-pest-control" },
+export const APP_SCREEN_PRESETS = [
+  { label: "Book a Service (/booking)", value: "/booking" },
+  { label: "All Services Tab (/(tabs)/services)", value: "/(tabs)/services" },
+  { label: "My Orders (/(tabs)/orders)", value: "/(tabs)/orders" },
+  { label: "Need Help & Support (/need-help)", value: "/need-help" },
+  { label: "FAQs (/faqs)", value: "/faqs" },
 ];
+
+export function getCategoryRoute(category: CategorySummary): string {
+  const slug = (category.slug || "").toLowerCase();
+  if (slug === "laundry" || slug.includes("laundry")) {
+    return "/service-laundry";
+  }
+  if (slug === "door-to-door-car-wash" || slug.includes("car-wash") || slug.includes("vehicle")) {
+    return "/service-car-wash";
+  }
+  if (slug === "pest-control" || slug.includes("pest")) {
+    return "/service-pest-control";
+  }
+  if (slug === "home-cleaning" || slug.includes("cleaning")) {
+    return "/service-cleaning";
+  }
+  return `/service-cleaning?categorySlug=${encodeURIComponent(category.slug)}&title=${encodeURIComponent(category.name)}`;
+}
+
+export function getServiceRoute(service: CatalogServiceSummary, category?: CategorySummary | null): string {
+  const catSlug = (category?.slug || "").toLowerCase();
+  const serviceSlug = service.slug;
+
+  if (catSlug === "laundry" || catSlug.includes("laundry")) {
+    return `/service-laundry?category=${encodeURIComponent(serviceSlug)}`;
+  }
+  if (catSlug === "door-to-door-car-wash" || catSlug.includes("car-wash")) {
+    return `/service-car-wash-details?serviceId=${encodeURIComponent(service.id)}&title=${encodeURIComponent(service.name)}&categorySlug=${encodeURIComponent(category?.slug || "door-to-door-car-wash")}`;
+  }
+  if (catSlug === "pest-control" || catSlug.includes("pest")) {
+    return `/service-pest-details?type=${encodeURIComponent(serviceSlug)}&title=${encodeURIComponent(service.name)}&categorySlug=${encodeURIComponent(category?.slug || "pest-control")}`;
+  }
+  if (catSlug === "home-cleaning" || catSlug.includes("cleaning")) {
+    return `/service-cleaning-details?serviceId=${encodeURIComponent(service.id)}&serviceSlug=${encodeURIComponent(serviceSlug)}&title=${encodeURIComponent(service.name)}&categorySlug=${encodeURIComponent(category?.slug || "home-cleaning")}`;
+  }
+  return `/service-cleaning-details?serviceId=${encodeURIComponent(service.id)}&serviceSlug=${encodeURIComponent(serviceSlug)}&title=${encodeURIComponent(service.name)}&categorySlug=${encodeURIComponent(category?.slug || "")}`;
+}
+
+export function getDestinationBadgeInfo(
+  linkUrl: string | undefined,
+  services: CatalogServiceSummary[],
+  categories: CategorySummary[]
+): { label: string; badge: string } {
+  if (!linkUrl || !linkUrl.trim()) {
+    return { label: "No action on click", badge: "None" };
+  }
+
+  const trimmed = linkUrl.trim();
+
+  // Check matching service
+  for (const svc of services) {
+    const cat = categories.find((c) => c.id === svc.categoryId);
+    const expected = getServiceRoute(svc, cat);
+    if (
+      trimmed === expected ||
+      (trimmed.includes(svc.id) && trimmed.includes("serviceId=")) ||
+      (trimmed.includes(`category=${svc.slug}`) && trimmed.startsWith("/service-laundry")) ||
+      (trimmed.includes(`type=${svc.slug}`) && trimmed.startsWith("/service-pest-details"))
+    ) {
+      return {
+        label: `${svc.name}${cat ? ` (${cat.name})` : ""}`,
+        badge: "Service",
+      };
+    }
+  }
+
+  // Check matching category
+  for (const cat of categories) {
+    const expected = getCategoryRoute(cat);
+    if (trimmed === expected || (trimmed.startsWith("/service-") && trimmed.includes(cat.slug))) {
+      return {
+        label: `${cat.name} Category`,
+        badge: "Category",
+      };
+    }
+  }
+
+  // Check general app screens
+  const screen = APP_SCREEN_PRESETS.find((s) => s.value === trimmed);
+  if (screen) {
+    return {
+      label: screen.label.replace(/\s*\(.*\)/, ""),
+      badge: "Screen",
+    };
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return {
+      label: trimmed,
+      badge: "Web Link",
+    };
+  }
+
+  return {
+    label: trimmed,
+    badge: "Custom Route",
+  };
+}
 
 export default function BannersPage() {
   const [settings, setSettings] = useState<HomeCarouselSetting>(DEFAULT_SETTINGS);
@@ -58,6 +157,11 @@ export default function BannersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Backend Catalog Data State
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [services, setServices] = useState<CatalogServiceSummary[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,9 +218,157 @@ export default function BannersPage() {
     }
   }, []);
 
+  // Fetch services and categories from backend
+  const loadCatalogData = useCallback(async () => {
+    setIsLoadingCatalog(true);
+    try {
+      let cats: CategorySummary[] = [];
+      let svcs: CatalogServiceSummary[] = [];
+
+      try {
+        cats = await apiRequest<CategorySummary[]>({
+          path: "/admin/categories",
+          method: "GET",
+        });
+      } catch (adminCatErr) {
+        console.warn("Failed fetching /admin/categories, trying public catalog:", adminCatErr);
+        try {
+          cats = await apiRequest<CategorySummary[]>({
+            path: "/catalog/categories",
+            method: "GET",
+            requireAuth: false,
+          });
+        } catch {
+          cats = [];
+        }
+      }
+
+      try {
+        svcs = await apiRequest<CatalogServiceSummary[]>({
+          path: "/admin/services",
+          method: "GET",
+        });
+      } catch (adminSvcErr) {
+        console.warn("Failed fetching /admin/services, trying public catalog:", adminSvcErr);
+        try {
+          svcs = await apiRequest<CatalogServiceSummary[]>({
+            path: "/catalog/services",
+            method: "GET",
+            requireAuth: false,
+          });
+        } catch {
+          svcs = [];
+        }
+      }
+
+      const allServices = Array.isArray(svcs) ? [...svcs] : [];
+      if (Array.isArray(cats)) {
+        for (const cat of cats) {
+          if (Array.isArray(cat.services)) {
+            for (const s of cat.services) {
+              if (!allServices.some((existing) => existing.id === s.id)) {
+                allServices.push({ ...s, categoryId: s.categoryId || cat.id });
+              }
+            }
+          }
+        }
+      }
+
+      setCategories(Array.isArray(cats) ? cats : []);
+      setServices(allServices);
+    } catch (err) {
+      console.error("Failed to load catalog data for banner destinations:", err);
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadSettings();
-  }, [loadSettings]);
+    void loadCatalogData();
+  }, [loadSettings, loadCatalogData]);
+
+  // Group services by category for clean dropdown navigation
+  const servicesGroupedByCategory = useMemo(() => {
+    if (!categories.length && !services.length) return [];
+
+    const categoryMap = new Map<string, { category: CategorySummary; services: CatalogServiceSummary[] }>();
+
+    for (const cat of categories) {
+      categoryMap.set(cat.id, { category: cat, services: [] });
+    }
+
+    const unassigned: CatalogServiceSummary[] = [];
+
+    for (const svc of services) {
+      if (svc.categoryId && categoryMap.has(svc.categoryId)) {
+        const group = categoryMap.get(svc.categoryId)!;
+        if (!group.services.some((s) => s.id === svc.id)) {
+          group.services.push(svc);
+        }
+      } else {
+        const matchedCat = categories.find((c) =>
+          c.services?.some((s) => s.id === svc.id || s.slug === svc.slug)
+        );
+        if (matchedCat && categoryMap.has(matchedCat.id)) {
+          const group = categoryMap.get(matchedCat.id)!;
+          if (!group.services.some((s) => s.id === svc.id)) {
+            group.services.push(svc);
+          }
+        } else {
+          if (!unassigned.some((s) => s.id === svc.id)) {
+            unassigned.push(svc);
+          }
+        }
+      }
+    }
+
+    // Also include services from category.services if any
+    for (const cat of categories) {
+      if (Array.isArray(cat.services)) {
+        const group = categoryMap.get(cat.id);
+        if (group) {
+          for (const s of cat.services) {
+            if (!group.services.some((existing) => existing.id === s.id)) {
+              group.services.push({ ...s, categoryId: cat.id });
+            }
+          }
+        }
+      }
+    }
+
+    const result = Array.from(categoryMap.values()).filter((g) => g.services.length > 0);
+    if (unassigned.length > 0) {
+      result.push({
+        category: {
+          id: "other",
+          name: "Other Services",
+          slug: "other",
+          code: "OTHER",
+          sortOrder: 999,
+          publishState: "ACTIVE",
+        },
+        services: unassigned,
+      });
+    }
+
+    return result;
+  }, [categories, services]);
+
+  const isCurrentLinkInOptions = useMemo(() => {
+    if (!slideLinkUrl) return true;
+    if (APP_SCREEN_PRESETS.some((s) => s.value === slideLinkUrl)) return true;
+    if (categories.some((c) => getCategoryRoute(c) === slideLinkUrl)) return true;
+    if (
+      services.some((s) => {
+        const cat = categories.find((c) => c.id === s.categoryId);
+        return getServiceRoute(s, cat) === slideLinkUrl;
+      })
+    ) {
+      return true;
+    }
+    return false;
+  }, [slideLinkUrl, categories, services]);
 
   // Save settings helper
   const saveCarouselSettings = async (updated: HomeCarouselSetting) => {
@@ -488,12 +740,23 @@ export default function BannersPage() {
                         {slide.title || "(Untitled Banner)"}
                       </h4>
                     </div>
-                    {slide.linkUrl ? (
-                      <p className="text-xs text-text-secondary flex items-center gap-1 truncate">
-                        <ExternalLink className="w-3 h-3 text-primary shrink-0" />
-                        <span className="truncate">{slide.linkUrl}</span>
-                      </p>
-                    ) : (
+                    {slide.linkUrl ? (() => {
+                      const dest = getDestinationBadgeInfo(slide.linkUrl, services, categories);
+                      return (
+                        <div className="flex items-center gap-1.5 text-xs text-text-secondary truncate">
+                          <ExternalLink className="w-3 h-3 text-primary shrink-0" />
+                          <span className="font-medium text-foreground truncate">
+                            {dest.label}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-text-muted border border-[var(--border-soft)] shrink-0 font-medium">
+                            {dest.badge}
+                          </span>
+                          <span className="text-[11px] text-text-muted truncate hidden sm:inline">
+                            ({slide.linkUrl})
+                          </span>
+                        </div>
+                      );
+                    })() : (
                       <p className="text-xs text-text-muted italic">No link action</p>
                     )}
                   </div>
@@ -619,25 +882,93 @@ export default function BannersPage() {
 
           {/* Destination Link */}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground">Destination Action (Optional)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-foreground">
+                Destination Action (Optional)
+              </label>
+              {isLoadingCatalog && (
+                <span className="text-xs text-text-muted animate-pulse">
+                  Loading services...
+                </span>
+              )}
+            </div>
+
             <select
               value={slideLinkUrl}
               onChange={(e) => setSlideLinkUrl(e.target.value)}
-              className="w-full rounded-xl border border-[var(--border-soft)] bg-surface px-3.5 py-2 text-sm text-foreground focus:border-primary focus:outline-none mb-1.5"
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none mb-1.5"
             >
-              {DESTINATION_PRESETS.map((preset) => (
-                <option key={preset.value} value={preset.value}>
-                  {preset.label}
-                </option>
-              ))}
+              <option value="">None (No action on click)</option>
+
+              {/* Backend Services grouped by Category */}
+              {servicesGroupedByCategory.length > 0 ? (
+                servicesGroupedByCategory.map((group) => (
+                  <optgroup key={group.category.id} label={`Services — ${group.category.name}`}>
+                    {group.services.map((svc) => {
+                      const route = getServiceRoute(svc, group.category);
+                      return (
+                        <option key={svc.id} value={route}>
+                          {svc.name}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                ))
+              ) : services.length > 0 ? (
+                <optgroup label="Services (All)">
+                  {services.map((svc) => {
+                    const cat = categories.find((c) => c.id === svc.categoryId);
+                    const route = getServiceRoute(svc, cat);
+                    return (
+                      <option key={svc.id} value={route}>
+                        {svc.name} {cat ? `(${cat.name})` : ""}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              ) : null}
+
+              {/* Backend Categories */}
+              {categories.length > 0 && (
+                <optgroup label="Category Pages">
+                  {categories.map((cat) => {
+                    const route = getCategoryRoute(cat);
+                    return (
+                      <option key={cat.id} value={route}>
+                        {cat.name} Category Page
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              )}
+
+              {/* App Screens */}
+              <optgroup label="General App Screens">
+                {APP_SCREEN_PRESETS.map((screen) => (
+                  <option key={screen.value} value={screen.value}>
+                    {screen.label}
+                  </option>
+                ))}
+              </optgroup>
+
+              {/* Custom option if not recognized */}
+              {!isCurrentLinkInOptions && slideLinkUrl && (
+                <optgroup label="Custom URL">
+                  <option value={slideLinkUrl}>Custom: {slideLinkUrl}</option>
+                </optgroup>
+              )}
             </select>
+
             <input
               type="text"
-              placeholder="Or enter custom route or web URL (e.g. /service-laundry)"
+              placeholder="Or enter custom route or web URL (e.g. /service-laundry or https://...)"
               value={slideLinkUrl}
               onChange={(e) => setSlideLinkUrl(e.target.value)}
               className="w-full rounded-xl border border-[var(--border-soft)] bg-surface px-3.5 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
             />
+            <p className="text-[11px] text-text-muted mt-1">
+              Select any service, category, or app screen above, or manually type a custom in-app path or website URL.
+            </p>
           </div>
 
           {/* Active status */}
