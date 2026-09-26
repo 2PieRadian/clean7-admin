@@ -18,6 +18,7 @@ import {
   Loader2,
   SlidersHorizontal,
   GripVertical,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -336,7 +337,7 @@ export function CatalogManager() {
 
   // Item reorder handlers
   const getSvcItems = (svc: CatalogServiceSummary): CatalogItemResponse[] => {
-    return localItems[svc.id] ?? svc.items ?? [];
+    return localItems[svc.id] ?? svc.items ?? (svc as any).variants ?? [];
   };
 
   const isItemOrderDirty = (svc: CatalogServiceSummary): boolean => {
@@ -461,6 +462,41 @@ export function CatalogManager() {
       return next;
     });
   };
+
+  // Base Catalog Summary counts
+  const baseCatalogStats = useMemo(() => {
+    let totalServices = 0;
+    let totalItems = 0;
+    let totalAddOns = 0;
+    let activeCategories = 0;
+    let activeServices = 0;
+
+    for (const cat of currentCategories) {
+      if (cat.publishState === "ACTIVE") {
+        activeCategories++;
+      }
+      const svcs = getCatServices(cat);
+      totalServices += svcs.length;
+      for (const svc of svcs) {
+        if (svc.publishState === "ACTIVE") {
+          activeServices++;
+        }
+        const items = getSvcItems(svc);
+        const addOns = getSvcAddOns(svc);
+        totalItems += items.length;
+        totalAddOns += addOns.length;
+      }
+    }
+
+    return {
+      categories: currentCategories.length,
+      activeCategories,
+      services: totalServices,
+      activeServices,
+      items: totalItems,
+      addOns: totalAddOns,
+    };
+  }, [currentCategories, localServices, localItems, localAddOns]);
 
   // Check if ANY ordering is unsaved
   const hasAnyUnsavedOrder =
@@ -650,6 +686,97 @@ export function CatalogManager() {
         </div>
       </div>
 
+      {/* Base Catalog Overview Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Categories Card */}
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-surface p-4 sm:p-5 shadow-sm transition-all hover:border-primary/40">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Base Categories
+            </span>
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <LayoutList className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {catLoading ? "—" : baseCatalogStats.categories}
+            </span>
+            <span className="text-xs text-text-muted">categories</span>
+          </div>
+          <p className="mt-1 text-[11px] text-text-muted">
+            {catLoading
+              ? "Loading..."
+              : `${baseCatalogStats.activeCategories} published in base`}
+          </p>
+        </div>
+
+        {/* Services Card */}
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-surface p-4 sm:p-5 shadow-sm transition-all hover:border-primary/40">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Base Services
+            </span>
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Package className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {catLoading ? "—" : baseCatalogStats.services}
+            </span>
+            <span className="text-xs text-text-muted">services</span>
+          </div>
+          <p className="mt-1 text-[11px] text-text-muted">
+            {catLoading
+              ? "Loading..."
+              : `${baseCatalogStats.activeServices} active across all categories`}
+          </p>
+        </div>
+
+        {/* Items Card */}
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-surface p-4 sm:p-5 shadow-sm transition-all hover:border-primary/40">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Base Items
+            </span>
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Tags className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {catLoading ? "—" : baseCatalogStats.items}
+            </span>
+            <span className="text-xs text-text-muted">items / variants</span>
+          </div>
+          <p className="mt-1 text-[11px] text-text-muted">
+            Standard priced garment & article units
+          </p>
+        </div>
+
+        {/* Add-ons Card */}
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-surface p-4 sm:p-5 shadow-sm transition-all hover:border-primary/40">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              Base Add-Ons
+            </span>
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Sparkles className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {catLoading ? "—" : baseCatalogStats.addOns}
+            </span>
+            <span className="text-xs text-text-muted">add-on options</span>
+          </div>
+          <p className="mt-1 text-[11px] text-text-muted">
+            Treatments, express & stain add-ons
+          </p>
+        </div>
+      </div>
+
       <GlobalSettingsCard />
 
       {/* Catalog Categories Container */}
@@ -669,6 +796,8 @@ export function CatalogManager() {
               const catServices = getCatServices(cat);
               const isExpanded = expandedCats[cat.id];
               const svcOrderDirty = isSvcOrderDirty(cat);
+              const catItemCount = catServices.reduce((acc, s) => acc + getSvcItems(s).length, 0);
+              const catAddOnCount = catServices.reduce((acc, s) => acc + getSvcAddOns(s).length, 0);
 
               return (
                 <div className="border border-[var(--border-soft)] rounded-2xl sm:rounded-3xl overflow-hidden bg-surface transition-shadow hover:shadow-sm">
@@ -697,6 +826,10 @@ export function CatalogManager() {
                         </span>
                         <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
                           <span className="break-words font-semibold leading-snug">{cat.name}</span>
+                          <span className="inline-flex items-center text-[11px] px-2.5 py-0.5 rounded-full bg-surface border border-[var(--border-soft)] text-text-muted font-medium shrink-0">
+                            {catServices.length} {catServices.length === 1 ? "service" : "services"} · {catItemCount} {catItemCount === 1 ? "item" : "items"}
+                            {catAddOnCount > 0 ? ` · ${catAddOnCount} add-on${catAddOnCount === 1 ? "" : "s"}` : ""}
+                          </span>
                           {cat.appImageUrl && (
                             <span
                               className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0"
@@ -813,6 +946,10 @@ export function CatalogManager() {
                                   </div>
 
                                   <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-3 shrink-0 pl-6 sm:pl-0">
+                                    <span className="text-[11px] text-text-muted font-medium px-2 py-0.5 rounded-full bg-surface border border-[var(--border-soft)] shrink-0 hidden sm:inline-flex">
+                                      {svcItems.length} {svcItems.length === 1 ? "item" : "items"}
+                                      {svcAddons.length > 0 ? ` · ${svcAddons.length} add-on${svcAddons.length === 1 ? "" : "s"}` : ""}
+                                    </span>
                                     <Badge variant="fulfillment" value={svc.serviceMode} className="text-[10px] sm:text-xs font-normal" />
                                     <div className="flex items-center gap-1">
                                       <button
