@@ -80,12 +80,6 @@ export default function SettingsPage() {
           </p>
           <ul className="list-inside list-disc space-y-2 text-sm text-primary">
             <li>
-              <Link href="/auth-users" className="underline-offset-4 hover:underline">
-                Managed users
-              </Link>
-            </li>
-
-            <li>
               <Link href="/banners" className="underline-offset-4 hover:underline">
                 Home Banners Carousel
               </Link>

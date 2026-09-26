@@ -106,17 +106,22 @@ export function useDeleteUser() {
       try {
         // First try primary auth-service delete endpoint (cascades to profile, operator, and auth credentials)
         await apiRequest({
-          path: `/admin/auth-users/${authUserId}`,
+          path: `/admin/auth-users/${encodeURIComponent(authUserId)}`,
           method: "DELETE",
         });
-      } catch (error) {
-        // Fallback: delete profile in user-service directly if auth-user was missing or already removed
-        try {
-          await apiRequest({
-            path: `/admin/profiles/${authUserId}`,
-            method: "DELETE",
-          });
-        } catch {
+      } catch (error: any) {
+        const status = error?.status ?? error?.statusCode;
+        // Only fallback to delete profile in user-service directly if auth-user was missing (404) or already removed
+        if (status === 404) {
+          try {
+            await apiRequest({
+              path: `/admin/profiles/${encodeURIComponent(authUserId)}`,
+              method: "DELETE",
+            });
+          } catch {
+            throw error;
+          }
+        } else {
           throw error;
         }
       }

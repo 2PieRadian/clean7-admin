@@ -174,10 +174,6 @@ export function UserManager() {
       toast.error("You cannot delete your own account.");
       return;
     }
-    if (profile.role === "DIRECTOR") {
-      toast.error("Director accounts cannot be deleted.");
-      return;
-    }
     setUserToDelete(profile);
   };
 
@@ -393,13 +389,11 @@ export function UserManager() {
                     variant="danger"
                     className="px-2.5 py-1 text-xs flex items-center gap-1.5 h-8 bg-danger/10 text-danger hover:bg-danger/20 border-danger/20"
                     onClick={() => handleDeleteClick(row)}
-                    disabled={row.authUserId === currentUser?.id || row.role === "DIRECTOR"}
+                    disabled={row.authUserId === currentUser?.id}
                     title={
-                      row.role === "DIRECTOR"
-                        ? "Director accounts cannot be deleted"
-                        : row.authUserId === currentUser?.id
-                          ? "Cannot delete your own account"
-                          : "Delete user"
+                      row.authUserId === currentUser?.id
+                        ? "Cannot delete your own account"
+                        : "Delete user"
                     }
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -602,7 +596,7 @@ export function UserManager() {
                 onClick={() => {
                   handleDeleteClick(selectedUser);
                 }}
-                disabled={selectedUser.authUserId === currentUser?.id || selectedUser.role === "DIRECTOR"}
+                disabled={selectedUser.authUserId === currentUser?.id}
               >
                 <Trash2 className="h-4 w-4 mr-1.5" />
                 Delete Account
@@ -639,8 +633,8 @@ export function UserManager() {
                   (<code className="text-xs bg-surface-muted px-1 py-0.5 rounded">{userToDelete.email}</code>)?
                   <br />
                   <br />
-                  This will permanently erase their login credentials, personal profile, contact information,
-                  and all saved delivery addresses. This action cannot be undone.
+                  This will permanently erase their login credentials, profile, operator/rider staff data,
+                  contact information, and all saved delivery addresses. <strong className="text-danger">Nothing will remain in the database.</strong> This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

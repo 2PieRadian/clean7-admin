@@ -12,7 +12,6 @@ const ROUTE_LABELS: Record<string, string> = {
   "/branches/create": "Add Branch",
   "/branches/capacities": "Schedule overrides",
   "/branch-admins": "Branch Admins",
-  "/auth-users": "Managed Users",
   "/operators": "Operators",
   "/operators/create": "Add operator",
   "/riders": "Riders",
