@@ -16,6 +16,14 @@ const DIRECTOR_ONLY_PREFIXES = [
   "/payments",
   "/branch-admins",
   "/schedule-overrides",
+  "/users",
+  "/customers",
+  "/profiles",
+  "/careers",
+  "/newsletters",
+  "/blogs",
+  "/banners",
+  "/coupons",
 ];
 
 function normalizePath(pathname: string) {

@@ -86,6 +86,14 @@ export function UserManager() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<ProfileResponse | null>(null);
 
+  // Filter available role options for non-directors
+  const availableRoles = useMemo(() => {
+    if (!isDirector) {
+      return ROLE_OPTIONS.filter((o) => o.value !== "USER");
+    }
+    return ROLE_OPTIONS;
+  }, [isDirector]);
+
   // Profile API hooks
   const { data: profiles, isLoading, isFetching, refetch } = useProfiles({
     search: search.trim() || undefined,
@@ -95,17 +103,26 @@ export function UserManager() {
   const updateProfile = useUpdateProfile();
   const deleteUser = useDeleteUser();
 
+  // Exclude customers for non-directors
+  const displayedProfiles = useMemo(() => {
+    const list = profiles || [];
+    if (!isDirector) {
+      return list.filter((p) => p.role !== "USER");
+    }
+    return list;
+  }, [profiles, isDirector]);
+
   // Metrics
   const metrics = useMemo(() => {
     const all = profiles || [];
-    const customersCount = all.filter((p) => p.role === "USER").length;
+    const customersCount = isDirector ? all.filter((p) => p.role === "USER").length : 0;
     const staffCount = all.filter((p) => p.role !== "USER").length;
     return {
-      total: all.length,
+      total: isDirector ? all.length : staffCount,
       customers: customersCount,
       staff: staffCount,
     };
-  }, [profiles]);
+  }, [profiles, isDirector]);
 
   // Edit Form State
   const [editFullName, setEditFullName] = useState("");
@@ -196,26 +213,30 @@ export function UserManager() {
   return (
     <div className="space-y-6">
       {/* ── Top Metric Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 ${isDirector ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}>
         <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
           <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
             <Users className="h-6 w-6 text-foreground" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Total Users</p>
+            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">
+              {isDirector ? "Total Users" : "Total Staff"}
+            </p>
             <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-          <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
-            <UserCheck className="h-6 w-6 text-info" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Customers</p>
-            <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
-          </div>
-        </Card>
+        {isDirector && (
+          <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+            <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
+              <UserCheck className="h-6 w-6 text-info" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Customers</p>
+              <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
+            </div>
+          </Card>
+        )}
 
         <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
           <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
@@ -245,7 +266,7 @@ export function UserManager() {
 
           {/* Role Filter Pills */}
           <div className="flex flex-wrap gap-1.5 items-center">
-            {ROLE_OPTIONS.map((option) => (
+            {availableRoles.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -276,7 +297,7 @@ export function UserManager() {
       {/* ── Users Data Table ── */}
       <div className="rounded-xl border border-[var(--border-soft)] overflow-hidden shadow-sm">
         <DataTable
-          rows={profiles || []}
+          rows={displayedProfiles}
           loading={isLoading}
           skeletonRows={6}
           emptyMessage={

@@ -7,9 +7,13 @@ import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/features/auth/store/auth-store";
 import { useProfileSearch } from "../api/profile-api";
 
 export function ProfileSearch() {
+  const { user: currentUser } = useAuth();
+  const isDirector = currentUser?.role === "DIRECTOR";
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,10 +24,12 @@ export function ProfileSearch() {
   const queryEmail = searchParams.get("email") || undefined;
   const queryPhone = searchParams.get("phoneNumber") || undefined;
 
-  const { data: profiles, isLoading, isError, error } = useProfileSearch({
+  const { data: rawProfiles, isLoading, isError, error } = useProfileSearch({
     email: queryEmail,
     phoneNumber: queryPhone,
   });
+
+  const profiles = (rawProfiles || []).filter((p) => isDirector || p.role !== "USER");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +98,6 @@ export function ProfileSearch() {
                   render: (row) => (
                     <div>
                       <p className="font-semibold text-foreground">{row.fullName || "No name"}</p>
-                      <p className="text-xs text-text-muted">{row.authUserId}</p>
                     </div>
                   ),
                 },
