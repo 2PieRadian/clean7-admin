@@ -2,14 +2,60 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/browser-api";
 import { getStoredSession } from "@/lib/browser-session";
 import { getGatewayUrl } from "@/lib/env";
-import type { OrderResponse } from "@/lib/types";
+import type { OrderResponse, PaginationMeta, FinanceStatsResponse } from "@/lib/types";
 
-export function useOrders(query?: Record<string, string>) {
-  return useQuery({
+export interface PaginatedOrdersResult {
+  orders: OrderResponse[];
+  pagination: PaginationMeta;
+}
+
+export function useOrders(query?: Record<string, string | number | boolean | undefined | null>) {
+  return useQuery<PaginatedOrdersResult>({
     queryKey: ["orders", query],
-    queryFn: () =>
-      apiRequest<OrderResponse[]>({
+    queryFn: async () => {
+      const data = await apiRequest<OrderResponse[] | PaginatedOrdersResult>({
         path: "/admin/orders",
+        query,
+      });
+
+      if (Array.isArray(data)) {
+        return {
+          orders: data,
+          pagination: {
+            page: 1,
+            limit: data.length || 20,
+            total: data.length,
+            totalPages: 1,
+          },
+        };
+      }
+
+      if (data && Array.isArray((data as PaginatedOrdersResult).orders)) {
+        return {
+          orders: (data as PaginatedOrdersResult).orders,
+          pagination: (data as PaginatedOrdersResult).pagination ?? {
+            page: 1,
+            limit: (data as PaginatedOrdersResult).orders.length || 20,
+            total: (data as PaginatedOrdersResult).orders.length,
+            totalPages: 1,
+          },
+        };
+      }
+
+      return {
+        orders: [],
+        pagination: { page: 1, limit: 20, total: 0, totalPages: 1 },
+      };
+    },
+  });
+}
+
+export function useFinanceStats(query?: Record<string, string | number | boolean | undefined | null>) {
+  return useQuery<FinanceStatsResponse>({
+    queryKey: ["admin-finance-stats", query],
+    queryFn: () =>
+      apiRequest<FinanceStatsResponse>({
+        path: "/admin/orders/finance-stats",
         query,
       }),
   });

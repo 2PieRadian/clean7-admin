@@ -6,6 +6,7 @@ import { useOrders } from "@/features/orders/api/order-api";
 import { useCategories } from "@/features/catalog/api/catalog-api";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { apiRequest } from "@/lib/browser-api";
 import { useAuth } from "@/features/auth/store/auth-store";
 import type { BranchAdminResponse, OrderResponse } from "@/lib/types";
@@ -42,7 +43,8 @@ export default function OrdersPage() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [bookingTypeFilter, setBookingTypeFilter] = useState("");
   const [slotFilter, setSlotFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -51,10 +53,7 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
-  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders({});
-  const { data: categories = [] } = useCategories();
-
-  // Debounce search by 350ms to prevent unnecessary UI re-filtering
+  // Debounce search by 350ms to prevent unnecessary backend requests
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -62,6 +61,46 @@ export default function OrdersPage() {
     }, 350);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Construct backend query with date range, filters, and pagination
+  const orderQuery = useMemo(() => {
+    const q: Record<string, string | number> = {
+      page,
+      limit,
+    };
+    if (startDate) q.startDate = startDate;
+    if (endDate) q.endDate = endDate;
+    if (branchFilter) q.branchId = branchFilter;
+    if (categoryFilter && categoryFilter !== "ALL") q.serviceCategory = categoryFilter;
+    if (statusFilter) q.status = statusFilter;
+    if (paymentStatusFilter) q.paymentStatus = paymentStatusFilter;
+    if (bookingTypeFilter) q.bookingType = bookingTypeFilter;
+    if (slotFilter) q.slotCode = slotFilter;
+    if (debouncedSearch) q.search = debouncedSearch;
+
+    if (quickFilter === "booking_asap") q.bookingType = "ASAP";
+    if (quickFilter === "booking_scheduled") q.bookingType = "SCHEDULED";
+
+    return q;
+  }, [
+    page,
+    limit,
+    startDate,
+    endDate,
+    branchFilter,
+    categoryFilter,
+    statusFilter,
+    paymentStatusFilter,
+    bookingTypeFilter,
+    slotFilter,
+    debouncedSearch,
+    quickFilter,
+  ]);
+
+  const { data: ordersData, isLoading: loadingOrders, error: orderError } = useOrders(orderQuery);
+  const rawOrders = ordersData?.orders ?? [];
+  const serverPagination = ordersData?.pagination;
+  const { data: categories = [] } = useCategories();
 
   useEffect(() => {
     let cancelled = false;
@@ -84,45 +123,12 @@ export default function OrdersPage() {
     };
   }, [isDirector, branchFilter]);
 
+  // Client-side quick filter refinement for unassigned jobs if needed
   const filteredOrders = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    return orders.filter((order) => {
-      if (branchFilter && order.branchId !== branchFilter) return false;
-      if (categoryFilter && categoryFilter !== "ALL") {
-        const orderCatCode = (order.serviceCategoryCode || "").trim().toUpperCase();
-        const filterTarget = categoryFilter.trim().toUpperCase();
-
-        let matches = orderCatCode === filterTarget;
-
-        if (!matches && categories.length > 0) {
-          const matchedCategory = categories.find(
-            (c) =>
-              c.code?.trim().toUpperCase() === filterTarget ||
-              c.id === categoryFilter ||
-              c.slug?.trim().toUpperCase() === filterTarget
-          );
-          if (matchedCategory) {
-            const catCode = (matchedCategory.code || "").trim().toUpperCase();
-            const catSlug = (matchedCategory.slug || "").trim().toUpperCase();
-            const catName = (matchedCategory.name || "").trim().toLowerCase();
-            const orderCatName = (order.serviceCategoryName || "").trim().toLowerCase();
-
-            matches =
-              orderCatCode === catCode ||
-              orderCatCode === catSlug ||
-              (Boolean(orderCatName) && orderCatName === catName);
-          }
-        }
-
-        if (!matches) return false;
-      }
-      if (bookingTypeFilter && order.bookingType !== bookingTypeFilter) return false;
-      if (slotFilter && order.scheduledSlotCode !== slotFilter) return false;
-      if (dateFilter && order.scheduledDate && !order.scheduledDate.startsWith(dateFilter)) return false;
-      if (statusFilter && order.status !== statusFilter) return false;
-      if (paymentStatusFilter && order.paymentStatus !== paymentStatusFilter) return false;
-
-      // quick filters
+    if (!quickFilter || quickFilter === "booking_asap" || quickFilter === "booking_scheduled") {
+      return rawOrders;
+    }
+    return rawOrders.filter((order) => {
       if (quickFilter === "pickup_unassigned") {
         const isLaundry =
           order.serviceMode === "PICKUP_DELIVERY" ||
@@ -142,45 +148,21 @@ export default function OrdersPage() {
       if (quickFilter === "delivery_unassigned") {
         if (order.status !== DELIVERY_UNASSIGNED_STATUS) return false;
       }
-      if (quickFilter === "booking_asap") {
-        if (order.bookingType !== "ASAP") return false;
-      }
-      if (quickFilter === "booking_scheduled") {
-        if (order.bookingType !== "SCHEDULED") return false;
-      }
-
-      if (!q) return true;
-      return (
-        orderLabel(order).toLowerCase().includes(q) ||
-        (order.orderNumber ? order.orderNumber.toLowerCase().includes(q) : false) ||
-        (order.orderCode ? order.orderCode.toLowerCase().includes(q) : false) ||
-        (order.contactSnapshot?.fullName ? order.contactSnapshot.fullName.toLowerCase().includes(q) : false) ||
-        (order.contactSnapshot?.phoneNumber ? order.contactSnapshot.phoneNumber.toLowerCase().includes(q) : false) ||
-        (order.serviceName ? order.serviceName.toLowerCase().includes(q) : false) ||
-        (order.serviceCategoryName ?? order.serviceCategoryCode ?? "").toLowerCase().includes(q)
-      );
+      return true;
     });
-  }, [
-    orders,
-    branchFilter,
-    categoryFilter,
-    categories,
-    bookingTypeFilter,
-    slotFilter,
-    dateFilter,
-    statusFilter,
-    paymentStatusFilter,
-    quickFilter,
-    debouncedSearch,
-  ]);
+  }, [rawOrders, quickFilter]);
 
-  const total = filteredOrders.length;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const isServerPaginated = Boolean(
+    serverPagination &&
+      serverPagination.total >= 0 &&
+      (!quickFilter || quickFilter === "booking_asap" || quickFilter === "booking_scheduled")
+  );
 
-  const paginatedOrders = useMemo(() => {
-    const start = (page - 1) * limit;
-    return filteredOrders.slice(start, start + limit);
-  }, [filteredOrders, page, limit]);
+  const total = isServerPaginated ? (serverPagination?.total ?? filteredOrders.length) : filteredOrders.length;
+  const totalPages = isServerPaginated
+    ? Math.max(1, serverPagination?.totalPages ?? 1)
+    : Math.max(1, Math.ceil(total / limit));
+  const paginatedOrders = isServerPaginated ? filteredOrders : filteredOrders.slice((page - 1) * limit, page * limit);
 
   const quickFilterLabels: Record<QuickFilter, string> = {
     "": "",
@@ -257,8 +239,8 @@ export default function OrdersPage() {
           ) : null}
         </div>
 
-        {/* Row 2 — Local filters & Search */}
-        <div className="grid gap-3 border-t border-[var(--border-soft)] pt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        {/* Row 2 — Dropdown filters */}
+        <div className="grid gap-3 border-t border-[var(--border-soft)] pt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <select
             className="input-surface px-3 py-2 text-sm"
             value={statusFilter}
@@ -328,27 +310,31 @@ export default function OrdersPage() {
               <option key={s} value={s}>{humanizeToken(s)}</option>
             ))}
           </select>
-          <input
-            type="date"
-            className="input-surface px-3 py-2 text-sm cursor-pointer"
-            value={dateFilter}
-            onChange={(e) => {
-              setDateFilter(e.target.value);
+        </div>
+
+        {/* Row 3 — Native Date Range Picker & Search */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-t border-[var(--border-soft)] pt-4">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s);
+              setEndDate(e);
               setPage(1);
             }}
-            onClick={(e) => {
-              try {
-                (e.target as HTMLInputElement).showPicker();
-              } catch (err) { }
-            }}
-            aria-label="Filter by date"
+            label="Order Date Range (Native Calendar)"
           />
-          <input
-            className="input-surface px-3 py-2 text-sm sm:col-span-2 md:col-span-3 lg:col-span-6"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by order #, customer name, phone, or service…"
-          />
+          <div className="flex-1 lg:max-w-sm">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+              Search Orders
+            </label>
+            <input
+              className="input-surface w-full px-3 py-2 text-sm rounded-lg"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Order #, customer, phone, service…"
+            />
+          </div>
         </div>
       </Card>
 

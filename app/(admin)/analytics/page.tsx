@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { InlineLoadingCard } from "@/components/ui/loading-state";
 import { Select } from "@/components/ui/field";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/features/auth/store/auth-store";
 import { apiRequest } from "@/lib/browser-api";
 import { useOrders } from "@/features/orders/api/order-api";
@@ -172,6 +173,8 @@ export default function AnalyticsPage() {
 
   const [branches, setBranches] = useState<BranchAdminResponse[]>([]);
   const [branchFilter, setBranchFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Load branches
   useEffect(() => {
@@ -199,15 +202,21 @@ export default function AnalyticsPage() {
     return () => { cancelled = true; };
   }, [isDirector]);
 
-  // Load orders for responsive analytics calculation
+  // Load orders for responsive analytics calculation via backend request
   const orderQuery = useMemo(() => {
+    const q: Record<string, string> = {};
     if (!isDirector && branchFilter) {
-      return { branchId: branchFilter };
+      q.branchId = branchFilter;
+    } else if (isDirector && branchFilter) {
+      q.branchId = branchFilter;
     }
-    return undefined;
-  }, [isDirector, branchFilter]);
+    if (startDate) q.startDate = startDate;
+    if (endDate) q.endDate = endDate;
+    return Object.keys(q).length > 0 ? q : undefined;
+  }, [isDirector, branchFilter, startDate, endDate]);
 
-  const { data: orders = [], isLoading: loadingOrders, error: orderError } = useOrders(orderQuery);
+  const { data: ordersData, isLoading: loadingOrders, error: orderError } = useOrders(orderQuery);
+  const orders = ordersData?.orders ?? [];
 
   // Filter orders by selected branch (strictly enforce branch admin scope)
   const branchOrders = useMemo(() => {
@@ -338,11 +347,13 @@ export default function AnalyticsPage() {
           if (dateStr) {
             const d = new Date(dateStr);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-            const mEntry = monthlyMap.get(key);
-            if (mEntry) {
-              mEntry.revenue += amount;
-              mEntry.orders += 1;
+            let mEntry = monthlyMap.get(key);
+            if (!mEntry) {
+              mEntry = { month: key, revenue: 0, orders: 0 };
+              monthlyMap.set(key, mEntry);
             }
+            mEntry.revenue += amount;
+            mEntry.orders += 1;
           }
         }
       }
@@ -489,9 +500,11 @@ export default function AnalyticsPage() {
           title={isDirector ? "Financial Analytics & Reports" : "Branch Analytics & Reports"}
           description={`Comprehensive live financial dashboard, service popularity, and payment analytics for ${selectedBranchName}.`}
         />
+      </div>
 
-        {/* Branch Filter */}
-        <div className="w-full sm:w-72 shrink-0">
+      {/* Filters Card */}
+      <Card className="p-5 flex flex-col md:flex-row md:items-end justify-between gap-5 bg-surface">
+        <div className="w-full md:w-72 shrink-0">
           {isDirector ? (
             <Select
               label="Filter by Branch"
@@ -531,7 +544,19 @@ export default function AnalyticsPage() {
             </div>
           )}
         </div>
-      </div>
+
+        <div className="flex-1">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s);
+              setEndDate(e);
+            }}
+            label="Analytics Date Range (Native Calendar)"
+          />
+        </div>
+      </Card>
 
       {loadingOrders ? (
         <InlineLoadingCard lines={8} />

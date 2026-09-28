@@ -830,5 +830,16 @@ export interface CareerApplication {
   reviewedAt: string | null;
   reviewedByAdminId: string | null;
   createdAt: string;
-  updatedAt: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedOrdersResponse {
+  orders: OrderResponse[];
+  pagination: PaginationMeta;
 }
