@@ -98,7 +98,6 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         href: "/users",
         label: "Users",
         icon: ContactRound,
-        directorOnly: true,
       },
       { href: "/newsletters", label: "Newsletters", icon: Mail, directorOnly: true },
     ],

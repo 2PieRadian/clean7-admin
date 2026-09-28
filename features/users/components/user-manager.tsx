@@ -18,7 +18,9 @@ import {
   UserCheck,
   UserX,
   Users,
+  Bike,
 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea, Select } from "@/components/ui/field";
@@ -36,8 +38,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/features/auth/store/auth-store";
+import { apiRequest } from "@/lib/browser-api";
 import { useProfiles, useUpdateProfile, useDeleteUser } from "../api/profile-api";
-import type { ProfileResponse, UserRole } from "@/lib/types";
+import type { OperatorProfileResponse, ProfileResponse, UserRole } from "@/lib/types";
 
 const ROLE_OPTIONS: { label: string; value: string }[] = [
   { label: "All Roles", value: "ALL" },
@@ -79,6 +82,7 @@ function getInitials(name: string | null | undefined, email: string): string {
 export function UserManager() {
   const { user: currentUser } = useAuth();
   const isDirector = currentUser?.role === "DIRECTOR";
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -86,43 +90,130 @@ export function UserManager() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<ProfileResponse | null>(null);
 
-  // Filter available role options for non-directors
+  // Filter available role options for non-directors (branch admins see only Operators and Riders)
   const availableRoles = useMemo(() => {
     if (!isDirector) {
-      return ROLE_OPTIONS.filter((o) => o.value !== "USER");
+      return [
+        { label: "All Staff", value: "ALL" },
+        { label: "Operators", value: "OPERATOR" },
+        { label: "Riders", value: "RIDER" },
+      ];
     }
     return ROLE_OPTIONS;
   }, [isDirector]);
 
-  // Profile API hooks
-  const { data: profiles, isLoading, isFetching, refetch } = useProfiles({
-    search: search.trim() || undefined,
-    role: roleFilter !== "ALL" ? roleFilter : undefined,
+  // Profile API hooks (user-service)
+  const {
+    data: profiles,
+    isLoading: isLoadingProfiles,
+    isFetching: isFetchingProfiles,
+    refetch: refetchProfiles,
+  } = useProfiles({
+    search: isDirector ? search.trim() || undefined : undefined,
+    role: isDirector && roleFilter !== "ALL" ? roleFilter : undefined,
   });
+
+  // Operators API hook for non-directors (branch-admin scoped to their branch by operator-service)
+  const {
+    data: branchOperators,
+    isLoading: isLoadingOperators,
+    isFetching: isFetchingOperators,
+    refetch: refetchOperators,
+  } = useQuery<OperatorProfileResponse[]>({
+    queryKey: ["admin-operators"],
+    queryFn: () => apiRequest<OperatorProfileResponse[]>({ path: "/admin/operators" }),
+    enabled: !isDirector,
+  });
+
+  const isLoading = isLoadingProfiles || (!isDirector && isLoadingOperators);
+  const isFetching = isFetchingProfiles || (!isDirector && isFetchingOperators);
 
   const updateProfile = useUpdateProfile();
   const deleteUser = useDeleteUser();
 
-  // Exclude customers for non-directors
+  const branchStaffMap = useMemo(() => {
+    if (isDirector || !branchOperators) return new Map<string, OperatorProfileResponse>();
+    return new Map(branchOperators.map((o) => [o.authUserId, o]));
+  }, [isDirector, branchOperators]);
+
+  // Exclude customers for non-directors, and strictly show ONLY branch operators and riders
   const displayedProfiles = useMemo(() => {
-    const list = profiles || [];
-    if (!isDirector) {
-      return list.filter((p) => p.role !== "USER");
+    if (isDirector) {
+      return profiles || [];
     }
-    return list;
-  }, [profiles, isDirector]);
+
+    const staffList = branchOperators || [];
+    const profilesByAuthId = new Map((profiles || []).map((p) => [p.authUserId, p]));
+
+    const combined: ProfileResponse[] = staffList.map((op) => {
+      const p = profilesByAuthId.get(op.authUserId);
+      if (p) {
+        return {
+          ...p,
+          role: op.role as UserRole,
+          fullName: p.fullName || op.displayName,
+          phoneNumber: p.phoneNumber || op.phoneNumber,
+        };
+      }
+      return {
+        id: op.authUserId,
+        authUserId: op.authUserId,
+        email: op.email || "No email",
+        role: op.role as UserRole,
+        fullName: op.displayName,
+        phoneNumber: op.phoneNumber,
+        avatarUrl: op.profilePhotoUrl || null,
+        emergencyContactName: op.emergencyContactName || null,
+        emergencyContactPhone: op.emergencyContactPhone || null,
+        internalNotes: null,
+        createdAt: op.createdAt,
+        updatedAt: op.updatedAt,
+        addresses: [],
+      };
+    });
+
+    let filtered = combined.filter((p) => p.role === "OPERATOR" || p.role === "RIDER");
+
+    if (roleFilter !== "ALL") {
+      filtered = filtered.filter((p) => p.role === roleFilter);
+    }
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          (p.fullName && p.fullName.toLowerCase().includes(q)) ||
+          (p.email && p.email.toLowerCase().includes(q)) ||
+          (p.phoneNumber && p.phoneNumber.toLowerCase().includes(q)),
+      );
+    }
+
+    return filtered;
+  }, [isDirector, profiles, branchOperators, roleFilter, search]);
 
   // Metrics
   const metrics = useMemo(() => {
+    if (!isDirector) {
+      const staff = branchOperators || [];
+      return {
+        total: staff.length,
+        customers: 0,
+        staff: staff.length,
+        operators: staff.filter((o) => o.role === "OPERATOR").length,
+        riders: staff.filter((o) => o.role === "RIDER").length,
+      };
+    }
     const all = profiles || [];
-    const customersCount = isDirector ? all.filter((p) => p.role === "USER").length : 0;
+    const customersCount = all.filter((p) => p.role === "USER").length;
     const staffCount = all.filter((p) => p.role !== "USER").length;
     return {
-      total: isDirector ? all.length : staffCount,
+      total: all.length,
       customers: customersCount,
       staff: staffCount,
+      operators: all.filter((p) => p.role === "OPERATOR").length,
+      riders: all.filter((p) => p.role === "RIDER").length,
     };
-  }, [profiles, isDirector]);
+  }, [profiles, isDirector, branchOperators]);
 
   // Edit Form State
   const [editFullName, setEditFullName] = useState("");
@@ -178,6 +269,9 @@ export function UserManager() {
         },
       });
 
+      await queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+
       toast.success("User details updated successfully");
       setIsEditModalOpen(false);
     } catch (err: unknown) {
@@ -199,6 +293,8 @@ export function UserManager() {
 
     try {
       await deleteUser.mutateAsync(userToDelete.authUserId);
+      await queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
       toast.success(`User ${userToDelete.fullName || userToDelete.email} deleted successfully`);
       setUserToDelete(null);
       if (selectedUser?.authUserId === userToDelete.authUserId) {
@@ -213,40 +309,72 @@ export function UserManager() {
   return (
     <div className="space-y-6">
       {/* ── Top Metric Cards ── */}
-      <div className={`grid grid-cols-1 ${isDirector ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-4`}>
-        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-          <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
-            <Users className="h-6 w-6 text-foreground" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">
-              {isDirector ? "Total Users" : "Total Staff"}
-            </p>
-            <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {isDirector ? (
+          <>
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
+                <Users className="h-6 w-6 text-foreground" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Total Users</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
+              </div>
+            </Card>
 
-        {isDirector && (
-          <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-            <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
-              <UserCheck className="h-6 w-6 text-info" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Customers</p>
-              <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
-            </div>
-          </Card>
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
+                <UserCheck className="h-6 w-6 text-info" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Customers</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
+                <Shield className="h-6 w-6 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Team & Staff</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.staff}</p>
+              </div>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
+                <Users className="h-6 w-6 text-foreground" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Branch Staff</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
+                <Shield className="h-6 w-6 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Operators</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.operators}</p>
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+              <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
+                <Bike className="h-6 w-6 text-info" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Riders</p>
+                <p className="text-2xl font-bold text-foreground">{metrics.riders}</p>
+              </div>
+            </Card>
+          </>
         )}
-
-        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-          <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
-            <Shield className="h-6 w-6 text-warning" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Team & Staff</p>
-            <p className="text-2xl font-bold text-foreground">{metrics.staff}</p>
-          </div>
-        </Card>
       </div>
 
       {/* ── Search & Filter Controls ── */}
@@ -284,7 +412,12 @@ export function UserManager() {
             <Button
               variant="secondary"
               className="px-2.5 py-1.5 h-auto text-xs flex items-center gap-1 ml-2"
-              onClick={() => refetch()}
+              onClick={() => {
+                refetchProfiles();
+                if (!isDirector) {
+                  refetchOperators();
+                }
+              }}
               disabled={isFetching}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
@@ -301,7 +434,11 @@ export function UserManager() {
           loading={isLoading}
           skeletonRows={6}
           emptyMessage={
-            search || roleFilter !== "ALL"
+            !isDirector
+              ? search || roleFilter !== "ALL"
+                ? "No branch staff match your active search or filters."
+                : "No operators or riders assigned to your branch yet."
+              : search || roleFilter !== "ALL"
               ? "No users match your active search or filters."
               : "No users found in the platform."
           }
@@ -324,9 +461,16 @@ export function UserManager() {
                     </div>
                   )}
                   <div className="space-y-0.5">
-                    <p className="font-semibold text-foreground text-sm leading-tight">
-                      {row.fullName || "No name set"}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground text-sm leading-tight">
+                        {row.fullName || "No name set"}
+                      </p>
+                      {!isDirector && branchStaffMap.get(row.authUserId)?.branch?.name && (
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-muted border border-[var(--border-soft)] text-text-muted font-medium">
+                          {branchStaffMap.get(row.authUserId)?.branch?.name}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                       <Mail className="h-3 w-3 text-text-muted" />
                       <span>{row.email}</span>
