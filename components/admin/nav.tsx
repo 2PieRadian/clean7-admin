@@ -202,9 +202,7 @@ export function AdminNav({
                 className="flex w-full items-center justify-between px-2 py-1.5 text-left transition hover:bg-surface-muted"
               >
                 <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-text-muted">
-                  {group.title === "People & customers" && role !== "DIRECTOR"
-                    ? "Staff"
-                    : group.title}
+                  {group.title}
                 </span>
                 <ChevronDown
                   className={`h-4 w-4 shrink-0 text-text-muted transition-transform duration-300 ease-out motion-reduce:transition-none ${sectionOpen ? "rotate-0" : "-rotate-90"

@@ -95,6 +95,8 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ["profiles", authUserId] });
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["auth-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-branch-orders"] });
     },
   });
 }
@@ -129,6 +131,8 @@ export function useDeleteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["auth-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-branch-orders"] });
     },
   });
 }

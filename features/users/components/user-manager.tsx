@@ -40,7 +40,8 @@ import {
 import { useAuth } from "@/features/auth/store/auth-store";
 import { apiRequest } from "@/lib/browser-api";
 import { useProfiles, useUpdateProfile, useDeleteUser } from "../api/profile-api";
-import type { OperatorProfileResponse, ProfileResponse, UserRole } from "@/lib/types";
+import { useBranches } from "@/features/branches/api/branch-api";
+import type { OperatorProfileResponse, ProfileResponse, UserRole, OrderResponse } from "@/lib/types";
 
 const ROLE_OPTIONS: { label: string; value: string }[] = [
   { label: "All Roles", value: "ALL" },
@@ -90,11 +91,12 @@ export function UserManager() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<ProfileResponse | null>(null);
 
-  // Filter available role options for non-directors (branch admins see only Operators and Riders)
+  // Filter available role options for non-directors (branch admins see Customers, Operators, and Riders)
   const availableRoles = useMemo(() => {
     if (!isDirector) {
       return [
-        { label: "All Staff", value: "ALL" },
+        { label: "All Branch Users", value: "ALL" },
+        { label: "Customers", value: "USER" },
         { label: "Operators", value: "OPERATOR" },
         { label: "Riders", value: "RIDER" },
       ];
@@ -125,8 +127,30 @@ export function UserManager() {
     enabled: !isDirector,
   });
 
-  const isLoading = isLoadingProfiles || (!isDirector && isLoadingOperators);
-  const isFetching = isFetchingProfiles || (!isDirector && isFetchingOperators);
+  // Orders API hook for non-directors (branch-admin scoped to their branch by order-service)
+  const {
+    data: branchOrders,
+    isLoading: isLoadingOrders,
+    isFetching: isFetchingOrders,
+    refetch: refetchOrders,
+  } = useQuery<OrderResponse[]>({
+    queryKey: ["admin-branch-orders"],
+    queryFn: async () => {
+      const res = await apiRequest<OrderResponse[] | { orders: OrderResponse[] }>({
+        path: "/admin/orders",
+      });
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray((res as any).orders)) return (res as any).orders;
+      return [];
+    },
+    enabled: !isDirector,
+  });
+
+  const { data: branches, refetch: refetchBranches } = useBranches();
+  const currentBranchName = branches?.[0]?.name;
+
+  const isLoading = isLoadingProfiles || (!isDirector && (isLoadingOperators || isLoadingOrders));
+  const isFetching = isFetchingProfiles || (!isDirector && (isFetchingOperators || isFetchingOrders));
 
   const updateProfile = useUpdateProfile();
   const deleteUser = useDeleteUser();
@@ -136,7 +160,8 @@ export function UserManager() {
     return new Map(branchOperators.map((o) => [o.authUserId, o]));
   }, [isDirector, branchOperators]);
 
-  // Exclude customers for non-directors, and strictly show ONLY branch operators and riders
+  // When director: show all profiles across platform
+  // When branch admin: show ONLY staff (operators, riders) from this branch, and ONLY users (customers) who placed orders in this branch
   const displayedProfiles = useMemo(() => {
     if (isDirector) {
       return profiles || [];
@@ -144,8 +169,10 @@ export function UserManager() {
 
     const staffList = branchOperators || [];
     const profilesByAuthId = new Map((profiles || []).map((p) => [p.authUserId, p]));
+    const staffAuthIds = new Set(staffList.map((op) => op.authUserId));
 
-    const combined: ProfileResponse[] = staffList.map((op) => {
+    // 1. Staff Profiles (Operators & Riders) from this branch
+    const staffProfiles: ProfileResponse[] = staffList.map((op) => {
       const p = profilesByAuthId.get(op.authUserId);
       if (p) {
         return {
@@ -172,7 +199,71 @@ export function UserManager() {
       };
     });
 
-    let filtered = combined.filter((p) => p.role === "OPERATOR" || p.role === "RIDER");
+    // 2. Customer Profiles associated with this branch only (from branch orders)
+    const customerProfilesMap = new Map<string, ProfileResponse>();
+    const orders = branchOrders || [];
+
+    for (const order of orders) {
+      const authId = order.customerAuthUserId;
+      if (!authId || authId === "walk-in-guest" || staffAuthIds.has(authId)) {
+        continue;
+      }
+
+      if (customerProfilesMap.has(authId)) {
+        continue;
+      }
+
+      const p = profilesByAuthId.get(authId);
+      const contact = order.contactSnapshot;
+      const addrSnapshot = order.serviceAddressSnapshot;
+
+      if (p) {
+        customerProfilesMap.set(authId, {
+          ...p,
+          role: "USER" as UserRole,
+          fullName: p.fullName || contact?.fullName || "Customer",
+          phoneNumber: p.phoneNumber || contact?.phoneNumber || null,
+          email: p.email || contact?.email || "No email",
+        });
+      } else {
+        customerProfilesMap.set(authId, {
+          id: authId,
+          authUserId: authId,
+          email: contact?.email || "No email",
+          role: "USER" as UserRole,
+          fullName: contact?.fullName || "Customer",
+          phoneNumber: contact?.phoneNumber || null,
+          avatarUrl: null,
+          emergencyContactName: null,
+          emergencyContactPhone: null,
+          internalNotes: null,
+          createdAt: order.createdAt || new Date().toISOString(),
+          updatedAt: order.updatedAt || order.createdAt || new Date().toISOString(),
+          addresses: addrSnapshot
+            ? [
+                {
+                  id: addrSnapshot.id || `${authId}-addr`,
+                  label: addrSnapshot.label || "Service Address",
+                  line1: addrSnapshot.line1,
+                  line2: addrSnapshot.line2 || null,
+                  city: addrSnapshot.city,
+                  state: addrSnapshot.state,
+                  postalCode: addrSnapshot.postalCode,
+                  country: addrSnapshot.country,
+                  latitude: addrSnapshot.latitude ?? null,
+                  longitude: addrSnapshot.longitude ?? null,
+                  isDefault: true,
+                },
+              ]
+            : [],
+        });
+      }
+    }
+
+    const customerProfiles = Array.from(customerProfilesMap.values());
+    const combined: ProfileResponse[] = [...staffProfiles, ...customerProfiles];
+
+    let filtered = combined;
 
     if (roleFilter !== "ALL") {
       filtered = filtered.filter((p) => p.role === roleFilter);
@@ -189,18 +280,32 @@ export function UserManager() {
     }
 
     return filtered;
-  }, [isDirector, profiles, branchOperators, roleFilter, search]);
+  }, [isDirector, profiles, branchOperators, branchOrders, roleFilter, search]);
 
   // Metrics
   const metrics = useMemo(() => {
     if (!isDirector) {
       const staff = branchOperators || [];
+      const branchStaffCount = staff.length;
+      const operatorsCount = staff.filter((o) => o.role === "OPERATOR").length;
+      const ridersCount = staff.filter((o) => o.role === "RIDER").length;
+
+      const staffAuthIds = new Set(staff.map((s) => s.authUserId));
+      const customerIds = new Set<string>();
+      for (const order of branchOrders || []) {
+        const id = order.customerAuthUserId;
+        if (id && id !== "walk-in-guest" && !staffAuthIds.has(id)) {
+          customerIds.add(id);
+        }
+      }
+      const customersCount = customerIds.size;
+
       return {
-        total: staff.length,
-        customers: 0,
-        staff: staff.length,
-        operators: staff.filter((o) => o.role === "OPERATOR").length,
-        riders: staff.filter((o) => o.role === "RIDER").length,
+        total: branchStaffCount + customersCount,
+        customers: customersCount,
+        staff: branchStaffCount,
+        operators: operatorsCount,
+        riders: ridersCount,
       };
     }
     const all = profiles || [];
@@ -213,7 +318,7 @@ export function UserManager() {
       operators: all.filter((p) => p.role === "OPERATOR").length,
       riders: all.filter((p) => p.role === "RIDER").length,
     };
-  }, [profiles, isDirector, branchOperators]);
+  }, [profiles, isDirector, branchOperators, branchOrders]);
 
   // Edit Form State
   const [editFullName, setEditFullName] = useState("");
@@ -270,6 +375,7 @@ export function UserManager() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-branch-orders"] });
       await queryClient.invalidateQueries({ queryKey: ["profiles"] });
 
       toast.success("User details updated successfully");
@@ -294,6 +400,7 @@ export function UserManager() {
     try {
       await deleteUser.mutateAsync(userToDelete.authUserId);
       await queryClient.invalidateQueries({ queryKey: ["admin-operators"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-branch-orders"] });
       await queryClient.invalidateQueries({ queryKey: ["profiles"] });
       toast.success(`User ${userToDelete.fullName || userToDelete.email} deleted successfully`);
       setUserToDelete(null);
@@ -309,72 +416,50 @@ export function UserManager() {
   return (
     <div className="space-y-6">
       {/* ── Top Metric Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {isDirector ? (
-          <>
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
-                <Users className="h-6 w-6 text-foreground" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Total Users</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
-              </div>
-            </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+          <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
+            <Users className="h-6 w-6 text-foreground" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">
+              {isDirector ? "Total Users" : "Branch Users"}
+            </p>
+            <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
+          </div>
+        </Card>
 
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
-                <UserCheck className="h-6 w-6 text-info" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Customers</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
-              </div>
-            </Card>
+        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+          <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
+            <UserCheck className="h-6 w-6 text-info" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">
+              {isDirector ? "Customers" : "Branch Customers"}
+            </p>
+            <p className="text-2xl font-bold text-foreground">{metrics.customers}</p>
+          </div>
+        </Card>
 
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
-                <Shield className="h-6 w-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Team & Staff</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.staff}</p>
-              </div>
-            </Card>
-          </>
-        ) : (
-          <>
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-surface-muted flex items-center justify-center text-foreground">
-                <Users className="h-6 w-6 text-foreground" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Branch Staff</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
-              </div>
-            </Card>
+        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+          <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
+            <Shield className="h-6 w-6 text-warning" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Operators</p>
+            <p className="text-2xl font-bold text-foreground">{metrics.operators}</p>
+          </div>
+        </Card>
 
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
-                <Shield className="h-6 w-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Operators</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.operators}</p>
-              </div>
-            </Card>
-
-            <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
-              <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center text-info">
-                <Bike className="h-6 w-6 text-info" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Riders</p>
-                <p className="text-2xl font-bold text-foreground">{metrics.riders}</p>
-              </div>
-            </Card>
-          </>
-        )}
+        <Card className="p-4 flex items-center gap-4 bg-surface border border-[var(--border-soft)]">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Bike className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-text-muted font-medium">Riders</p>
+            <p className="text-2xl font-bold text-foreground">{metrics.riders}</p>
+          </div>
+        </Card>
       </div>
 
       {/* ── Search & Filter Controls ── */}
@@ -416,6 +501,8 @@ export function UserManager() {
                 refetchProfiles();
                 if (!isDirector) {
                   refetchOperators();
+                  refetchOrders();
+                  refetchBranches();
                 }
               }}
               disabled={isFetching}
@@ -436,8 +523,8 @@ export function UserManager() {
           emptyMessage={
             !isDirector
               ? search || roleFilter !== "ALL"
-                ? "No branch staff match your active search or filters."
-                : "No operators or riders assigned to your branch yet."
+                ? "No branch users or staff match your active search or filters."
+                : "No users or staff associated with your branch yet."
               : search || roleFilter !== "ALL"
               ? "No users match your active search or filters."
               : "No users found in the platform."
@@ -465,9 +552,9 @@ export function UserManager() {
                       <p className="font-semibold text-foreground text-sm leading-tight">
                         {row.fullName || "No name set"}
                       </p>
-                      {!isDirector && branchStaffMap.get(row.authUserId)?.branch?.name && (
+                      {!isDirector && (
                         <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-muted border border-[var(--border-soft)] text-text-muted font-medium">
-                          {branchStaffMap.get(row.authUserId)?.branch?.name}
+                          {branchStaffMap.get(row.authUserId)?.branch?.name || currentBranchName || "My Branch"}
                         </span>
                       )}
                     </div>
