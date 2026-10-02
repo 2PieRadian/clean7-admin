@@ -738,6 +738,8 @@ export type OrderResponse = {
   auditEvents?: OrderAuditEventResponse[];
   proofArtifacts?: ProofArtifactResponse[];
   laundryStageTasks?: LaundryStageTask[];
+  completedAt?: string | null;
+  deliveredAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { OrderList } from "@/features/orders/components/order-list";
+import { OrderList, getAlertLabel } from "@/features/orders/components/order-list";
 import { useOrders } from "@/features/orders/api/order-api";
 import { useCategories } from "@/features/catalog/api/catalog-api";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/browser-api";
 import { useAuth } from "@/features/auth/store/auth-store";
 import type { BranchAdminResponse, OrderResponse } from "@/lib/types";
 import { slotCodes, orderStatuses, paymentStatuses } from "@/lib/constants";
-import { humanizeToken } from "@/lib/format";
+import { humanizeToken, deliveryPromiseInfo } from "@/lib/format";
 
 /** Statuses where pickup rider should be assigned but isn't. */
 const PICKUP_UNASSIGNED_STATUSES = new Set([
@@ -34,6 +34,32 @@ type QuickFilter =
   | "booking_asap"
   | "booking_scheduled";
 
+type OrderQueueFilter =
+  | "ALL"
+  | "WAITING_PICKUP"
+  | "PROCESSING"
+  | "READY_DELIVERY"
+  | "DELAYED"
+  | "COMPLETED_TODAY"
+  | "AWAITING_ASSIGNMENT";
+
+const ORDER_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "All Statuses" },
+  { value: "ALL_FINISHED", label: "All Finished (Delivered & Completed)" },
+  { value: "DELIVERED", label: "Delivered (Laundry Only)" },
+  { value: "COMPLETED", label: "Completed (At-Home Service)" },
+  { value: "CONFIRMED", label: "Confirmed" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "RECEIVED_AT_BRANCH", label: "Received at Branch (Laundry)" },
+  { value: "PROCESSING", label: "In Processing (Laundry)" },
+  { value: "READY_FOR_DELIVERY", label: "Ready for Delivery (Laundry)" },
+  { value: "OUT_FOR_DELIVERY", label: "Out for Delivery (Laundry)" },
+  { value: "PENDING", label: "Pending" },
+  { value: "PICKUP_FAILED", label: "Pickup Failed (Laundry)" },
+  { value: "DELIVERY_FAILED", label: "Delivery Failed (Laundry)" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
+
 export default function OrdersPage() {
   const { user } = useAuth();
   const isDirector = user?.role === "DIRECTOR";
@@ -50,8 +76,17 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("");
+  const [orderQueueFilter, setOrderQueueFilter] = useState<OrderQueueFilter>("ALL");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+
+  const today = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }, []);
 
   // Debounce search by 350ms to prevent unnecessary backend requests
   useEffect(() => {
@@ -72,7 +107,7 @@ export default function OrdersPage() {
     if (endDate) q.endDate = endDate;
     if (branchFilter) q.branchId = branchFilter;
     if (categoryFilter && categoryFilter !== "ALL") q.serviceCategory = categoryFilter;
-    if (statusFilter) q.status = statusFilter;
+    if (statusFilter && statusFilter !== "ALL_FINISHED") q.status = statusFilter;
     if (paymentStatusFilter) q.paymentStatus = paymentStatusFilter;
     if (bookingTypeFilter) q.bookingType = bookingTypeFilter;
     if (slotFilter) q.slotCode = slotFilter;
@@ -80,6 +115,26 @@ export default function OrdersPage() {
 
     if (quickFilter === "booking_asap") q.bookingType = "ASAP";
     if (quickFilter === "booking_scheduled") q.bookingType = "SCHEDULED";
+
+    // Direct mapping to backend status if queue filter matches and statusFilter is not overriding
+    if (!statusFilter) {
+      if (orderQueueFilter === "PROCESSING") q.status = "PROCESSING";
+      if (orderQueueFilter === "READY_DELIVERY") q.status = "READY_FOR_DELIVERY";
+    }
+
+    if (orderQueueFilter && orderQueueFilter !== "ALL") {
+      q.queueFilter = orderQueueFilter;
+    }
+
+    // When client-side filtering is required, fetch a larger batch (100) so local filtering covers the orders
+    const needsClientFilter = Boolean(
+      statusFilter === "ALL_FINISHED" ||
+      (quickFilter && quickFilter !== "booking_asap" && quickFilter !== "booking_scheduled") ||
+      (orderQueueFilter && orderQueueFilter !== "ALL" && orderQueueFilter !== "PROCESSING" && orderQueueFilter !== "READY_DELIVERY")
+    );
+    if (needsClientFilter) {
+      q.limit = 100;
+    }
 
     return q;
   }, [
@@ -95,6 +150,7 @@ export default function OrdersPage() {
     slotFilter,
     debouncedSearch,
     quickFilter,
+    orderQueueFilter,
   ]);
 
   const { data: ordersData, isLoading: loadingOrders, error: orderError } = useOrders(orderQuery);
@@ -123,39 +179,101 @@ export default function OrdersPage() {
     };
   }, [isDirector, branchFilter]);
 
-  // Client-side quick filter refinement for unassigned jobs if needed
+  // Client-side quick filter and queue filter refinement
   const filteredOrders = useMemo(() => {
-    if (!quickFilter || quickFilter === "booking_asap" || quickFilter === "booking_scheduled") {
-      return rawOrders;
-    }
-    return rawOrders.filter((order) => {
+    let result = rawOrders;
+
+    // 1. Row 1 Quick Filter (unassigned jobs)
+    if (quickFilter) {
       if (quickFilter === "pickup_unassigned") {
+        result = result.filter((order) => {
+          const isLaundry =
+            order.serviceMode === "PICKUP_DELIVERY" ||
+            (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() === "LAUNDRY");
+          if (!isLaundry) return false;
+          if (!PICKUP_UNASSIGNED_STATUSES.has(order.status)) return false;
+          return !order.pickupRiderAuthUserId && !order.pickupCompletedAt;
+        });
+      } else if (quickFilter === "operator_unassigned") {
+        result = result.filter((order) => {
+          const isAtHome =
+            order.serviceMode === "AT_HOME" ||
+            (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() !== "LAUNDRY");
+          if (!isAtHome) return false;
+          if (order.status !== "CONFIRMED" && order.status !== "IN_PROGRESS") return false;
+          return !order.assignedOperatorAuthUserId;
+        });
+      } else if (quickFilter === "delivery_unassigned") {
+        result = result.filter((order) => order.status === DELIVERY_UNASSIGNED_STATUS);
+      }
+    }
+
+    // 2. Orders Queue Filters beside "Orders Queue"
+    if (orderQueueFilter && orderQueueFilter !== "ALL") {
+      result = result.filter((o) => {
         const isLaundry =
-          order.serviceMode === "PICKUP_DELIVERY" ||
-          (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() === "LAUNDRY");
-        if (!isLaundry) return false;
-        if (!PICKUP_UNASSIGNED_STATUSES.has(order.status)) return false;
-        if (order.pickupRiderAuthUserId || order.pickupCompletedAt) return false;
-      }
-      if (quickFilter === "operator_unassigned") {
-        const isAtHome =
-          order.serviceMode === "AT_HOME" ||
-          (order.serviceCategoryCode && order.serviceCategoryCode.toUpperCase() !== "LAUNDRY");
-        if (!isAtHome) return false;
-        if (order.status !== "CONFIRMED" && order.status !== "IN_PROGRESS") return false;
-        if (order.assignedOperatorAuthUserId) return false;
-      }
-      if (quickFilter === "delivery_unassigned") {
-        if (order.status !== DELIVERY_UNASSIGNED_STATUS) return false;
-      }
-      return true;
-    });
-  }, [rawOrders, quickFilter]);
+          o.serviceMode === "PICKUP_DELIVERY" ||
+          o.serviceCategoryCode?.toUpperCase() === "LAUNDRY";
+
+        if (orderQueueFilter === "WAITING_PICKUP") {
+          if (!isLaundry) return false;
+          if (o.status !== "CONFIRMED" && o.status !== "IN_PROGRESS") return false;
+          if (o.pickupCompletedAt) return false;
+          return true;
+        }
+
+        if (orderQueueFilter === "PROCESSING") {
+          return o.status === "PROCESSING";
+        }
+
+        if (orderQueueFilter === "READY_DELIVERY") {
+          return o.status === "READY_FOR_DELIVERY";
+        }
+
+        if (orderQueueFilter === "DELAYED") {
+          const d = o.scheduledDate ? String(o.scheduledDate).slice(0, 10) : null;
+          const promise = deliveryPromiseInfo(o);
+          if (
+            o.status === "DELIVERED" ||
+            o.status === "COMPLETED" ||
+            o.status === "CANCELLED"
+          ) {
+            return false;
+          }
+          return Boolean((d && d < today) || promise.isOverdue);
+        }
+
+        if (orderQueueFilter === "COMPLETED_TODAY") {
+          const updatedDate = o.updatedAt ? String(o.updatedAt).slice(0, 10) : null;
+          const completedDate = o.completedAt ? String(o.completedAt).slice(0, 10) : null;
+          const deliveredDate = o.deliveredAt ? String(o.deliveredAt).slice(0, 10) : null;
+          const isDone = o.status === "COMPLETED" || o.status === "DELIVERED";
+          return isDone && (updatedDate === today || completedDate === today || deliveredDate === today);
+        }
+
+        if (orderQueueFilter === "AWAITING_ASSIGNMENT") {
+          const alert = getAlertLabel(o);
+          return Boolean(alert);
+        }
+
+        return true;
+      });
+    }
+
+    // 3. Filter by ALL_FINISHED if chosen
+    if (statusFilter === "ALL_FINISHED") {
+      result = result.filter((o) => o.status === "DELIVERED" || o.status === "COMPLETED");
+    }
+
+    return result;
+  }, [rawOrders, quickFilter, orderQueueFilter, statusFilter, today]);
 
   const isServerPaginated = Boolean(
     serverPagination &&
-      serverPagination.total >= 0 &&
-      (!quickFilter || quickFilter === "booking_asap" || quickFilter === "booking_scheduled")
+    serverPagination.total >= 0 &&
+    statusFilter !== "ALL_FINISHED" &&
+    (!quickFilter || quickFilter === "booking_asap" || quickFilter === "booking_scheduled") &&
+    (!orderQueueFilter || orderQueueFilter === "ALL" || (!statusFilter && (orderQueueFilter === "PROCESSING" || orderQueueFilter === "READY_DELIVERY")))
   );
 
   const total = isServerPaginated ? (serverPagination?.total ?? filteredOrders.length) : filteredOrders.length;
@@ -246,13 +364,17 @@ export default function OrdersPage() {
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
+              if (e.target.value) {
+                setOrderQueueFilter("ALL");
+              }
               setPage(1);
             }}
             aria-label="Filter by order status"
           >
-            <option value="">All Statuses</option>
-            {orderStatuses.map((s) => (
-              <option key={s} value={s}>{humanizeToken(s)}</option>
+            {ORDER_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
           <select
@@ -354,7 +476,8 @@ export default function OrdersPage() {
         highlightUnassigned={
           quickFilter === "delivery_unassigned" ||
           quickFilter === "pickup_unassigned" ||
-          quickFilter === "operator_unassigned"
+          quickFilter === "operator_unassigned" ||
+          orderQueueFilter === "AWAITING_ASSIGNMENT"
         }
         pagination={{
           page,
@@ -372,9 +495,12 @@ export default function OrdersPage() {
           setCategoryFilter(cat);
           setPage(1);
         }}
-        quickFilter={quickFilter}
+        quickFilter={orderQueueFilter}
         onQuickFilterChange={(qf) => {
-          setQuickFilter(qf === "ALL" ? "" : (qf as QuickFilter));
+          setOrderQueueFilter(qf as OrderQueueFilter);
+          if (statusFilter && (qf === "PROCESSING" || qf === "READY_DELIVERY" || qf === "WAITING_PICKUP")) {
+            setStatusFilter("");
+          }
           setPage(1);
         }}
       />

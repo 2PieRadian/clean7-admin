@@ -86,9 +86,11 @@ export function getAlertLabel(order: OrderResponse): string | null {
 }
 
 function startOfTodayIsoDate() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 const columnHelper = createColumnHelper<OrderResponse>();
@@ -758,9 +760,8 @@ export function OrderList({
   const { data: fetchedCategories = [], isLoading: categoriesLoading } = useCategories();
   const categories = propCategories ?? fetchedCategories;
 
-  const isServerPaginated = !!pagination;
   const activeCategory = controlledCategory ?? internalSelectedCategory;
-  const activeQuickFilter = controlledQuickFilter ?? internalQuickFilter;
+  const activeQuickFilter = controlledQuickFilter || internalQuickFilter || "ALL";
 
   const categoryTabs = useMemo(() => {
     const tabs: Array<{ id: string; label: string; code: string }> = [
@@ -823,10 +824,6 @@ export function OrderList({
   const today = useMemo(() => startOfTodayIsoDate(), []);
 
   const filteredOrders = useMemo(() => {
-    if (isServerPaginated) {
-      return orders;
-    }
-
     return orders.filter((o) => {
       if (activeCategory && activeCategory !== "ALL") {
         const orderCatCode = (o.serviceCategoryCode || "").trim().toUpperCase();
@@ -857,45 +854,56 @@ export function OrderList({
         if (!matches) return false;
       }
 
-      if (activeQuickFilter !== "ALL") {
+      if (activeQuickFilter && activeQuickFilter !== "ALL") {
         const isLaundry =
           o.serviceMode === "PICKUP_DELIVERY" ||
           o.serviceCategoryCode?.toUpperCase() === "LAUNDRY";
 
         if (activeQuickFilter === "WAITING_PICKUP") {
-          if (!isLaundry || (o.status !== "CONFIRMED" && o.status !== "IN_PROGRESS")) return false;
+          if (!isLaundry) return false;
+          if (o.status !== "CONFIRMED" && o.status !== "IN_PROGRESS") return false;
+          if (o.pickupCompletedAt) return false;
+          return true;
         }
+
         if (activeQuickFilter === "PROCESSING") {
-          if (!isLaundry || o.status !== "PROCESSING") return false;
+          return o.status === "PROCESSING";
         }
+
         if (activeQuickFilter === "READY_DELIVERY") {
-          if (!isLaundry || o.status !== "READY_FOR_DELIVERY") return false;
+          return o.status === "READY_FOR_DELIVERY";
         }
+
         if (activeQuickFilter === "DELAYED") {
           const d = o.scheduledDate ? String(o.scheduledDate).slice(0, 10) : null;
+          const promise = deliveryPromiseInfo(o);
           if (
-            !d ||
-            d >= today ||
             o.status === "DELIVERED" ||
             o.status === "COMPLETED" ||
             o.status === "CANCELLED"
-          )
+          ) {
             return false;
+          }
+          return Boolean((d && d < today) || promise.isOverdue);
         }
+
         if (activeQuickFilter === "COMPLETED_TODAY") {
           const updatedDate = o.updatedAt ? String(o.updatedAt).slice(0, 10) : null;
-          if (updatedDate !== today || (o.status !== "COMPLETED" && o.status !== "DELIVERED"))
-            return false;
+          const completedDate = o.completedAt ? String(o.completedAt).slice(0, 10) : null;
+          const deliveredDate = o.deliveredAt ? String(o.deliveredAt).slice(0, 10) : null;
+          const isDone = o.status === "COMPLETED" || o.status === "DELIVERED";
+          return isDone && (updatedDate === today || completedDate === today || deliveredDate === today);
         }
+
         if (activeQuickFilter === "AWAITING_ASSIGNMENT") {
           const alert = getAlertLabel(o);
-          if (!alert) return false;
+          return Boolean(alert);
         }
       }
 
       return true;
     });
-  }, [orders, isServerPaginated, activeCategory, activeQuickFilter, today]);
+  }, [orders, activeCategory, activeQuickFilter, categories, today]);
 
   const [orderToDelete, setOrderToDelete] = useState<OrderResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -963,24 +971,27 @@ export function OrderList({
           <div className="flex flex-wrap items-center gap-3">
             {/* Quick Filters */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {QUICK_FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    if (onQuickFilterChange) {
-                      onQuickFilterChange(f.id);
-                    } else {
-                      setInternalQuickFilter(f.id);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${activeQuickFilter === f.id
-                    ? "bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
-                    : "bg-surface text-text-muted ring-1 ring-[var(--border-soft)] hover:bg-surface-muted hover:text-foreground"
-                    }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+              {QUICK_FILTERS.map((f) => {
+                const isActive = f.id === "ALL" ? (!activeQuickFilter || activeQuickFilter === "ALL") : activeQuickFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => {
+                      if (onQuickFilterChange) {
+                        onQuickFilterChange(f.id);
+                      } else {
+                        setInternalQuickFilter(f.id);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${isActive
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 font-semibold"
+                      : "bg-surface text-text-muted ring-1 ring-[var(--border-soft)] hover:bg-surface-muted hover:text-foreground"
+                      }`}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* View Mode Toggle */}
