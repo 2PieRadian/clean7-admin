@@ -35,12 +35,12 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
       serviceRadiusKm: defaultServiceRadiusKm,
       status: "OPEN NOW",
       openHours: "8:00 AM - 8:00 PM",
-      pickupTime: "30-45 mins",
-      readyWithin: "24 hrs",
-      rating: 4.8,
+      pickupTime: "",
+      readyWithin: "",
+      rating: undefined,
       reviews: 0,
-      tags: "Laundry, Car Wash, Home Care",
-      features: "Free Pickup, Express Service, Verified Store",
+      tags: "",
+      features: "",
     }
   });
 
@@ -221,17 +221,17 @@ export function BranchCreateForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Rating (0.0 to 5.0)" type="number" step="0.1" min={0} max={5} {...register("rating")} />
-            <Field label="Reviews Count" type="number" min={0} {...register("reviews")} />
+            <Field label="Rating (0.0 to 5.0, Optional)" type="number" step="0.1" min={0} max={5} placeholder="Leave empty for new store" {...register("rating")} />
+            <Field label="Reviews Count" type="number" min={0} placeholder="0" {...register("reviews")} />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Pickup in" placeholder="30-45 mins" {...register("pickupTime")} />
-            <Field label="Ready within" placeholder="24 hrs" {...register("readyWithin")} />
+            <Field label="Pickup in (Optional)" placeholder="e.g. 30-45 mins" {...register("pickupTime")} />
+            <Field label="Ready within (Optional)" placeholder="e.g. 24 hrs" {...register("readyWithin")} />
           </div>
 
-          <Field label="Services / Tags (comma separated)" placeholder="Laundry, Car Wash, Home Care" {...register("tags")} />
-          <Field label="Store features / Highlights (comma separated)" placeholder="Free Pickup, Express Service, Verified Store" {...register("features")} />
+          <Field label="Services / Tags (comma separated, Optional)" placeholder="e.g. Laundry, Dry Clean, Steam Press" {...register("tags")} />
+          <Field label="Store features / Highlights (comma separated, Optional)" placeholder="e.g. Free Pickup, Express Service, Verified Store" {...register("features")} />
           <Field label="Google Maps directions URL (Optional)" placeholder="https://maps.google.com/?q=..." {...register("directionsUrl")} />
         </div>
 

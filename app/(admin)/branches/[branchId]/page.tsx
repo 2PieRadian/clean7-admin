@@ -455,13 +455,14 @@ export default function BranchDetailPage() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field
-                  label="Rating (0.0 to 5.0)"
+                  label="Rating (0.0 to 5.0, Optional)"
                   name="rating"
                   type="number"
                   step="0.1"
                   min={0}
                   max={5}
-                  defaultValue={branch.rating ?? 4.8}
+                  defaultValue={branch.rating ?? ""}
+                  placeholder="Leave empty for new store"
                   hint="Store rating shown to customers"
                 />
                 <Field
@@ -476,34 +477,34 @@ export default function BranchDetailPage() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field
-                  label="Pickup in"
+                  label="Pickup in (Optional)"
                   name="pickupTime"
-                  defaultValue={branch.pickupTime ?? "30-45 mins"}
-                  placeholder="30-45 mins"
+                  defaultValue={branch.pickupTime ?? ""}
+                  placeholder="e.g. 30-45 mins"
                   hint="E.g. 30-45 mins"
                 />
                 <Field
-                  label="Ready within"
+                  label="Ready within (Optional)"
                   name="readyWithin"
-                  defaultValue={branch.readyWithin ?? "24 hrs"}
-                  placeholder="24 hrs"
+                  defaultValue={branch.readyWithin ?? ""}
+                  placeholder="e.g. 24 hrs"
                   hint="E.g. 24 hrs"
                 />
               </div>
 
               <Field
-                label="Services / Tags (comma separated)"
+                label="Services / Tags (comma separated, Optional)"
                 name="tags"
-                defaultValue={Array.isArray(branch.tags) ? branch.tags.join(", ") : "Laundry, Car Wash, Home Care"}
-                placeholder="Laundry, Car Wash, Home Care"
+                defaultValue={Array.isArray(branch.tags) ? branch.tags.join(", ") : ""}
+                placeholder="e.g. Laundry, Dry Clean, Steam Press"
                 hint="Used for tags and service filter on the website"
               />
 
               <Field
-                label="Store features / Highlights (comma separated)"
+                label="Store features / Highlights (comma separated, Optional)"
                 name="features"
-                defaultValue={Array.isArray(branch.features) ? branch.features.join(", ") : "Free Pickup, Express Service, Verified Store"}
-                placeholder="Free Pickup, Express Service, Verified Store"
+                defaultValue={Array.isArray(branch.features) ? branch.features.join(", ") : ""}
+                placeholder="e.g. Free Pickup, Express Service, Verified Store"
                 hint="Store highlights listed on the card"
               />
 

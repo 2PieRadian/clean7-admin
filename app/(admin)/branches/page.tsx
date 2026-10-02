@@ -102,7 +102,13 @@ export default function BranchesPage() {
                         {branch.name}
                       </Link>
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
-                        <span>⭐ {branch.rating ?? 4.8}</span>
+                        {typeof branch.rating === "number" && branch.rating > 0 ? (
+                          <span>⭐ {branch.rating.toFixed(1)}</span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-text-secondary bg-surface px-1.5 py-0.5 rounded border border-border">
+                            New Store
+                          </span>
+                        )}
                         <span>·</span>
                         <span className={branch.status === "CLOSED" ? "text-danger" : "text-[#27c1a5]"}>
                           {branch.status ?? "OPEN NOW"}
