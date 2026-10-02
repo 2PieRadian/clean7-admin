@@ -78,15 +78,37 @@ export default function BranchesPage() {
             columns={[
               {
                 key: "name",
-                header: "Branch",
+                header: "Branch / Store",
                 render: (branch) => (
-                  <div>
-                    <Link
-                      href={`/branches/${branch.id}`}
-                      className="font-semibold text-foreground underline decoration-[rgba(39,193,165,0.35)] underline-offset-4"
-                    >
-                      {branch.name}
-                    </Link>
+                  <div className="flex items-center gap-3">
+                    {branch.imageUrl ? (
+                      <div className="relative w-10 h-10 rounded-md overflow-hidden border border-border shrink-0 bg-surface">
+                        <img
+                          src={branch.imageUrl}
+                          alt={branch.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-md border border-dashed border-border shrink-0 flex items-center justify-center text-[10px] text-text-secondary bg-surface">
+                        Store
+                      </div>
+                    )}
+                    <div>
+                      <Link
+                        href={`/branches/${branch.id}`}
+                        className="font-semibold text-foreground underline decoration-[rgba(39,193,165,0.35)] underline-offset-4 block"
+                      >
+                        {branch.name}
+                      </Link>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
+                        <span>⭐ {branch.rating ?? 4.8}</span>
+                        <span>·</span>
+                        <span className={branch.status === "CLOSED" ? "text-danger" : "text-[#27c1a5]"}>
+                          {branch.status ?? "OPEN NOW"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ),
               },

@@ -39,6 +39,11 @@ function readServiceRadiusKm(formData: FormData) {
   return value;
 }
 
+function parseCommaSeparated(value: string | null): string[] | null {
+  if (!value) return null;
+  return value.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export function buildBranchPayload(
   formData: FormData,
   options: {
@@ -79,6 +84,17 @@ export function buildBranchPayload(
     serviceRadiusKm: number;
     code?: string;
     assignedBranchAdminAuthUserId?: string | null;
+    imageUrl?: string | null;
+    rating?: number | null;
+    reviews?: number | null;
+    tags?: string[] | null;
+    features?: string[] | null;
+    pickupTime?: string | null;
+    readyWithin?: string | null;
+    openHours?: string | null;
+    status?: string | null;
+    directionsUrl?: string | null;
+    todaySlots?: any;
   } = {
     name: readText(formData, "name"),
     phoneNumber: readOptionalText(formData, "phoneNumber") ?? readOptionalText(formData, "phone"),
@@ -93,7 +109,24 @@ export function buildBranchPayload(
     latitude,
     longitude,
     serviceRadiusKm: readServiceRadiusKm(formData),
+    imageUrl: readOptionalText(formData, "imageUrl"),
+    rating: readOptionalNumber(formData, "rating"),
+    reviews: readOptionalNumber(formData, "reviews"),
+    pickupTime: readOptionalText(formData, "pickupTime"),
+    readyWithin: readOptionalText(formData, "readyWithin"),
+    openHours: readOptionalText(formData, "openHours"),
+    status: readOptionalText(formData, "status"),
+    directionsUrl: readOptionalText(formData, "directionsUrl"),
+    tags: parseCommaSeparated(readOptionalText(formData, "tags")),
+    features: parseCommaSeparated(readOptionalText(formData, "features")),
   };
+
+  const todaySlotsRaw = readOptionalText(formData, "todaySlots");
+  if (todaySlotsRaw) {
+    try {
+      payload.todaySlots = JSON.parse(todaySlotsRaw);
+    } catch {}
+  }
 
   if (code) {
     payload.code = code;

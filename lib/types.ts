@@ -434,6 +434,20 @@ export type BranchAdminResponse = {
   bankIfscCode?: string | null;
   bankBeneficiaryName?: string | null;
   razorpayLinkedAccountId?: string | null;
+
+  // Website Store Locator & Front Display Fields
+  imageUrl?: string | null;
+  rating?: number | null;
+  reviews?: number | null;
+  tags?: string[] | null;
+  features?: string[] | null;
+  pickupTime?: string | null;
+  readyWithin?: string | null;
+  openHours?: string | null;
+  status?: string | null;
+  directionsUrl?: string | null;
+  todaySlots?: { label: string; active: boolean }[] | null;
+
   metrics?: {
     activeOrderCount?: number;
     pipelineBacklog?: number;

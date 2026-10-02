@@ -16,6 +16,19 @@ export const branchCreateSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
   longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
   assignedBranchAdminAuthUserId: z.string().optional().nullable(),
+
+  // Website Store Locator & Front Display Fields
+  imageUrl: z.string().optional().nullable(),
+  rating: z.coerce.number().min(0).max(5).optional().nullable(),
+  reviews: z.coerce.number().min(0).optional().nullable(),
+  tags: z.any().optional().nullable(),
+  features: z.any().optional().nullable(),
+  pickupTime: z.string().optional().nullable(),
+  readyWithin: z.string().optional().nullable(),
+  openHours: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+  directionsUrl: z.string().optional().nullable(),
+  todaySlots: z.any().optional().nullable(),
 });
 
 export const branchUpdateSchema = branchCreateSchema;

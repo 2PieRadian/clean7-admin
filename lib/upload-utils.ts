@@ -359,3 +359,11 @@ export async function uploadBannerImage(
   await putToSignedUrl(uploadURL, file, onProgress);
   return fileURL;
 }
+
+export async function uploadStoreImage(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  return uploadBannerImage(file, onProgress);
+}
+
